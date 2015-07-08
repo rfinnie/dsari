@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ job_name }}</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+</head>
+
+<body>
+<div class="container">
+<h1>{{ job_name }}</h1>
+<table class="table table-striped">
+<tr>
+    <th>Start time</th>
+    <th>Duration</th>
+    <th>Exit code</th>
+</tr>
+{% for run in runs|sort(attribute='start_time', reverse=True) %}
+<tr{% if run.exit_code != 0 %} class="danger"{% endif %}>
+    <td><a href="{{ run.run_id }}/">{{ run.start_time }}</a></td>
+    <td>{{ run.stop_time - run.start_time }}</td>
+    <td>{{ run.exit_code }}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+</body>
+</html>

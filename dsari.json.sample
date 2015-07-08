@@ -1,0 +1,39 @@
+{
+    "jobs": {
+        "test": {
+            "command": ["/bin/sleep", "60"],
+            "max_execution": 8,
+            "schedule": "* * * * *"
+        },
+        "test2": {
+            "command": ["/usr/bin/env"],
+            "schedule": "* * * * *"
+        },
+        "test3": {
+            "command": ["/usr/bin/env"],
+            "schedule": "H H * * *"
+        },
+        "test4": {
+            "command": ["/bin/sleep", "90"],
+            "schedule": "* * * * *"
+        },
+        "run1": {
+            "command": ["bin/run1"],
+            "concurrency_group": "local",
+            "max_execution": 7200,
+            "schedule": "H H(0-7) * * *"
+        },
+        "run2": {
+            "command": ["bin/run2"],
+            "concurrency_group": "local",
+            "max_execution": 7200,
+            "schedule": "H H(0-7) * * *"
+        },
+        "run3": {
+            "command": ["ssh", "otherhost", "run3"],
+            "concurrency_group": "notlocal",
+            "max_execution": 7200,
+            "schedule": "H H(0-7) * * *"
+        }
+    }
+}

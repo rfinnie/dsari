@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ job_name }} - {{ start_time }} ({{ exit_code }})</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+</head>
+
+<body>
+<div class="container">
+<h1>{{ job_name }}</h1>
+<ul>
+<li>Job name: {{ job_name }}</li>
+<li>Run ID: {{ run_id }}</li>
+<li>Trigger type: {{ trigger_type }}</li>
+<li>Start time: {{ start_time }}</li>
+<li>Stop time: {{ stop_time }}</li>
+<li>Duration: {{ stop_time - start_time }}</li>
+<li{% if exit_code != 0 %} class="text-danger"{% endif %}>Exit code: {{ exit_code }}</li>
+</ul>
+<pre>{{ run_output }}</pre>
+</div>
+</body>
+</html>
