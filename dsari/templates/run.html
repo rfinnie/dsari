@@ -9,15 +9,16 @@
 <body>
 <div class="container">
 <h1>{{ job_name }}</h1>
-<ul>
-<li>Job name: {{ job_name }}</li>
-<li>Run ID: {{ run_id }}</li>
-<li>Trigger type: {{ trigger_type }}</li>
-<li>Start time: {{ start_time }}</li>
-<li>Stop time: {{ stop_time }}</li>
-<li>Duration: {{ stop_time - start_time }}</li>
-<li{% if exit_code != 0 %} class="text-danger"{% endif %}>Exit code: {{ exit_code }}</li>
-</ul>
+<table class="table">
+<tr><th>Job name</th><td><a href="../../{{ job_name }}/">{{ job_name }}</a></td></tr>
+<tr><th>Run ID</th><td>{{ run_id }}</td></tr>
+<tr><th>Trigger type</th><td>{{ trigger_type }}</td></tr>
+<tr><th>Start time</th><td>{{ start_time }}</td></tr>
+<tr><th>Stop time</th><td>{{ stop_time }}</td></tr>
+<tr><th>Duration</th><td>{{ stop_time - start_time }}</td></tr>
+<tr{% if exit_code != 0 %} class="danger"{% endif %}><th>Exit code</th><td>{{ exit_code }}</td></tr>
+</table>
+<h2>Run Output</h2>
 <pre>{{ run_output }}</pre>
 </div>
 </body>
