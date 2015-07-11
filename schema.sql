@@ -5,6 +5,6 @@ CREATE TABLE runs (
   stop_time real,
   exit_code integer,
   trigger_type text,
-  trigger_data text
+  trigger_data text,
+  run_data text
 );
-
