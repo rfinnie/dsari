@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import sys
 import jinja2
 import datetime
 import json
@@ -45,9 +44,17 @@ def main(argv):
 
     ignore_jobs = ['test', 'test2', 'test3', 'test4']
 
+    if 'template_dir' in config and config['template_dir']:
+        loader = jinja2.ChoiceLoader(
+            jinja2.FileSystemLoader(config['template_dir']),
+            jinja2.PackageLoader('dsari'),
+        )
+    else:
+        loader = jinja2.PackageLoader('dsari')
+
     templates = jinja2.Environment(
         autoescape=guess_autoescape,
-        loader=jinja2.PackageLoader('dsari'),
+        loader=loader,
         extensions=['jinja2.ext.autoescape'],
     )
     run_template = templates.get_template('run.html')
