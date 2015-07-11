@@ -72,7 +72,22 @@ class Scheduler():
             lh_console.setLevel(logging.INFO)
         self.logger.addHandler(lh_console)
 
+        db_exists = os.path.exists(os.path.join(self.config['data_dir'], 'dsari.sqlite3'))
         self.db_conn = sqlite3.connect(os.path.join(self.config['data_dir'], 'dsari.sqlite3'))
+        if not db_exists:
+            self.db_conn.execute(
+                """CREATE TABLE runs (
+                    job_name text,
+                    run_id text,
+                    start_time real,
+                    stop_time real,
+                    exit_code integer,
+                    trigger_type text,
+                    trigger_data text,
+                    run_data text
+                )"""
+            )
+            self.db_conn.commit()
 
         self.reset_jobs()
 
