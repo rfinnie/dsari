@@ -13,6 +13,7 @@ import sqlite3
 import tempfile
 import shutil
 import argparse
+import copy
 import croniter_hash
 import utils
 
@@ -61,9 +62,11 @@ class Run():
 
 class Scheduler():
     def __init__(self):
+        self.shutdown = False
         self.args = self.parse_args()
         self.load_config()
-        signal.signal(signal.SIGHUP, self.sighup_handler)
+        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
+            signal.signal(signum, self.signal_handler)
 
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
@@ -108,9 +111,32 @@ class Scheduler():
         parser.add_argument('--debug', action='store_true')
         return parser.parse_args()
 
-    def sighup_handler(self, signum, frame):
-        self.logger.info('SIGHUP received, reloading config when next idle')
-        self.sighup_load_config = True
+    def begin_shutdown(self):
+        for run in copy.copy(self.runs):
+            if run not in self.running_runs:
+                self.runs.remove(run)
+
+        if 'shutdown_kill_runs' in self.config and self.config['shutdown_kill_runs']:
+            for run in self.running_runs:
+                job = run.job
+                self.logger.info('[%s %s] Shutdown requested, sending SIGTERM to %d' % (job.name, run.id, run.pid))
+                os.kill(run.pid, signal.SIGTERM)
+                run.term_sent = True
+        elif len(self.running_runs) > 0:
+            self.logger.info('Shutdown will proceed after runs have completed')
+
+    def signal_handler(self, signum, frame):
+        if signum in (signal.SIGINT, signal.SIGTERM):
+            if signum == signal.SIGINT:
+                self.logger.info('SIGINT received, beginning shutdown')
+            elif signum == signal.SIGTERM:
+                self.logger.info('SIGTERM received, beginning shutdown')
+            self.shutdown = True
+            self.shutdown_begin = time.time()
+            self.begin_shutdown()
+        elif signum == signal.SIGHUP:
+            self.logger.info('SIGHUP received, reloading config when next idle')
+            self.sighup_load_config = True
 
     def load_config(self):
         self.sighup_load_config = False
@@ -152,14 +178,25 @@ class Scheduler():
             self.wakeups.append(run.start_time + job.config['max_execution'])
 
     def run_child_executor(self, run):
-        signal.signal(signal.SIGHUP, signal.SIG_DFL)
-        job = run.job
+        # Reset all handled signals to default
+        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
+            signal.signal(signum, signal.SIG_DFL)
+
+        # Put the child in its own process group to prevent SIGINT from
+        # propagating to the children
+        os.setpgid(os.getpid(), 0)
+
+        # Close the database in the child
         self.db_conn.close()
+
+        # Close all tempfiles, except the one we will be using
         for r in self.runs:
             if r == run:
                 continue
             if hasattr(r, 'tempfile') and r.tempfile:
                 r.tempfile.close()
+
+        job = run.job
         os.environ['JOB_NAME'] = job.name
         os.environ['RUN_ID'] = run.id
         os.environ['BUILD_NUMBER'] = run.id
@@ -216,11 +253,12 @@ class Scheduler():
         self.runs.remove(run)
         if run.concurrency_group and run in self.running_groups[run.concurrency_group]:
             self.running_groups[run.concurrency_group].remove(run)
-        run = Run(job, str(uuid.uuid4()))
-        t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job.name).get_next() + (random.random() * 60.0)
-        run.scheduled_time = t
-        self.runs.append(run)
-        self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
+        if not self.shutdown:
+            run = Run(job, str(uuid.uuid4()))
+            t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job.name).get_next() + (random.random() * 60.0)
+            run.scheduled_time = t
+            self.runs.append(run)
+            self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
         return child_pid
 
     def process_run(self, run):
@@ -299,6 +337,10 @@ class Scheduler():
                     if self.process_next_child() == 0:
                         break
             else:
+                if self.shutdown:
+                    self.logger.info('Shutdown complete')
+                    return
+
                 to_sleep = self.next_wakeup - time.time()
                 if to_sleep > 0:
                     self.logger.debug('No running jobs, waiting %0.02fs' % to_sleep)
