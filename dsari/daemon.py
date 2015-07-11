@@ -2,7 +2,6 @@
 
 import os
 import sys
-import subprocess
 import json
 import time
 import uuid
@@ -21,6 +20,11 @@ import utils
 def wait_deadline(pid, options, deadline, interval=0.05):
     while True:
         (child_pid, child_exit, child_resource) = os.wait4(pid, options)
+        child_signal = child_exit % 256
+        if child_signal > 0:
+            child_exit = 128 + child_signal
+        else:
+            child_exit = child_exit >> 8
         if child_pid != 0:
             return (child_pid, child_exit, child_resource)
         if time.time() >= deadline:
@@ -120,7 +124,7 @@ class Scheduler():
             job.config = self.config['jobs'][job_name]
             run = Run(job, str(uuid.uuid4()))
             t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job_name).get_next() + (random.random() * 60.0)
-            self.logger.debug('[%s] Next scheduled run: %s (%0.02fs)' % (job.name, time.strftime('%c', time.localtime(t)), (t - now)))
+            self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
             run.scheduled_time = t
             self.runs.append(run)
 
@@ -134,13 +138,13 @@ class Scheduler():
         delta = now - run.start_time
         if delta > (job.config['max_execution'] + sigterm_grace):
             if not run.kill_sent:
-                self.logger.warning('[%s] SIGTERM grace (%0.02fs) exceeded, sending SIGKILL to %d' % (job.name, sigterm_grace, run.pid))
+                self.logger.warning('[%s %s] SIGTERM grace (%0.02fs) exceeded, sending SIGKILL to %d' % (job.name, run.id, sigterm_grace, run.pid))
                 os.kill(run.pid, signal.SIGKILL)
                 run.kill_sent = True
             self.wakeups.append(now + sigkill_grace)
         elif delta > job.config['max_execution']:
             if not run.term_sent:
-                self.logger.warn('[%s] Max execution (%0.02fs) exceeded, sending SIGTERM to %d' % (job.name, job.config['max_execution'], run.pid))
+                self.logger.warn('[%s %s] Max execution (%0.02fs) exceeded, sending SIGTERM to %d' % (job.name, run.id, job.config['max_execution'], run.pid))
                 os.kill(run.pid, signal.SIGTERM)
                 run.term_sent = True
             self.wakeups.append(now + sigterm_grace)
@@ -148,6 +152,7 @@ class Scheduler():
             self.wakeups.append(run.start_time + job.config['max_execution'])
 
     def run_child_executor(self, run):
+        signal.signal(signal.SIGHUP, signal.SIG_DFL)
         job = run.job
         self.db_conn.close()
         for r in self.runs:
@@ -175,9 +180,14 @@ class Scheduler():
                 os.environ[key] = str(val)
         if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name)):
             os.makedirs(os.path.join(self.config['data_dir'], 'runs', job.name))
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
         devnull_f = open(os.devnull, 'r')
-        exit_code = subprocess.call(job.config['command'], stdout=run.tempfile, stderr=run.tempfile, stdin=devnull_f)
-        sys.exit(exit_code)
+        os.dup2(devnull_f.fileno(), 0)
+        os.dup2(run.tempfile.fileno(), 1)
+        os.dup2(run.tempfile.fileno(), 2)
+        devnull_f.close()
+        run.tempfile.close()
+        os.execvp(job.config['command'][0], job.config['command'])
 
     def process_next_child(self):
         self.logger.debug('Waiting up to %0.02fs for running jobs' % (self.next_wakeup - time.time()))
@@ -210,7 +220,7 @@ class Scheduler():
         t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job.name).get_next() + (random.random() * 60.0)
         run.scheduled_time = t
         self.runs.append(run)
-        self.logger.debug('[%s] Next scheduled run: %s (%0.02fs)' % (job.name, time.strftime('%c', time.localtime(t)), (t - now)))
+        self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
         return child_pid
 
     def process_run(self, run):
@@ -220,7 +230,7 @@ class Scheduler():
             self.wakeups.append(now + backoff(run.scheduled_time, now))
             return
         if os.path.exists(os.path.join(self.config['data_dir'], 'trigger', job.name)):
-            self.logger.info('[%s] Trigger detected, scheduling for now' % job.name)
+            self.logger.info('[%s %s] Trigger detected, scheduling for now' % (job.name, run.id))
             run.trigger_type = 'file'
             with open(os.path.join(self.config['data_dir'], 'trigger', job.name)) as f:
                 os.remove(os.path.join(self.config['data_dir'], 'trigger', job.name))
