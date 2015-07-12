@@ -196,6 +196,7 @@ class Scheduler():
             if hasattr(r, 'tempfile') and r.tempfile:
                 r.tempfile.close()
 
+        # Set environment variables
         job = run.job
         os.environ['JOB_NAME'] = job.name
         os.environ['RUN_ID'] = run.id
@@ -215,8 +216,8 @@ class Scheduler():
         if 'environment' in run.trigger_data and run.trigger_data['environment']:
             for (key, val) in run.trigger_data['environment'].items():
                 os.environ[key] = str(val)
-        if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name)):
-            os.makedirs(os.path.join(self.config['data_dir'], 'runs', job.name))
+
+        # Set STDIN to /dev/null, and STDOUT/STDERR to the tempfile
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
         devnull_f = open(os.devnull, 'r')
         os.dup2(devnull_f.fileno(), 0)
@@ -224,6 +225,8 @@ class Scheduler():
         os.dup2(run.tempfile.fileno(), 2)
         devnull_f.close()
         run.tempfile.close()
+
+        # Finally!
         os.execvp(job.config['command'][0], job.config['command'])
 
     def process_next_child(self):
@@ -247,6 +250,8 @@ class Scheduler():
         self.db_conn.execute('INSERT INTO runs (job_name, run_id, start_time, stop_time, exit_code, trigger_type, trigger_data, run_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (job.name, run.id, start_time, stop_time, child_exit, run.trigger_type, json.dumps(run.trigger_data), json.dumps({})))
         self.db_conn.commit()
         run.tempfile.close()
+        if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name)):
+            os.makedirs(os.path.join(self.config['data_dir'], 'runs', job.name))
         shutil.copyfile(run.tempfile.name, os.path.join(self.config['data_dir'], 'runs', job.name, '%s.output' % run.id))
         os.remove(run.tempfile.name)
         self.running_runs.remove(run)
