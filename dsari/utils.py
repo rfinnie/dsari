@@ -51,10 +51,35 @@ def load_config(config_dir):
         for file in config_files:
             config = dict_merge(config, json_load_file(file))
 
+    if 'jobs' not in config:
+        config['jobs'] = {}
     if 'concurrency_groups' not in config:
         config['concurrency_groups'] = {}
 
     if 'data_dir' not in config:
         config['data_dir'] = DEFAULT_DATA_DIR
+    if 'template_dir' not in config:
+        config['template_dir'] = None
+
+    if 'shutdown_kill_runs' not in config:
+        config['shutdown_kill_runs'] = False
+    if 'shutdown_kill_grace' not in config:
+        config['shutdown_kill_grace'] = None
+
+    for job_name in config['jobs'].keys():
+        if '/' in job_name:
+            del(config['jobs'][job_name])
+            continue
+        if job_name in ('.', '..'):
+            del(config['jobs'][job_name])
+            continue
+        if 'concurrency_group' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['concurrency_group'] = None
+        if 'max_execution' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['max_execution'] = None
+        if 'environment' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['environment'] = {}
+        if 'render_reports' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['render_reports'] = True
 
     return config

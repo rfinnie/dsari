@@ -43,7 +43,7 @@ def main(argv):
         lh_console.setLevel(logging.INFO)
     logger.addHandler(lh_console)
 
-    if 'template_dir' in config and config['template_dir']:
+    if config['template_dir']:
         loader = jinja2.ChoiceLoader(
             jinja2.FileSystemLoader(config['template_dir']),
             jinja2.PackageLoader('dsari'),
@@ -63,7 +63,7 @@ def main(argv):
     jobs_written = []
     db_conn = sqlite3.connect(os.path.join(config['data_dir'], 'dsari.sqlite3'))
     for (job_name, run_id, start_time, stop_time, exit_code, trigger_type, trigger_data) in db_conn.execute('SELECT job_name, run_id, start_time, stop_time, exit_code, trigger_type, trigger_data FROM runs ORDER BY start_time'):
-        if 'render_reports' in config['jobs'][job_name] and (not config['jobs'][job_name]['render_reports']):
+        if not config['jobs'][job_name]['render_reports']:
             logger.debug('Ignoring %s %s' % (job_name, run_id))
             continue
         context = {

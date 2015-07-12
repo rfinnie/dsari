@@ -116,7 +116,7 @@ class Scheduler():
             if run not in self.running_runs:
                 self.runs.remove(run)
 
-        if 'shutdown_kill_runs' in self.config and self.config['shutdown_kill_runs']:
+        if self.config['shutdown_kill_runs']:
             for run in self.running_runs:
                 if run.term_sent:
                     continue
@@ -128,9 +128,9 @@ class Scheduler():
             self.logger.info('Shutdown will proceed after runs have completed')
 
     def monitor_shutdown(self):
-        if not ('shutdown_kill_runs' in self.config and self.config['shutdown_kill_runs']):
+        if not self.config['shutdown_kill_runs']:
             return
-        if not ('shutdown_kill_grace' in self.config and self.config['shutdown_kill_grace']):
+        if not self.config['shutdown_kill_grace']:
             return
         if time.time() < (self.shutdown_begin + self.config['shutdown_kill_grace']):
             self.wakeups.append(self.shutdown_begin + self.config['shutdown_kill_grace'])
@@ -174,7 +174,7 @@ class Scheduler():
 
     def process_run_execution_time(self, run):
         job = run.job
-        if ('max_execution' not in job.config) or (not job.config['max_execution']):
+        if not job.config['max_execution']:
             return
         sigterm_grace = 60.0
         sigkill_grace = 5.0
@@ -214,16 +214,15 @@ class Scheduler():
         os.environ['BUILD_NUMBER'] = run.id
         os.environ['BUILD_ID'] = run.id
         os.environ['BUILD_TAG'] = 'dsari-%s-%s' % (job.name, run.id)
-        if 'concurrency_group' in job.config and job.config['concurrency_group']:
-            os.environ['CONCURRENCY_GROUP'] = job.config['concurrency_group']
+        if run.concurrency_group:
+            os.environ['CONCURRENCY_GROUP'] = run.concurrency_group
         if run.previous_run:
             os.environ['PREVIOUS_RUN_ID'] = run.previous_run[0]
             os.environ['PREVIOUS_START_TIME'] = str(run.previous_run[1])
             os.environ['PREVIOUS_STOP_TIME'] = str(run.previous_run[2])
             os.environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run[3])
-        if 'environment' in job.config and job.config['environment']:
-            for (key, val) in job.config['environment'].items():
-                os.environ[key] = str(val)
+        for (key, val) in job.config['environment'].items():
+            os.environ[key] = str(val)
         if 'environment' in run.trigger_data and run.trigger_data['environment']:
             for (key, val) in run.trigger_data['environment'].items():
                 os.environ[key] = str(val)
@@ -295,7 +294,7 @@ class Scheduler():
         if run.scheduled_time > now:
             self.wakeups.append(run.scheduled_time)
             return
-        if 'concurrency_group' in job.config and job.config['concurrency_group']:
+        if job.config['concurrency_group']:
             concurrency_group = job.config['concurrency_group']
             if concurrency_group not in self.running_groups:
                 self.running_groups[concurrency_group] = []
