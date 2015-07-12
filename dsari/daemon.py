@@ -189,13 +189,6 @@ class Scheduler():
         # Close the database in the child
         self.db_conn.close()
 
-        # Close all tempfiles, except the one we will be using
-        for r in self.runs:
-            if r == run:
-                continue
-            if hasattr(r, 'tempfile') and r.tempfile:
-                r.tempfile.close()
-
         # Set environment variables
         job = run.job
         os.environ['JOB_NAME'] = job.name
@@ -249,7 +242,6 @@ class Scheduler():
         #self.logger.debug('[%s %s] Resources: %s' % (job.name, run.id, repr(child_resource)))
         self.db_conn.execute('INSERT INTO runs (job_name, run_id, start_time, stop_time, exit_code, trigger_type, trigger_data, run_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (job.name, run.id, start_time, stop_time, child_exit, run.trigger_type, json.dumps(run.trigger_data), json.dumps({})))
         self.db_conn.commit()
-        run.tempfile.close()
         if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name)):
             os.makedirs(os.path.join(self.config['data_dir'], 'runs', job.name))
         shutil.copyfile(run.tempfile.name, os.path.join(self.config['data_dir'], 'runs', job.name, '%s.output' % run.id))
@@ -316,6 +308,7 @@ class Scheduler():
             raise OSError('run_child_executor returned, when it should not have')
         else:
             run.pid = child_pid
+            run.tempfile.close()
             self.running_runs.append(run)
             if run.concurrency_group:
                 self.running_groups[run.concurrency_group].append(run)
