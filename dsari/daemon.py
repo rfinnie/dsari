@@ -236,8 +236,14 @@ class Scheduler():
         devnull_f.close()
         run.tempfile.close()
 
+        # Build command line
+        command = job.config['command']
+        if job.config['command_append_run']:
+            command.append(job.name)
+            command.append(run.id)
+
         # Finally!
-        os.execvp(job.config['command'][0], job.config['command'])
+        os.execvp(command[0], command)
 
     def process_next_child(self):
         self.logger.debug('Waiting up to %0.02fs for running jobs' % (self.next_wakeup - time.time()))

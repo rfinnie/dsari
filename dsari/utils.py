@@ -81,5 +81,7 @@ def load_config(config_dir):
             config['jobs'][job_name]['environment'] = {}
         if 'render_reports' not in config['jobs'][job_name]:
             config['jobs'][job_name]['render_reports'] = True
+        if 'command_append_run' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['command_append_run'] = False
 
     return config
