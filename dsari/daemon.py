@@ -118,12 +118,30 @@ class Scheduler():
 
         if 'shutdown_kill_runs' in self.config and self.config['shutdown_kill_runs']:
             for run in self.running_runs:
+                if run.term_sent:
+                    continue
                 job = run.job
                 self.logger.info('[%s %s] Shutdown requested, sending SIGTERM to %d' % (job.name, run.id, run.pid))
                 os.kill(run.pid, signal.SIGTERM)
                 run.term_sent = True
         elif len(self.running_runs) > 0:
             self.logger.info('Shutdown will proceed after runs have completed')
+
+    def monitor_shutdown(self):
+        if not ('shutdown_kill_runs' in self.config and self.config['shutdown_kill_runs']):
+            return
+        if not ('shutdown_kill_grace' in self.config and self.config['shutdown_kill_grace']):
+            return
+        if time.time() < (self.shutdown_begin + self.config['shutdown_kill_grace']):
+            self.wakeups.append(self.shutdown_begin + self.config['shutdown_kill_grace'])
+            return
+        for run in self.running_runs:
+            if run.kill_sent:
+                continue
+            job = run.job
+            self.logger.info('[%s %s] Shutdown grace time exceeded, sending SIGKILL to %d' % (job.name, run.id, run.pid))
+            os.kill(run.pid, signal.SIGKILL)
+            run.kill_sent = True
 
     def signal_handler(self, signum, frame):
         if signum in (signal.SIGINT, signal.SIGTERM):
@@ -306,12 +324,11 @@ class Scheduler():
         if child_pid == 0:
             self.run_child_executor(run)
             raise OSError('run_child_executor returned, when it should not have')
-        else:
-            run.pid = child_pid
-            run.tempfile.close()
-            self.running_runs.append(run)
-            if run.concurrency_group:
-                self.running_groups[run.concurrency_group].append(run)
+        run.pid = child_pid
+        run.tempfile.close()
+        self.running_runs.append(run)
+        if run.concurrency_group:
+            self.running_groups[run.concurrency_group].append(run)
 
     def process_wakeups(self):
         self.next_wakeup = time.time() + 60.0
@@ -327,6 +344,9 @@ class Scheduler():
 
             for run in self.running_runs:
                 self.process_run_execution_time(run)
+
+            if self.shutdown:
+                self.monitor_shutdown()
 
             self.process_wakeups()
 
