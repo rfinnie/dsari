@@ -65,7 +65,7 @@ class Scheduler():
         self.shutdown = False
         self.args = self.parse_args()
         self.load_config()
-        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
+        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM, signal.SIGQUIT):
             signal.signal(signum, self.signal_handler)
 
         self.logger = logging.getLogger()
@@ -155,6 +155,19 @@ class Scheduler():
         elif signum == signal.SIGHUP:
             self.logger.info('SIGHUP received, reloading config when next idle')
             self.sighup_load_config = True
+        elif signum == signal.SIGQUIT:
+            self.sigquit_status()
+
+    def sigquit_status(self):
+        now = time.time()
+        for run in sorted(self.runs, key=lambda x: x.job.name):
+            job = run.job
+            if run in self.running_runs:
+                t = run.start_time
+                self.logger.info('[%s %s] PID %d running since %s (%0.02fs)' % (job.name, run.id, run.pid, time.strftime('%c', time.localtime(t)), (now - t)))
+            else:
+                t = run.scheduled_time
+                self.logger.info('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
 
     def load_config(self):
         self.sighup_load_config = False
@@ -197,7 +210,7 @@ class Scheduler():
 
     def run_child_executor(self, run):
         # Reset all handled signals to default
-        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
+        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM, signal.SIGQUIT):
             signal.signal(signum, signal.SIG_DFL)
 
         # Put the child in its own process group to prevent SIGINT from
