@@ -13,7 +13,20 @@
 <table class="table">
 <tr><th>Job name</th><td><a href="../../{{ job_name }}/">{{ job_name }}</a></td></tr>
 <tr><th>Run ID</th><td>{{ run_id }}</td></tr>
-<tr><th>Trigger type</th><td>{{ trigger_type }}</td></tr>
+{% if trigger_type == 'schedule' %}
+<tr><th>Trigger</th><td>Schedule{% if trigger_data.scheduled_time %} ({{ trigger_data.scheduled_time }}){% endif %}</td></tr>
+{% elif trigger_type == 'file' %}
+{% if trigger_data.type %}
+<tr><th>Trigger</th><td>{{ trigger_data.type }}</td></tr>
+{% else %}
+<tr><th>Trigger</th><td>File</td></tr>
+{% endif %}
+{% else %}
+<tr><th>Trigger</th><td>{{ trigger_type }}</td></tr>
+{% endif %}
+{% if trigger_data.description %}
+<tr><th>Description</th><td>{{ trigger_data.description }}</td></tr>
+{% endif %}
 <tr><th>Start time</th><td>{{ start_time }}</td></tr>
 <tr><th>Stop time</th><td>{{ stop_time }}</td></tr>
 <tr><th>Duration</th><td>{{ stop_time - start_time }}</td></tr>

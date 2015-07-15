@@ -95,6 +95,8 @@ def main(argv):
             'trigger_type': trigger_type,
             'trigger_data': json.loads(trigger_data),
         }
+        if 'scheduled_time' in context['trigger_data']:
+            context['trigger_data']['scheduled_time'] = datetime.datetime.fromtimestamp(context['trigger_data']['scheduled_time'])
         runs.append(context)
         if job_name not in jobs:
             jobs[job_name] = {

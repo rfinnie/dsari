@@ -201,6 +201,7 @@ class Scheduler():
             t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job_name).get_next() + (random.random() * 60.0)
             self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
             run.scheduled_time = t
+            run.trigger_data['scheduled_time'] = t
             self.runs.append(run)
 
     def process_run_execution_time(self, run):
@@ -308,9 +309,29 @@ class Scheduler():
             run = Run(job, str(uuid.uuid4()))
             t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job.name).get_next() + (random.random() * 60.0)
             run.scheduled_time = t
+            run.trigger_data['scheduled_time'] = t
             self.runs.append(run)
             self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
         return child_pid
+
+    def process_run_trigger(self, run):
+        job = run.job
+        if not os.path.exists(os.path.join(self.config['data_dir'], 'trigger', '%s.json' % job.name)):
+            return
+        with open(os.path.join(self.config['data_dir'], 'trigger', '%s.json' % job.name)) as f:
+            os.remove(os.path.join(self.config['data_dir'], 'trigger', '%s.json' % job.name))
+            try:
+                j = json.load(f)
+            except ValueError, e:
+                self.logger.error('[%s %s] Cannot load trigger: %s' % (job.name, run.id, e.message))
+                return
+        if type(j) != dict:
+            self.logger.error('[%s %s] Cannot load trigger: Data must be a dict' % (job.name, run.id))
+            return
+        run.trigger_type = 'file'
+        run.trigger_data = j
+        self.logger.info('[%s %s] Trigger detected, scheduling for now' % (job.name, run.id))
+        run.scheduled_time = time.time()
 
     def process_run(self, run):
         now = time.time()
@@ -318,16 +339,7 @@ class Scheduler():
         if run in self.running_runs:
             self.wakeups.append(now + backoff(run.scheduled_time, now))
             return
-        if os.path.exists(os.path.join(self.config['data_dir'], 'trigger', job.name)):
-            self.logger.info('[%s %s] Trigger detected, scheduling for now' % (job.name, run.id))
-            run.trigger_type = 'file'
-            with open(os.path.join(self.config['data_dir'], 'trigger', job.name)) as f:
-                os.remove(os.path.join(self.config['data_dir'], 'trigger', job.name))
-                try:
-                    run.trigger_data = json.load(f)
-                except ValueError:
-                    run.trigger_data = {}
-            run.scheduled_time = now
+        self.process_run_trigger(run)
         if run.scheduled_time > now:
             self.wakeups.append(run.scheduled_time)
             return
