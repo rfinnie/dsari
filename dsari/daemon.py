@@ -98,6 +98,8 @@ class Scheduler():
             lh_console.setLevel(logging.INFO)
         self.logger.addHandler(lh_console)
 
+        if not os.path.exists(self.config['data_dir']):
+            os.makedirs(self.config['data_dir'])
         db_exists = os.path.exists(os.path.join(self.config['data_dir'], 'dsari.sqlite3'))
         self.db_conn = sqlite3.connect(os.path.join(self.config['data_dir'], 'dsari.sqlite3'))
         if not db_exists:
