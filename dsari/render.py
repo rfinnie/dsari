@@ -56,6 +56,8 @@ def main(argv):
         loader=loader,
         extensions=['jinja2.ext.autoescape'],
     )
+    templates.globals['now'] = datetime.datetime.now()
+
     run_template = templates.get_template('run.html')
 
     runs = []
