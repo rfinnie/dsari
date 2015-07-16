@@ -204,6 +204,8 @@ class Scheduler():
             job = Job(job_name)
             job.config = self.config['jobs'][job_name]
             self.jobs.append(job)
+            if not job.config['schedule']:
+                continue
             run = Run(job, str(uuid.uuid4()))
             run.respawn = True
             t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job_name).get_next() + (random.random() * 60.0)
@@ -313,7 +315,7 @@ class Scheduler():
         self.runs.remove(run)
         if run.concurrency_group and run in self.running_groups[run.concurrency_group]:
             self.running_groups[run.concurrency_group].remove(run)
-        if (not self.shutdown) and run.respawn:
+        if (not self.shutdown) and run.respawn and job.config['schedule']:
             run = Run(job, str(uuid.uuid4()))
             run.respawn = True
             t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job.name).get_next() + (random.random() * 60.0)

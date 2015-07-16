@@ -93,6 +93,12 @@ def load_config(config_dir):
         if job_name in ('.', '..'):
             del(config['jobs'][job_name])
             continue
+        if 'command' not in config['jobs'][job_name]:
+            continue
+        if type(config['jobs'][job_name]['command']) != list:
+            continue
+        if 'schedule' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['schedule'] = None
         if 'concurrency_group' not in config['jobs'][job_name]:
             config['jobs'][job_name]['concurrency_group'] = None
         if 'max_execution' not in config['jobs'][job_name]:
