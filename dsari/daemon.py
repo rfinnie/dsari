@@ -205,6 +205,7 @@ class Scheduler():
             job.config = self.config['jobs'][job_name]
             self.jobs.append(job)
             if not job.config['schedule']:
+                self.logger.debug('[%s %s] No schedule defined, manual triggers only' % (job.name, run.id))
                 continue
             run = Run(job, str(uuid.uuid4()))
             run.respawn = True
