@@ -305,9 +305,9 @@ class Scheduler():
         #self.logger.debug('[%s %s] Resources: %s' % (job.name, run.id, repr(child_resource)))
         self.db_conn.execute('INSERT INTO runs (job_name, run_id, start_time, stop_time, exit_code, trigger_type, trigger_data, run_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (job.name, run.id, start_time, stop_time, child_exit, run.trigger_type, json.dumps(run.trigger_data), json.dumps({})))
         self.db_conn.commit()
-        if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name)):
-            os.makedirs(os.path.join(self.config['data_dir'], 'runs', job.name))
-        shutil.copyfile(run.tempfile.name, os.path.join(self.config['data_dir'], 'runs', job.name, '%s.output' % run.id))
+        if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name, run.id)):
+            os.makedirs(os.path.join(self.config['data_dir'], 'runs', job.name, run.id))
+        shutil.copyfile(run.tempfile.name, os.path.join(self.config['data_dir'], 'runs', job.name, run.id, 'output.txt'))
         os.remove(run.tempfile.name)
         self.running_runs.remove(run)
         self.runs.remove(run)

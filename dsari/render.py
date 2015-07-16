@@ -112,8 +112,8 @@ def main(argv):
                 continue
         if not os.path.exists(os.path.join(config['data_dir'], 'html', job_name, run_id)):
             os.makedirs(os.path.join(config['data_dir'], 'html', job_name, run_id))
-        if os.path.isfile(os.path.join(config['data_dir'], 'runs', job_name, '%s.output' % run_id)):
-            with open(os.path.join(config['data_dir'], 'runs', job_name, '%s.output' % run_id)) as f:
+        if os.path.isfile(os.path.join(config['data_dir'], 'runs', job_name, run_id, 'output.txt')):
+            with open(os.path.join(config['data_dir'], 'runs', job_name, run_id, 'output.txt')) as f:
                 context['run_output'] = f.read().decode('utf-8')
         logger.info('Writing %s' % os.path.join(config['data_dir'], 'html', job_name, run_id, 'index.html'))
         with open(os.path.join(config['data_dir'], 'html', job_name, run_id, 'index.html'), 'w') as f:
