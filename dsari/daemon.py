@@ -437,7 +437,6 @@ class Scheduler():
 def main(argv):
     s = Scheduler()
     s.loop()
-    return(2)
 
 
 if __name__ == '__main__':
