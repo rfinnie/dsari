@@ -101,8 +101,8 @@ def load_config(config_dir):
             continue
         if 'schedule' not in config['jobs'][job_name]:
             config['jobs'][job_name]['schedule'] = None
-        if 'concurrency_group' not in config['jobs'][job_name]:
-            config['jobs'][job_name]['concurrency_group'] = None
+        if 'concurrency_groups' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['concurrency_groups'] = []
         if 'max_execution' not in config['jobs'][job_name]:
             config['jobs'][job_name]['max_execution'] = None
         if 'environment' not in config['jobs'][job_name]:

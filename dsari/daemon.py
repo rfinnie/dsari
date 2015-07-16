@@ -361,20 +361,24 @@ class Scheduler():
         if run.scheduled_time > now:
             self.wakeups.append(run.scheduled_time)
             return
-        if job.config['concurrency_group']:
-            concurrency_group = job.config['concurrency_group']
-            if concurrency_group not in self.running_groups:
-                self.running_groups[concurrency_group] = []
-            concurrency_inuse = len(self.running_groups[concurrency_group])
-            if (concurrency_group in self.config['concurrency_groups']) and ('max' in self.config['concurrency_groups'][concurrency_group]):
-                concurrency_max = self.config['concurrency_groups'][concurrency_group]['max']
-            else:
-                concurrency_max = 1
-            if concurrency_inuse >= concurrency_max:
+        run.concurrency_group = None
+        if len(job.config['concurrency_groups']) > 0:
+            job_concurrency_groups = copy.copy(job.config['concurrency_groups'])
+            random.shuffle(job_concurrency_groups)
+            for concurrency_group in job_concurrency_groups:
+                if concurrency_group not in self.running_groups:
+                    self.running_groups[concurrency_group] = []
+                concurrency_inuse = len(self.running_groups[concurrency_group])
+                if (concurrency_group in self.config['concurrency_groups']) and ('max' in self.config['concurrency_groups'][concurrency_group]):
+                    concurrency_max = self.config['concurrency_groups'][concurrency_group]['max']
+                else:
+                    concurrency_max = 1
+                if concurrency_inuse < concurrency_max:
+                    run.concurrency_group = concurrency_group
+                    break
+            if not run.concurrency_group:
                 self.wakeups.append(now + backoff(run.scheduled_time, now))
                 return
-        else:
-            concurrency_group = None
 
         res = self.db_conn.execute('SELECT run_id, start_time, stop_time, exit_code FROM runs WHERE job_name = ? ORDER BY stop_time DESC', (job.name,))
         run.previous_run = res.fetchone()
@@ -382,7 +386,6 @@ class Scheduler():
 
         self.logger.info('[%s %s] Running: %s' % (job.name, run.id, job.config['command']))
         run.start_time = now
-        run.concurrency_group = concurrency_group
         run.term_sent = False
         run.kill_sent = False
         run.tempfile = tempfile.NamedTemporaryFile(delete=False)
@@ -406,7 +409,9 @@ class Scheduler():
         while True:
             self.wakeups = []
             self.process_triggers()
-            for run in self.runs:
+            runs = copy.copy(self.runs)
+            random.shuffle(runs)
+            for run in runs:
                 self.process_run(run)
 
             for run in self.running_runs:
