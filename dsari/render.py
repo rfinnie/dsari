@@ -82,21 +82,20 @@ def main(argv):
     jobs = {}
     jobs_written = []
     db_conn = sqlite3.connect(os.path.join(config['data_dir'], 'dsari.sqlite3'))
-    for (job_name, run_id, start_time, stop_time, exit_code, trigger_type, trigger_data) in db_conn.execute('SELECT job_name, run_id, start_time, stop_time, exit_code, trigger_type, trigger_data FROM runs ORDER BY start_time'):
+    for (job_name, run_id, schedule_time, start_time, stop_time, exit_code, trigger_type, trigger_data) in db_conn.execute('SELECT job_name, run_id, schedule_time, start_time, stop_time, exit_code, trigger_type, trigger_data FROM runs ORDER BY start_time'):
         if not config['jobs'][job_name]['render_reports']:
             logger.debug('Ignoring %s %s' % (job_name, run_id))
             continue
         context = {
             'job_name': job_name,
             'run_id': run_id,
+            'schedule_time': datetime.datetime.fromtimestamp(schedule_time),
             'start_time': datetime.datetime.fromtimestamp(start_time),
             'stop_time': datetime.datetime.fromtimestamp(stop_time),
             'exit_code': exit_code,
             'trigger_type': trigger_type,
             'trigger_data': json.loads(trigger_data),
         }
-        if 'scheduled_time' in context['trigger_data']:
-            context['trigger_data']['scheduled_time'] = datetime.datetime.fromtimestamp(context['trigger_data']['scheduled_time'])
         runs.append(context)
         if job_name not in jobs:
             jobs[job_name] = {

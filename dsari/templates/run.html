@@ -14,15 +14,15 @@
 <table class="table">
 <tr><th>Run ID</th><td>{{ run_id }}</td></tr>
 {% if trigger_type == 'schedule' %}
-<tr><th>Trigger</th><td>Schedule{% if trigger_data.scheduled_time %} ({{ trigger_data.scheduled_time }}){% endif %}</td></tr>
+<tr><th>Trigger</th><td>Schedule ({{ schedule_time }})</td></tr>
 {% elif trigger_type == 'file' %}
 {% if trigger_data.type %}
-<tr><th>Trigger</th><td>{{ trigger_data.type }}</td></tr>
+<tr><th>Trigger</th><td>{{ trigger_data.type }} ({{ schedule_time }})</td></tr>
 {% else %}
-<tr><th>Trigger</th><td>File</td></tr>
+<tr><th>Trigger</th><td>File ({{ schedule_time }})</td></tr>
 {% endif %}
 {% else %}
-<tr><th>Trigger</th><td>{{ trigger_type }}</td></tr>
+<tr><th>Trigger</th><td>{{ trigger_type }} ({{ schedule_time }})</td></tr>
 {% endif %}
 {% if trigger_data.description %}
 <tr><th>Description</th><td>{{ trigger_data.description }}</td></tr>

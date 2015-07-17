@@ -73,7 +73,7 @@ class Run():
     def __init__(self, job, id):
         self.job = job
         self.id = id
-        self.scheduled_time = None
+        self.schedule_time = None
         self.trigger_type = 'schedule'
         self.trigger_data = {}
         self.respawn = False
@@ -107,6 +107,7 @@ class Scheduler():
                 """CREATE TABLE runs (
                     job_name text,
                     run_id text,
+                    schedule_time real,
                     start_time real,
                     stop_time real,
                     exit_code integer,
@@ -187,7 +188,7 @@ class Scheduler():
                 t = run.start_time
                 self.logger.info('[%s %s] PID %d running since %s (%0.02fs)' % (job.name, run.id, run.pid, time.strftime('%c', time.localtime(t)), (now - t)))
             else:
-                t = run.scheduled_time
+                t = run.schedule_time
                 self.logger.info('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
 
     def load_config(self):
@@ -211,8 +212,7 @@ class Scheduler():
             run.respawn = True
             t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job_name).get_next() + (random.random() * 60.0)
             self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
-            run.scheduled_time = t
-            run.trigger_data['scheduled_time'] = t
+            run.schedule_time = t
             self.runs.append(run)
 
     def process_run_execution_time(self, run):
@@ -261,9 +261,10 @@ class Scheduler():
             os.environ['CONCURRENCY_GROUP'] = run.concurrency_group
         if run.previous_run:
             os.environ['PREVIOUS_RUN_ID'] = run.previous_run[0]
-            os.environ['PREVIOUS_START_TIME'] = str(run.previous_run[1])
-            os.environ['PREVIOUS_STOP_TIME'] = str(run.previous_run[2])
-            os.environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run[3])
+            os.environ['PREVIOUS_SCHEDULE_TIME'] = str(run.previous_run[1])
+            os.environ['PREVIOUS_START_TIME'] = str(run.previous_run[2])
+            os.environ['PREVIOUS_STOP_TIME'] = str(run.previous_run[3])
+            os.environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run[4])
         for (key, val) in job.config['environment'].items():
             os.environ[key] = str(val)
         if 'environment' in run.trigger_data and run.trigger_data['environment']:
@@ -302,11 +303,12 @@ class Scheduler():
             return child_pid
         job = run.job
         now = time.time()
+        schedule_time = run.schedule_time
         start_time = run.start_time
         stop_time = now
         self.logger.info('[%s %s] Finished with status %d in %0.02fs' % (job.name, run.id, child_exit, (stop_time - start_time)))
         #self.logger.debug('[%s %s] Resources: %s' % (job.name, run.id, repr(child_resource)))
-        self.db_conn.execute('INSERT INTO runs (job_name, run_id, start_time, stop_time, exit_code, trigger_type, trigger_data, run_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (job.name, run.id, start_time, stop_time, child_exit, run.trigger_type, json.dumps(run.trigger_data), json.dumps({})))
+        self.db_conn.execute('INSERT INTO runs (job_name, run_id, schedule_time, start_time, stop_time, exit_code, trigger_type, trigger_data, run_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', (job.name, run.id, schedule_time, start_time, stop_time, child_exit, run.trigger_type, json.dumps(run.trigger_data), json.dumps({})))
         self.db_conn.commit()
         if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name, run.id)):
             os.makedirs(os.path.join(self.config['data_dir'], 'runs', job.name, run.id))
@@ -320,8 +322,7 @@ class Scheduler():
             run = Run(job, str(uuid.uuid4()))
             run.respawn = True
             t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job.name).get_next() + (random.random() * 60.0)
-            run.scheduled_time = t
-            run.trigger_data['scheduled_time'] = t
+            run.schedule_time = t
             self.runs.append(run)
             self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
         return child_pid
@@ -334,8 +335,10 @@ class Scheduler():
                self.process_trigger_job(job) 
 
     def process_trigger_job(self, job):
-        with open(os.path.join(self.config['data_dir'], 'trigger', '%s.json' % job.name)) as f:
-            os.remove(os.path.join(self.config['data_dir'], 'trigger', '%s.json' % job.name))
+        trigger_file = os.path.join(self.config['data_dir'], 'trigger', '%s.json' % job.name)
+        t = os.path.getmtime(trigger_file)
+        with open(trigger_file) as f:
+            os.remove(trigger_file)
             try:
                 j = json.load(f)
             except ValueError, e:
@@ -349,17 +352,17 @@ class Scheduler():
         run.respawn = False
         run.trigger_type = 'file'
         run.trigger_data = j
-        run.scheduled_time = time.time()
+        run.schedule_time = t
         self.runs.append(run)
 
     def process_run(self, run):
         now = time.time()
         job = run.job
         if run in self.running_runs:
-            self.wakeups.append(now + backoff(run.scheduled_time, now))
+            self.wakeups.append(now + backoff(run.schedule_time, now))
             return
-        if run.scheduled_time > now:
-            self.wakeups.append(run.scheduled_time)
+        if run.schedule_time > now:
+            self.wakeups.append(run.schedule_time)
             return
         run.concurrency_group = None
         if len(job.config['concurrency_groups']) > 0:
@@ -377,10 +380,10 @@ class Scheduler():
                     run.concurrency_group = concurrency_group
                     break
             if not run.concurrency_group:
-                self.wakeups.append(now + backoff(run.scheduled_time, now))
+                self.wakeups.append(now + backoff(run.schedule_time, now))
                 return
 
-        res = self.db_conn.execute('SELECT run_id, start_time, stop_time, exit_code FROM runs WHERE job_name = ? ORDER BY stop_time DESC', (job.name,))
+        res = self.db_conn.execute('SELECT run_id, schedule_time, start_time, stop_time, exit_code FROM runs WHERE job_name = ? ORDER BY stop_time DESC', (job.name,))
         run.previous_run = res.fetchone()
         res.close()
 

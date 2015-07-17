@@ -46,6 +46,7 @@ When a run is executed, several environment variables are passed to the program 
     JOB_NAME=sample-job
     RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
     PREVIOUS_RUN_ID=e5bd61b3-27f3-46ca-8169-372433056fc2
+    PREVIOUS_SCHEDULE_TIME=1437004689.27
     PREVIOUS_START_TIME=1437004689.65
     PREVIOUS_STOP_TIME=1437004689.71
     PREVIOUS_EXIT_CODE=0
