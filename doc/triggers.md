@@ -4,8 +4,8 @@ In most situations, job runs are triggered on a recurring schedule.
 However, you may also trigger a run manually.
 It can be as simple as the following:
 
-    $ mkdir -p ~/.dsari/var/trigger
-    $ echo '{}' >~/.dsari/var/trigger/sample-job.json
+    $ mkdir -p ~/.dsari/var/trigger/sample-job
+    $ echo '{}' >~/.dsari/var/trigger/sample-job/trigger.json
 
 The daemon will notice this trigger within 60 seconds, set up a new one-off run, and delete the trigger JSON file.
 
