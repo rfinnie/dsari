@@ -4,9 +4,7 @@
 
 dsari may be installed as any normal Python package:
 
-```
-$ sudo python setup.py install
-```
+    $ sudo python setup.py install
 
 When this is done, dsari will expect its configuration file -- `dsari.json` -- in `/usr/local/etc/dsari/`, and will store its data in `/usr/local/lib/dsari/`.
 
@@ -23,16 +21,14 @@ The rest of these documents assume a locally-running setup, i.e. `~/.dsari/`.
 
 A basic configuration for `dsari.json` looks as follows:
 
-```
-{
-    "jobs": {
-        "sample-job": {
-            "command": ["/usr/bin/env"],
-            "schedule": "*/5 * * * *"
+    {
+        "jobs": {
+            "sample-job": {
+                "command": ["/usr/bin/env"],
+                "schedule": "*/5 * * * *"
+            }
         }
     }
-}
-```
 
 This defines a job named "sample-job", which is run every 5 minutes.
 Many more [configuration options](configuration.md) are available, and an explanation of the [schedule format](schedule-format.md) is also available.
@@ -47,23 +43,19 @@ Runs are identified by a UUID, the run output is stored in `~/.dsari/var/runs/`,
 
 When a run is executed, several environment variables are passed to the program to be run:
 
-```
-JOB_NAME=sample-job
-RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-PREVIOUS_RUN_ID=e5bd61b3-27f3-46ca-8169-372433056fc2
-PREVIOUS_START_TIME=1437004689.65
-PREVIOUS_STOP_TIME=1437004689.71
-PREVIOUS_EXIT_CODE=0
-```
+    JOB_NAME=sample-job
+    RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    PREVIOUS_RUN_ID=e5bd61b3-27f3-46ca-8169-372433056fc2
+    PREVIOUS_START_TIME=1437004689.65
+    PREVIOUS_STOP_TIME=1437004689.71
+    PREVIOUS_EXIT_CODE=0
 
 `PREVIOUS_*` variables are not set if there is no previous run.
 In addition, several extra environment variables are set to aid with migrations from Jenkins setups:
 
-```
-BUILD_NUMBER=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-BUILD_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-BUILD_TAG=dsari-sample-job-fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-```
+    BUILD_NUMBER=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    BUILD_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    BUILD_TAG=dsari-sample-job-fa0490b8-7a8e-4f6b-b73c-160199a9ff75
 
 ## Reports
 
