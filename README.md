@@ -1,18 +1,91 @@
 # dsari - Do Something and Record It
 
-## About
-dsari is described as a "Jenkins killer", in that I want to kill Jenkins.  It is a small scheduler which does something (something you configure) and records the output (somewhere).
+dsari is a lightweight continuous integration (CI) system.
+It provides scheduling, concurrency management and trigger capabilities, and is easy to configure.
+Job scheduling is handled via `dsari-daemon`, while `dsari-render` may be used to format job run information as HTML.
 
-## Development goals
-1. Write a small script which does 85% of the features I need, and a random handful of features I don't really need.
-2. Deploy it and forget about it for the next year or so.
-3. Add a handful of extra features.
-4. Realize six other people are also using dsari, two of which have filed a combined 76 bugs and feature requests.
-  1. Fix three of the bugs.
-  2. Implement two of the feature requests.
-  3. Mark the other 71 WONTFIX.
-5. Add a bunch more functionality, making the entire project unwieldy and complex.
-6. Rename the project after a C&D from a commercial project with a similar name.
-7. Rewrite the entire project in Go.
-8. Abandon the project.
-9. Sourceforge picks up the project files, wraps them in malware and re-releases them.
+## Installation
+
+dsari may be installed as any normal Python package:
+
+    $ sudo python setup.py install
+
+When this is done, dsari will expect its configuration file -- `dsari.json` -- in `/usr/local/etc/dsari/`, and will store its data in `/usr/local/lib/dsari/`.
+
+These locations may be customized by passing `-c` argument to `dsari-*` to specify the configuration directory, and the `data_dir` configuration option, respectively.
+
+When dsari is installed directly in `/usr/` (i.e. as part of distribution packaging), the default configuration and data directories will be `/etc/dsari/` and `/var/lib/dsari/`, respectively.
+
+dsari does not need to be installed at all, it can be run directly from the repository directory.
+In this case, the default configuration and data directories will be `~/.dsari/etc/` and `~/.dsari/var/`, respectively.
+
+The rest of these documents assume a locally-running setup, i.e. `~/.dsari/`.
+
+## Configuration
+
+A basic configuration for `dsari.json` looks as follows:
+
+    {
+        "jobs": {
+            "sample-job": {
+                "command": ["/usr/bin/env"],
+                "schedule": "H/5 * * * *"
+            }
+        }
+    }
+
+This defines a job named "sample-job", which is run every 5 minutes.
+Many more configuration options are available in the `doc/` directory.
+
+## Running
+
+Once dsari is configured, run `dsari-daemon`.
+Despite its name, `dsari-daemon` does not fork itself to the background; it is up to you to run it with an appropriate supervisor (upstart, systemd, supervisord, etc).
+
+When a job is scheduled to be run, it produces a "run".
+Runs are identified by a UUID, the run output is stored in `~/.dsari/var/runs/`, and data related to the run (start time, stop time, exit code, etc) is stored in a SQLite database at `~/.dsari/var/dsari.sqlite3`.
+
+When a run is executed, several environment variables are passed to the program to be run:
+
+    JOB_NAME=sample-job
+    RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    PREVIOUS_RUN_ID=e5bd61b3-27f3-46ca-8169-372433056fc2
+    PREVIOUS_SCHEDULE_TIME=1437004689.27
+    PREVIOUS_START_TIME=1437004689.65
+    PREVIOUS_STOP_TIME=1437004689.71
+    PREVIOUS_EXIT_CODE=0
+
+`PREVIOUS_*` variables are not set if there is no previous run.
+In addition, several extra environment variables are set to aid with migrations from Jenkins setups:
+
+    BUILD_NUMBER=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    BUILD_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    BUILD_TAG=dsari-sample-job-fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+
+## Reports
+
+To render HTML reports, run `dsari-render` occasionally.
+This will produce a series of HTML files in `~/.dsari/var/html/`.
+You may then serve these files, rsync them to a remote server, etc.
+
+## License
+
+dsari - Do Something and Record It
+
+Copyright (C) 2015 [Ryan Finnie](http://www.finnie.org/)
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1301, USA.
+
