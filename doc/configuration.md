@@ -40,7 +40,7 @@ Default: false
     "shutdown_kill_grace": 5.0
 
 If set and `shutdown_kill_runs` is true, this is the grace period allowed between a SIGTERM and a SIGKILL.
-Note that individual runs have a hardcoded 60-second grace as part of normal operation, so setting this to longer than 60 seconds will have no additional effect.
+Note that individual jobs also have a grace period ("max_execution_grace"), which will be considered as well during a shutdown.
 
 Default: null
 
@@ -85,9 +85,17 @@ Default: {}
 
 The maximum number of seconds to wait for a run to finish.
 If reached, the run will be sent a SIGTERM.
-If the run does not exit within 60 seconds of the SIGTERM, it will be sent a SIGKILL.
+If the run does not exit within "max_execution_grace" seconds of the SIGTERM, it will be sent a SIGKILL.
 
 Default: null (wait forever)
+
+    "max_execution_grace": 60.0
+
+The number of seconds to wait after a SIGTERM before the run is sent a SIGKILL.
+If "max_execution" is set and reached, the run will be sent a SIGTERM.
+If the run does not exit within this number of seconds of the SIGTERM, it will be sent a SIGKILL.
+
+Default: 60.0
 
     "concurrency_groups": ["group-a", "group-b"]
 

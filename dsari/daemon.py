@@ -219,7 +219,7 @@ class Scheduler():
         job = run.job
         if not job.config['max_execution']:
             return
-        sigterm_grace = 60.0
+        sigterm_grace = job.config['max_execution_grace']
         sigkill_grace = 5.0
         now = time.time()
         delta = now - run.start_time

@@ -105,6 +105,8 @@ def load_config(config_dir):
             config['jobs'][job_name]['concurrency_groups'] = []
         if 'max_execution' not in config['jobs'][job_name]:
             config['jobs'][job_name]['max_execution'] = None
+        if 'max_execution_grace' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['max_execution_grace'] = 60.0
         if 'environment' not in config['jobs'][job_name]:
             config['jobs'][job_name]['environment'] = {}
         if 'render_reports' not in config['jobs'][job_name]:
