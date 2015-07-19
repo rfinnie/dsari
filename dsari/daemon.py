@@ -338,17 +338,24 @@ class Scheduler():
         if not os.path.exists(trigger_file):
             return
         t = os.path.getmtime(trigger_file)
-        with open(trigger_file) as f:
-            try:
-                os.remove(trigger_file)
-            except OSError, e:
-                # Return silently, otherwise we spam the log during each loop
-                return
-            try:
-                j = json.load(f)
-            except ValueError, e:
-                self.logger.error('[%s] Cannot load trigger: %s' % (job.name, e.message))
-                return
+        try:
+            f = open(trigger_file)
+        except IOError, e:
+            # Return silently, otherwise we spam the log during each loop
+            return
+        try:
+            os.remove(trigger_file)
+        except OSError, e:
+            # Return silently, otherwise we spam the log during each loop
+            f.close()
+            return
+        try:
+            j = json.load(f)
+        except ValueError, e:
+            self.logger.error('[%s] Cannot load trigger: %s' % (job.name, e.message))
+            f.close()
+            return
+        f.close()
         if type(j) != dict:
             self.logger.error('[%s] Cannot load trigger: Data must be a dict' % job.name)
             return
