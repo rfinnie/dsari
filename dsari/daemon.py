@@ -331,14 +331,19 @@ class Scheduler():
         if self.shutdown:
             return
         for job in self.jobs:
-            if os.path.exists(os.path.join(self.config['data_dir'], 'trigger', job.name, 'trigger.json')):
-               self.process_trigger_job(job) 
+            self.process_trigger_job(job)
 
     def process_trigger_job(self, job):
         trigger_file = os.path.join(self.config['data_dir'], 'trigger', job.name, 'trigger.json')
+        if not os.path.exists(trigger_file):
+            return
         t = os.path.getmtime(trigger_file)
         with open(trigger_file) as f:
-            os.remove(trigger_file)
+            try:
+                os.remove(trigger_file)
+            except OSError, e:
+                # Return silently, otherwise we spam the log during each loop
+                return
             try:
                 j = json.load(f)
             except ValueError, e:
