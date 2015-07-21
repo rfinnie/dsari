@@ -34,3 +34,22 @@ Here are a few examples of the extended syntax:
     # Every 10 minutes, offset a hashed amount, but only between :30 and :59 each
     # hour.
     # Example result: 34-59/10 (i.e. 34,44,54)
+
+    @midnight
+    # Alias for: H H(0-2) * * *
+
+    @hourly
+    # Alias for: H * * * *
+
+    @daily
+    # Alias for: H H * * *
+
+    @weekly
+    # Alias for: H H * * H
+
+    @monthly
+    # Alias for: H H H * *
+
+    @annually
+    @yearly
+    # Aliases for: H H H H *

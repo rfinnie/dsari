@@ -40,6 +40,21 @@ class croniter_hash(croniter.croniter):
         return ((crc >> position) % (range_end - range_begin + 1)) + range_begin
 
     def _hash_expand(self, expr_format, id):
+        if expr_format == '@midnight':
+            expr_format = 'H H(0-2) * * *'
+        elif expr_format == '@hourly':
+            expr_format = 'H * * * *'
+        elif expr_format == '@daily':
+            expr_format = 'H H * * *'
+        elif expr_format == '@weekly':
+            expr_format = 'H H * * H'
+        elif expr_format == '@monthly':
+            expr_format = 'H H H * *'
+        elif expr_format == '@annually':
+            expr_format = 'H H H H *'
+        elif expr_format == '@yearly':
+            expr_format = 'H H H H *'
+
         expr_expanded = []
         for item in expr_format.split(' '):
             idx = len(expr_expanded)
