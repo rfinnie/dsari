@@ -208,11 +208,18 @@ class Scheduler():
             job.config = self.config['jobs'][job_name]
             self.jobs.append(job)
             if not job.config['schedule']:
-                self.logger.debug('[%s %s] No schedule defined, manual triggers only' % (job.name, run.id))
+                self.logger.debug('[%s] No schedule defined, manual triggers only' % job.name)
+                continue
+            if len(job.config['schedule'].split(' ')) == 6:
+                self.logger.warning('[%s] Invalid schedule: 6-item schedules are not supported' % job.name)
+                continue
+            try:
+                t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job_name).get_next() + (random.random() * 60.0)
+            except Exception, e:
+                self.logger.warning('[%s] Invalid schedule: %s: %s' % (job.name, type(e), str(e)))
                 continue
             run = Run(job, str(uuid.uuid4()))
             run.respawn = True
-            t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job_name).get_next() + (random.random() * 60.0)
             self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
             run.schedule_time = t
             self.runs.append(run)
