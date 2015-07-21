@@ -4,6 +4,13 @@ dsari is a lightweight continuous integration (CI) system.
 It provides scheduling, concurrency management and trigger capabilities, and is easy to configure.
 Job scheduling is handled via `dsari-daemon`, while `dsari-render` may be used to format job run information as HTML.
 
+## Requirements
+
+dsari requires Python 2.6 or later, and will run on Unix-based platform.  It requires the following non-core modules:
+
+  - [`croniter`](https://pypi.python.org/pypi/croniter/), for parsing cron-style schedule definitions
+  - [`jinja2`](http://jinja.pocoo.org/), for rendering HTML reports
+
 ## Installation
 
 dsari may be installed as any normal Python package:
