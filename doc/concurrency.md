@@ -107,7 +107,7 @@ For example:
     }
 
 Here, the scheduler will pick a viable target concurrency group from each job, ensuring that no more than 2 jobs are running as part of "host-a_group", and no more than 1 job is running as part of "host-b_group".
-Each run will have the CONCURRENCY_GROUP environment variable set to the picked group, which our example `build_job_wrapper` can use (along with JOB_NAME and RUN_ID) to determine what to do.
+Each run will have the `CONCURRENCY_GROUP` environment variable set to the picked group, which our example `build_job_wrapper` can use (along with `JOB_NAME` and `RUN_ID`) to determine what to do.
 (In this example, SSHing to host-a or host-b.)
 
 If a scheduled run cannot be started due to concurrency limits, it is retried later on an exponential backoff scale, up to 5 minutes in the future.

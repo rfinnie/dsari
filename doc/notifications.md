@@ -11,8 +11,8 @@ For example, this script runs the desired command, then mails someone if the com
     desired_command || EXIT_CODE=$?
     
     if [ "$EXIT_CODE" != "0" ]; then
-        echo "$JOB_NAME has failed ($RUN_ID)" | mail "$EMAIL"
+        env | mail -s "$JOB_NAME has failed ($RUN_ID)" "$EMAIL"
     elif [ -n "$PREVIOUS_EXIT_CODE" ] && [ "$PREVIOUS_EXIT_CODE" != "0" ]; then
-        echo "$JOB_NAME is back to normal ($RUN_ID)" | mail "$EMAIL"
+        env | mail -s "$JOB_NAME is back to normal ($RUN_ID)" "$EMAIL"
     fi
     exit $EXIT_CODE
