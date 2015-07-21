@@ -63,6 +63,15 @@ def backoff(a, b, min=5.0, max=300.0):
         return r
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--config-dir', '-c', type=str, default=utils.DEFAULT_CONFIG_DIR)
+    parser.add_argument('--daemonize', '-d', action='store_true')
+    parser.add_argument('--debug', action='store_true')
+    return parser.parse_args()
+
+
 class Job():
     def __init__(self, name):
         self.name = name
@@ -80,9 +89,9 @@ class Run():
 
 
 class Scheduler():
-    def __init__(self):
+    def __init__(self, args):
         self.shutdown = False
-        self.args = self.parse_args()
+        self.args = args
         self.load_config()
         for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM, signal.SIGQUIT):
             signal.signal(signum, self.signal_handler)
@@ -125,13 +134,6 @@ class Scheduler():
 
         self.wakeups = []
         self.next_wakeup = time.time() + 60.0
-
-    def parse_args(self):
-        parser = argparse.ArgumentParser(
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        parser.add_argument('--config-dir', '-c', type=str, default=utils.DEFAULT_CONFIG_DIR)
-        parser.add_argument('--debug', action='store_true')
-        return parser.parse_args()
 
     def begin_shutdown(self):
         for run in copy.copy(self.runs):
@@ -458,7 +460,12 @@ class Scheduler():
 
 
 def main(argv):
-    s = Scheduler()
+    args = parse_args()
+    if args.daemonize:
+        child_pid = os.fork()
+        if child_pid > 0:
+            return
+    s = Scheduler(args)
     s.loop()
 
 

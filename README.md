@@ -40,7 +40,8 @@ Many more configuration options are available in the `doc/` directory.
 ## Running
 
 Once dsari is configured, run `dsari-daemon`.
-Despite its name, `dsari-daemon` does not fork itself to the background; it is up to you to run it with an appropriate supervisor (upstart, systemd, supervisord, etc).
+By default, `dsari-daemon` will run in the foreground, and can be used with a supervisor (upstart, systemd, supervisord, etc).
+If given `-d`, it will daemonize.
 
 When a job is scheduled to be run, it produces a "run".
 Runs are identified by a UUID, the run output is stored in `~/.dsari/var/runs/`, and data related to the run (start time, stop time, exit code, etc) is stored in a SQLite database at `~/.dsari/var/dsari.sqlite3`.
