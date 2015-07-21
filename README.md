@@ -6,7 +6,7 @@ Job scheduling is handled via `dsari-daemon`, while `dsari-render` may be used t
 
 ## Requirements
 
-dsari requires Python 2.6 or later, and will run on Unix-based platform.  It requires the following non-core modules:
+dsari requires Python 2.6 or later, and will run on Unix-based platforms.  It requires the following non-core modules:
 
   - [`croniter`](https://pypi.python.org/pypi/croniter/), for parsing cron-style schedule definitions
   - [`jinja2`](http://jinja.pocoo.org/), for rendering HTML reports
