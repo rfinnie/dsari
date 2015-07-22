@@ -136,6 +136,8 @@ class Scheduler():
         self.wakeups = []
         self.next_wakeup = time.time() + 60.0
 
+        self.logger.info('Scheduler running')
+
     def begin_shutdown(self):
         for run in copy.copy(self.runs):
             if run not in self.running_runs:
