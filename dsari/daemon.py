@@ -32,6 +32,7 @@ import tempfile
 import shutil
 import argparse
 import copy
+import re
 import croniter_hash
 import utils
 
@@ -204,6 +205,9 @@ class Scheduler():
         self.runs = []
         now = time.time()
         for job_name in sorted(self.config['jobs']):
+            if (len(job_name) > 64) or (not re.search('^([- A-Za-z0-9_+.:@]+)$', job_name)):
+                self.logger.warning('Invalid job name: %s' % job_name)
+                continue
             job = Job(job_name)
             job.config = self.config['jobs'][job_name]
             self.jobs.append(job)
