@@ -109,6 +109,24 @@ If false, the job and all of its runs will be hidden from `dsari-render`.
 
 Default: true
 
+    "jenkins_environment": true
+
+If true, several extra environment variables are available to the run, to aid with migrations from Jenkins setups:
+
+*   `BUILD_NUMBER=fa0490b8-7a8e-4f6b-b73c-160199a9ff75`
+*   `BUILD_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75`
+*   `BUILD_URL=file:///home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75/`
+*   `NODE_NAME=master`
+*   `BUILD_TAG=dsari-sample-job-fa0490b8-7a8e-4f6b-b73c-160199a9ff75`
+*   `JENKINS_URL=file:///home/user/.dsari/var/`
+*   `EXECUTOR_NUMBER=0`
+*   `WORKSPACE=/tmp`
+
+These values may not be ideal in all situations (e.g. a migrated Jenkins job may expect a VCS checkout in `WORKSPACE`), but are present for maximum Jenkins compatibility.
+They can be individually overridden by explicit `environment` options.
+
+Default: false
+
 ## Concurrency Groups
 
 "concurrency_groups" is an associative array of [concurrency group](concurrency.md) definitions, each of which is an associative array.
