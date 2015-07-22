@@ -64,11 +64,16 @@ When a run is executed, several environment variables are passed to the program 
     PREVIOUS_EXIT_CODE=0
 
 `PREVIOUS_*` variables are not set if there is no previous run.
-In addition, several extra environment variables are set to aid with migrations from Jenkins setups:
+In addition, several extra environment variables are present, if the job's `jenkins_environment` option is set, to aid with migrations from Jenkins setups:
 
     BUILD_NUMBER=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
     BUILD_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    BUILD_URL=file:///home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75/
+    NODE_NAME=master
     BUILD_TAG=dsari-sample-job-fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    JENKINS_URL=file:///home/user/.dsari/var/
+    EXECUTOR_NUMBER=0
+    WORKSPACE=/tmp
 
 ## Reports
 

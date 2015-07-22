@@ -113,5 +113,7 @@ def load_config(config_dir):
             config['jobs'][job_name]['render_reports'] = True
         if 'command_append_run' not in config['jobs'][job_name]:
             config['jobs'][job_name]['command_append_run'] = False
+        if 'jenkins_environment' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['jenkins_environment'] = False
 
     return config

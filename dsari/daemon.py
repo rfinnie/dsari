@@ -269,9 +269,6 @@ class Scheduler():
         job = run.job
         os.environ['JOB_NAME'] = job.name
         os.environ['RUN_ID'] = run.id
-        os.environ['BUILD_NUMBER'] = run.id
-        os.environ['BUILD_ID'] = run.id
-        os.environ['BUILD_TAG'] = 'dsari-%s-%s' % (job.name, run.id)
         if run.concurrency_group:
             os.environ['CONCURRENCY_GROUP'] = run.concurrency_group
         if run.previous_run:
@@ -280,6 +277,15 @@ class Scheduler():
             os.environ['PREVIOUS_START_TIME'] = str(run.previous_run[2])
             os.environ['PREVIOUS_STOP_TIME'] = str(run.previous_run[3])
             os.environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run[4])
+        if job.config['jenkins_environment']:
+            os.environ['BUILD_NUMBER'] = run.id
+            os.environ['BUILD_ID'] = run.id
+            os.environ['BUILD_URL'] = 'file://%s' % os.path.join(self.config['data_dir'], 'runs', job.name, run.id, '')
+            os.environ['NODE_NAME'] = 'master'
+            os.environ['BUILD_TAG'] = 'dsari-%s-%s' % (job.name, run.id)
+            os.environ['JENKINS_URL'] = 'file://%s' % os.path.join(self.config['data_dir'], '')
+            os.environ['EXECUTOR_NUMBER'] = '0'
+            os.environ['WORKSPACE'] = '/tmp'
         for (key, val) in job.config['environment'].items():
             os.environ[key] = str(val)
         if 'environment' in run.trigger_data and run.trigger_data['environment']:
