@@ -19,7 +19,7 @@ It reads a configuration file containing job information, and schedules runs of 
 :   Base configuration directory.
     A file named `dsari.json` is expected in this directory.
 
---daemonize, -d
+--fork
 :   Fork into the background after starting.
 
 --debug

@@ -25,6 +25,7 @@ import json
 import sqlite3
 import argparse
 import logging
+import __init__ as dsari
 import utils
 
 
@@ -39,10 +40,21 @@ def guess_autoescape(template_name):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--config-dir', '-c', type=str, default=utils.DEFAULT_CONFIG_DIR)
-    parser.add_argument('--regenerate', '-r', action='store_true')
-    parser.add_argument('--debug', action='store_true')
+        description='Do Something and Record It - report renderer (%s)' % dsari.VERSION,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        '--config-dir', '-c', type=str, default=utils.DEFAULT_CONFIG_DIR,
+        help='configuration directory for dsari.json',
+    )
+    parser.add_argument(
+        '--regenerate', '-r', action='store_true',
+        help='regenerate all reports',
+    )
+    parser.add_argument(
+        '--debug', action='store_true',
+        help='output additional debugging information',
+    )
     return parser.parse_args()
 
 

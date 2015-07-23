@@ -31,6 +31,7 @@ import sqlite3
 import argparse
 import copy
 import re
+import __init__ as dsari
 import croniter_hash
 import utils
 
@@ -64,10 +65,21 @@ def backoff(a, b, min=5.0, max=300.0):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--config-dir', '-c', type=str, default=utils.DEFAULT_CONFIG_DIR)
-    parser.add_argument('--daemonize', '-d', action='store_true')
-    parser.add_argument('--debug', action='store_true')
+        description='Do Something and Record It - scheduler daemon (%s)' % dsari.VERSION,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        '--config-dir', '-c', type=str, default=utils.DEFAULT_CONFIG_DIR,
+        help='configuration directory for dsari.json',
+    )
+    parser.add_argument(
+        '--fork', action='store_true',
+        help='fork into the background after starting',
+    )
+    parser.add_argument(
+        '--debug', action='store_true',
+        help='output additional debugging information',
+    )
     return parser.parse_args()
 
 
@@ -571,7 +583,7 @@ class Scheduler():
 
 def main(argv):
     args = parse_args()
-    if args.daemonize:
+    if args.fork:
         child_pid = os.fork()
         if child_pid > 0:
             return
