@@ -13,4 +13,3 @@ setup(
     package_data={'dsari': ['templates/*.html']},
     scripts=['dsari-daemon', 'dsari-render'],
 )
-

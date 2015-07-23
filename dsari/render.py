@@ -82,7 +82,31 @@ def main(argv):
     jobs = {}
     jobs_written = []
     db_conn = sqlite3.connect(os.path.join(config['data_dir'], 'dsari.sqlite3'))
-    for (job_name, run_id, schedule_time, start_time, stop_time, exit_code, trigger_type, trigger_data) in db_conn.execute('SELECT job_name, run_id, schedule_time, start_time, stop_time, exit_code, trigger_type, trigger_data FROM runs ORDER BY start_time'):
+    sql_statement = """
+        SELECT
+            job_name,
+            run_id,
+            schedule_time,
+            start_time,
+            stop_time,
+            exit_code,
+            trigger_type,
+            trigger_data
+        FROM
+            runs
+        ORDER BY
+            start_time
+    """
+    for (
+        job_name,
+        run_id,
+        schedule_time,
+        start_time,
+        stop_time,
+        exit_code,
+        trigger_type,
+        trigger_data
+    ) in db_conn.execute(sql_statement):
         if not config['jobs'][job_name]['render_reports']:
             logger.debug('Ignoring %s %s' % (job_name, run_id))
             continue

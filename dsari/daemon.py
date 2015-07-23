@@ -28,7 +28,6 @@ import random
 import logging
 import signal
 import sqlite3
-import shutil
 import argparse
 import copy
 import re
@@ -112,8 +111,8 @@ class Scheduler():
         db_exists = os.path.exists(os.path.join(self.config['data_dir'], 'dsari.sqlite3'))
         self.db_conn = sqlite3.connect(os.path.join(self.config['data_dir'], 'dsari.sqlite3'))
         if not db_exists:
-            self.db_conn.execute(
-                """CREATE TABLE runs (
+            sql_statement = """
+                CREATE TABLE runs (
                     job_name text,
                     run_id text,
                     schedule_time real,
@@ -123,8 +122,9 @@ class Scheduler():
                     trigger_type text,
                     trigger_data text,
                     run_data text
-                )"""
-            )
+                )
+            """
+            self.db_conn.execute(sql_statement)
             self.db_conn.commit()
 
         self.reset_jobs()
@@ -190,10 +190,25 @@ class Scheduler():
             job = run.job
             if run in self.running_runs:
                 t = run.start_time
-                self.logger.info('[%s %s] PID %d running since %s (%0.02fs)' % (job.name, run.id, run.pid, time.strftime('%c', time.localtime(t)), (now - t)))
+                self.logger.info(
+                    '[%s %s] PID %d running since %s (%0.02fs)' % (
+                        job.name,
+                        run.id,
+                        run.pid,
+                        time.strftime('%c', time.localtime(t)),
+                        (now - t)
+                    )
+                )
             else:
                 t = run.schedule_time
-                self.logger.info('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
+                self.logger.info(
+                    '[%s %s] Next scheduled run: %s (%0.02fs)' % (
+                        job.name,
+                        run.id,
+                        time.strftime('%c', time.localtime(t)),
+                        (t - now)
+                    )
+                )
 
     def load_config(self):
         self.sighup_load_config = False
@@ -219,13 +234,24 @@ class Scheduler():
                 self.logger.warning('[%s] Invalid schedule: 6-item schedules are not supported' % job.name)
                 continue
             try:
-                t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job_name).get_next() + (random.random() * 60.0)
+                t = croniter_hash.croniter_hash(
+                    job.config['schedule'],
+                    start_time=now,
+                    hash_id=job_name
+                ).get_next() + (random.random() * 60.0)
             except Exception, e:
                 self.logger.warning('[%s] Invalid schedule: %s: %s' % (job.name, type(e), str(e)))
                 continue
             run = Run(job, str(uuid.uuid4()))
             run.respawn = True
-            self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
+            self.logger.debug(
+                '[%s %s] Next scheduled run: %s (%0.02fs)' % (
+                    job.name,
+                    run.id,
+                    time.strftime('%c', time.localtime(t)),
+                    (t - now)
+                )
+            )
             run.schedule_time = t
             self.runs.append(run)
 
@@ -239,13 +265,27 @@ class Scheduler():
         delta = now - run.start_time
         if delta > (job.config['max_execution'] + sigterm_grace):
             if not run.kill_sent:
-                self.logger.warning('[%s %s] SIGTERM grace (%0.02fs) exceeded, sending SIGKILL to %d' % (job.name, run.id, sigterm_grace, run.pid))
+                self.logger.warning(
+                    '[%s %s] SIGTERM grace (%0.02fs) exceeded, sending SIGKILL to %d' % (
+                        job.name,
+                        run.id,
+                        sigterm_grace,
+                        run.pid
+                    )
+                )
                 os.kill(run.pid, signal.SIGKILL)
                 run.kill_sent = True
             self.wakeups.append(now + sigkill_grace)
         elif delta > job.config['max_execution']:
             if not run.term_sent:
-                self.logger.warn('[%s %s] Max execution (%0.02fs) exceeded, sending SIGTERM to %d' % (job.name, run.id, job.config['max_execution'], run.pid))
+                self.logger.warn(
+                    '[%s %s] Max execution (%0.02fs) exceeded, sending SIGTERM to %d' % (
+                        job.name,
+                        run.id,
+                        job.config['max_execution'],
+                        run.pid
+                    )
+                )
                 os.kill(run.pid, signal.SIGTERM)
                 run.term_sent = True
             self.wakeups.append(now + sigterm_grace)
@@ -331,8 +371,32 @@ class Scheduler():
         start_time = run.start_time
         stop_time = now
         self.logger.info('[%s %s] Finished with status %d in %0.02fs' % (job.name, run.id, child_exit, (stop_time - start_time)))
-        #self.logger.debug('[%s %s] Resources: %s' % (job.name, run.id, repr(child_resource)))
-        self.db_conn.execute('INSERT INTO runs (job_name, run_id, schedule_time, start_time, stop_time, exit_code, trigger_type, trigger_data, run_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', (job.name, run.id, schedule_time, start_time, stop_time, child_exit, run.trigger_type, json.dumps(run.trigger_data), json.dumps({})))
+        sql_statement = """
+            INSERT INTO runs (
+                job_name,
+                run_id,
+                schedule_time,
+                start_time,
+                stop_time,
+                exit_code,
+                trigger_type,
+                trigger_data,
+                run_data
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
+        """
+        self.db_conn.execute(sql_statement, (
+            job.name,
+            run.id,
+            schedule_time,
+            start_time,
+            stop_time,
+            child_exit,
+            run.trigger_type,
+            json.dumps(run.trigger_data),
+            json.dumps({})
+        ))
         self.db_conn.commit()
         self.running_runs.remove(run)
         self.runs.remove(run)
@@ -341,10 +405,20 @@ class Scheduler():
         if (not self.shutdown) and run.respawn and job.config['schedule']:
             run = Run(job, str(uuid.uuid4()))
             run.respawn = True
-            t = croniter_hash.croniter_hash(job.config['schedule'], start_time=now, hash_id=job.name).get_next() + (random.random() * 60.0)
+            t = croniter_hash.croniter_hash(
+                job.config['schedule'],
+                start_time=now,
+                hash_id=job.name
+            ).get_next() + (random.random() * 60.0)
             run.schedule_time = t
             self.runs.append(run)
-            self.logger.debug('[%s %s] Next scheduled run: %s (%0.02fs)' % (job.name, run.id, time.strftime('%c', time.localtime(t)), (t - now)))
+            self.logger.debug(
+                '[%s %s] Next scheduled run: %s (%0.02fs)' % (
+                    job.name,
+                    run.id,
+                    time.strftime('%c', time.localtime(t)), (t - now)
+                )
+            )
         return child_pid
 
     def process_triggers(self):
@@ -404,7 +478,10 @@ class Scheduler():
                 if concurrency_group not in self.running_groups:
                     self.running_groups[concurrency_group] = []
                 concurrency_inuse = len(self.running_groups[concurrency_group])
-                if (concurrency_group in self.config['concurrency_groups']) and ('max' in self.config['concurrency_groups'][concurrency_group]):
+                if (
+                    (concurrency_group in self.config['concurrency_groups'])
+                    and ('max' in self.config['concurrency_groups'][concurrency_group])
+                ):
                     concurrency_max = self.config['concurrency_groups'][concurrency_group]['max']
                 else:
                     concurrency_max = 1
@@ -415,7 +492,21 @@ class Scheduler():
                 self.wakeups.append(now + backoff(run.schedule_time, now))
                 return
 
-        res = self.db_conn.execute('SELECT run_id, schedule_time, start_time, stop_time, exit_code FROM runs WHERE job_name = ? ORDER BY stop_time DESC', (job.name,))
+        sql_statement = """
+            SELECT
+                run_id,
+                schedule_time,
+                start_time,
+                stop_time,
+                exit_code
+            FROM
+                runs
+            WHERE
+                job_name = ?
+            ORDER BY
+                stop_time DESC
+        """
+        res = self.db_conn.execute(sql_statement, (job.name,))
         run.previous_run = res.fetchone()
         res.close()
 
