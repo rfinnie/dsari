@@ -1,4 +1,4 @@
 include README.md
 include HISTORY.md
 include LICENSE
-include doc/*
+include doc/*.md
