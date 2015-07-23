@@ -73,6 +73,9 @@ def main(argv):
         lh_console.setLevel(logging.INFO)
     logger.addHandler(lh_console)
 
+    if not os.path.exists(os.path.join(config['data_dir'], 'dsari.sqlite3')):
+        return
+
     if config['template_dir']:
         loader = jinja2.ChoiceLoader(
             jinja2.FileSystemLoader(config['template_dir']),
