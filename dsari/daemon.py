@@ -28,7 +28,6 @@ import random
 import logging
 import signal
 import sqlite3
-import tempfile
 import shutil
 import argparse
 import copy
@@ -285,27 +284,31 @@ class Scheduler():
             os.environ['BUILD_TAG'] = 'dsari-%s-%s' % (job.name, run.id)
             os.environ['JENKINS_URL'] = 'file://%s' % os.path.join(self.config['data_dir'], '')
             os.environ['EXECUTOR_NUMBER'] = '0'
-            os.environ['WORKSPACE'] = '/tmp'
+            os.environ['WORKSPACE'] = os.path.join(self.config['data_dir'], 'runs', job.name, run.id)
         for (key, val) in job.config['environment'].items():
             os.environ[key] = str(val)
         if 'environment' in run.trigger_data and run.trigger_data['environment']:
             for (key, val) in run.trigger_data['environment'].items():
                 os.environ[key] = str(val)
 
-        # Set STDIN to /dev/null, and STDOUT/STDERR to the tempfile
+        # Set STDIN to /dev/null, and STDOUT/STDERR to the output file
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+        out_f = open(os.path.join(self.config['data_dir'], 'runs', job.name, run.id, 'output.txt'), 'w')
         devnull_f = open(os.devnull, 'r')
         os.dup2(devnull_f.fileno(), 0)
-        os.dup2(run.tempfile.fileno(), 1)
-        os.dup2(run.tempfile.fileno(), 2)
+        os.dup2(out_f.fileno(), 1)
+        os.dup2(out_f.fileno(), 2)
         devnull_f.close()
-        run.tempfile.close()
+        out_f.close()
 
         # Build command line
         command = job.config['command']
         if job.config['command_append_run']:
             command.append(job.name)
             command.append(run.id)
+
+        # chdir to the run directory
+        os.chdir(os.path.join(self.config['data_dir'], 'runs', job.name, run.id))
 
         # Finally!
         os.execvp(command[0], command)
@@ -331,10 +334,6 @@ class Scheduler():
         #self.logger.debug('[%s %s] Resources: %s' % (job.name, run.id, repr(child_resource)))
         self.db_conn.execute('INSERT INTO runs (job_name, run_id, schedule_time, start_time, stop_time, exit_code, trigger_type, trigger_data, run_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', (job.name, run.id, schedule_time, start_time, stop_time, child_exit, run.trigger_type, json.dumps(run.trigger_data), json.dumps({})))
         self.db_conn.commit()
-        if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name, run.id)):
-            os.makedirs(os.path.join(self.config['data_dir'], 'runs', job.name, run.id))
-        shutil.copyfile(run.tempfile.name, os.path.join(self.config['data_dir'], 'runs', job.name, run.id, 'output.txt'))
-        os.remove(run.tempfile.name)
         self.running_runs.remove(run)
         self.runs.remove(run)
         if run.concurrency_group and run in self.running_groups[run.concurrency_group]:
@@ -420,17 +419,18 @@ class Scheduler():
         run.previous_run = res.fetchone()
         res.close()
 
+        if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name, run.id)):
+            os.makedirs(os.path.join(self.config['data_dir'], 'runs', job.name, run.id))
+
         self.logger.info('[%s %s] Running: %s' % (job.name, run.id, job.config['command']))
         run.start_time = now
         run.term_sent = False
         run.kill_sent = False
-        run.tempfile = tempfile.NamedTemporaryFile(delete=False)
         child_pid = os.fork()
         if child_pid == 0:
             self.run_child_executor(run)
             raise OSError('run_child_executor returned, when it should not have')
         run.pid = child_pid
-        run.tempfile.close()
         self.running_runs.append(run)
         if run.concurrency_group:
             self.running_groups[run.concurrency_group].append(run)
