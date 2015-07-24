@@ -41,19 +41,19 @@ class croniter_hash(croniter.croniter):
 
     def _hash_expand(self, expr_format, id):
         if expr_format == '@midnight':
-            expr_format = 'H H(0-2) * * *'
+            expr_format = 'H H(0-2) * * * H'
         elif expr_format == '@hourly':
-            expr_format = 'H * * * *'
+            expr_format = 'H * * * * H'
         elif expr_format == '@daily':
-            expr_format = 'H H * * *'
+            expr_format = 'H H * * * H'
         elif expr_format == '@weekly':
-            expr_format = 'H H * * H'
+            expr_format = 'H H * * H H'
         elif expr_format == '@monthly':
-            expr_format = 'H H H * *'
+            expr_format = 'H H H * * H'
         elif expr_format == '@annually':
-            expr_format = 'H H H H *'
+            expr_format = 'H H H H * H'
         elif expr_format == '@yearly':
-            expr_format = 'H H H H *'
+            expr_format = 'H H H H * H'
 
         expr_expanded = []
         for item in expr_format.split(' '):

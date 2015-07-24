@@ -31,6 +31,7 @@ import sqlite3
 import argparse
 import copy
 import re
+import binascii
 import __init__ as dsari
 import croniter_hash
 import utils
@@ -238,19 +239,19 @@ class Scheduler():
                 continue
             job = Job(job_name)
             job.config = self.config['jobs'][job_name]
+            job.subsecond_offset = float(binascii.crc32(job.name) & 0xffffffff) / float(2**32)
             self.jobs.append(job)
             if not job.config['schedule']:
                 self.logger.debug('[%s] No schedule defined, manual triggers only' % job.name)
                 continue
-            if len(job.config['schedule'].split(' ')) == 6:
-                self.logger.warning('[%s] Invalid schedule: 6-item schedules are not supported' % job.name)
-                continue
+            if len(job.config['schedule'].split(' ')) == 5:
+                job.config['schedule'] = job.config['schedule'] + ' H'
             try:
                 t = croniter_hash.croniter_hash(
                     job.config['schedule'],
                     start_time=now,
                     hash_id=job_name
-                ).get_next() + (random.random() * 60.0)
+                ).get_next() + job.subsecond_offset
             except Exception, e:
                 self.logger.warning('[%s] Invalid schedule: %s: %s' % (job.name, type(e), str(e)))
                 continue
@@ -421,7 +422,7 @@ class Scheduler():
                 job.config['schedule'],
                 start_time=now,
                 hash_id=job.name
-            ).get_next() + (random.random() * 60.0)
+            ).get_next() + job.subsecond_offset
             run.schedule_time = t
             self.runs.append(run)
             self.logger.debug(
