@@ -329,6 +329,18 @@ class Scheduler():
             os.environ['PREVIOUS_START_TIME'] = str(run.previous_run[2])
             os.environ['PREVIOUS_STOP_TIME'] = str(run.previous_run[3])
             os.environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run[4])
+        if run.previous_good_run:
+            os.environ['PREVIOUS_GOOD_RUN_ID'] = run.previous_good_run[0]
+            os.environ['PREVIOUS_GOOD_SCHEDULE_TIME'] = str(run.previous_good_run[1])
+            os.environ['PREVIOUS_GOOD_START_TIME'] = str(run.previous_good_run[2])
+            os.environ['PREVIOUS_GOOD_STOP_TIME'] = str(run.previous_good_run[3])
+            os.environ['PREVIOUS_GOOD_EXIT_CODE'] = str(run.previous_good_run[4])
+        if run.previous_bad_run:
+            os.environ['PREVIOUS_BAD_RUN_ID'] = run.previous_bad_run[0]
+            os.environ['PREVIOUS_BAD_SCHEDULE_TIME'] = str(run.previous_bad_run[1])
+            os.environ['PREVIOUS_BAD_START_TIME'] = str(run.previous_bad_run[2])
+            os.environ['PREVIOUS_BAD_STOP_TIME'] = str(run.previous_bad_run[3])
+            os.environ['PREVIOUS_BAD_EXIT_CODE'] = str(run.previous_bad_run[4])
         if job.config['jenkins_environment']:
             os.environ['BUILD_NUMBER'] = run.id
             os.environ['BUILD_ID'] = run.id
@@ -521,6 +533,46 @@ class Scheduler():
         """
         res = self.db_conn.execute(sql_statement, (job.name,))
         run.previous_run = res.fetchone()
+        res.close()
+
+        sql_statement = """
+            SELECT
+                run_id,
+                schedule_time,
+                start_time,
+                stop_time,
+                exit_code
+            FROM
+                runs
+            WHERE
+                job_name = ?
+            AND
+                exit_code = 0
+            ORDER BY
+                stop_time DESC
+        """
+        res = self.db_conn.execute(sql_statement, (job.name,))
+        run.previous_good_run = res.fetchone()
+        res.close()
+
+        sql_statement = """
+            SELECT
+                run_id,
+                schedule_time,
+                start_time,
+                stop_time,
+                exit_code
+            FROM
+                runs
+            WHERE
+                job_name = ?
+            AND
+                exit_code != 0
+            ORDER BY
+                stop_time DESC
+        """
+        res = self.db_conn.execute(sql_statement, (job.name,))
+        run.previous_bad_run = res.fetchone()
         res.close()
 
         if not os.path.exists(os.path.join(self.config['data_dir'], 'runs', job.name, run.id)):
