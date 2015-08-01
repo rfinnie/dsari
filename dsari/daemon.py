@@ -375,6 +375,11 @@ class Scheduler():
         # chdir to the run directory
         os.chdir(os.path.join(self.config['data_dir'], 'runs', job.name, run.id))
 
+        # Close any remaining open filehandles.  At this point it should
+        # just be /dev/urandom (usually on fd 4), but it's not worth it to
+        # actually verify.
+        os.closerange(3, 1024)
+
         # Finally!
         os.execvp(command[0], command)
 
