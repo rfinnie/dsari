@@ -365,10 +365,10 @@ class Scheduler():
             environ['EXECUTOR_NUMBER'] = '0'
             environ['WORKSPACE'] = os.path.join(self.config['data_dir'], 'runs', job.name, run.id)
         for (key, val) in job.config['environment'].items():
-            environ[key] = str(val)
-        if 'environment' in run.trigger_data and run.trigger_data['environment']:
+            environ[str(key)] = str(val)
+        if 'environment' in run.trigger_data:
             for (key, val) in run.trigger_data['environment'].items():
-                environ[key] = str(val)
+                environ[str(key)] = str(val)
 
         # Set STDIN to /dev/null, and STDOUT/STDERR to the output file
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
@@ -498,6 +498,10 @@ class Scheduler():
         if type(j) != dict:
             self.logger.error('[%s] Cannot load trigger: Data must be a dict' % job.name)
             return
+        if ('environment' in j) and (type(j['environment']) != dict):
+            self.logger.error('[%s] Cannot load trigger: key must be a dict' % job.name)
+            return
+
         self.logger.info('[%s] Trigger detected, creating trigger run' % job.name)
         run = Run(job, str(uuid.uuid4()))
         run.respawn = False
