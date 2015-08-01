@@ -32,6 +32,7 @@ import argparse
 import copy
 import re
 import binascii
+import pwd
 import __init__ as dsari
 import croniter_hash
 import utils
@@ -319,42 +320,55 @@ class Scheduler():
 
         # Set environment variables
         job = run.job
-        os.environ['JOB_NAME'] = job.name
-        os.environ['RUN_ID'] = run.id
+        environ = {}
+
+        try:
+            pwd_user = pwd.getpwuid(os.getuid())
+            environ['LOGNAME'] = pwd_user.pw_name
+            environ['HOME'] = pwd_user.pw_dir
+        except KeyError:
+            pass
+        if 'PATH' in os.environ:
+            environ['PATH'] = os.environ['PATH']
+        else:
+            environ['PATH'] = '/usr/bin:/bin'
+
+        environ['JOB_NAME'] = job.name
+        environ['RUN_ID'] = run.id
         if run.concurrency_group:
-            os.environ['CONCURRENCY_GROUP'] = run.concurrency_group
+            environ['CONCURRENCY_GROUP'] = run.concurrency_group
         if run.previous_run:
-            os.environ['PREVIOUS_RUN_ID'] = run.previous_run[0]
-            os.environ['PREVIOUS_SCHEDULE_TIME'] = str(run.previous_run[1])
-            os.environ['PREVIOUS_START_TIME'] = str(run.previous_run[2])
-            os.environ['PREVIOUS_STOP_TIME'] = str(run.previous_run[3])
-            os.environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run[4])
+            environ['PREVIOUS_RUN_ID'] = run.previous_run[0]
+            environ['PREVIOUS_SCHEDULE_TIME'] = str(run.previous_run[1])
+            environ['PREVIOUS_START_TIME'] = str(run.previous_run[2])
+            environ['PREVIOUS_STOP_TIME'] = str(run.previous_run[3])
+            environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run[4])
         if run.previous_good_run:
-            os.environ['PREVIOUS_GOOD_RUN_ID'] = run.previous_good_run[0]
-            os.environ['PREVIOUS_GOOD_SCHEDULE_TIME'] = str(run.previous_good_run[1])
-            os.environ['PREVIOUS_GOOD_START_TIME'] = str(run.previous_good_run[2])
-            os.environ['PREVIOUS_GOOD_STOP_TIME'] = str(run.previous_good_run[3])
-            os.environ['PREVIOUS_GOOD_EXIT_CODE'] = str(run.previous_good_run[4])
+            environ['PREVIOUS_GOOD_RUN_ID'] = run.previous_good_run[0]
+            environ['PREVIOUS_GOOD_SCHEDULE_TIME'] = str(run.previous_good_run[1])
+            environ['PREVIOUS_GOOD_START_TIME'] = str(run.previous_good_run[2])
+            environ['PREVIOUS_GOOD_STOP_TIME'] = str(run.previous_good_run[3])
+            environ['PREVIOUS_GOOD_EXIT_CODE'] = str(run.previous_good_run[4])
         if run.previous_bad_run:
-            os.environ['PREVIOUS_BAD_RUN_ID'] = run.previous_bad_run[0]
-            os.environ['PREVIOUS_BAD_SCHEDULE_TIME'] = str(run.previous_bad_run[1])
-            os.environ['PREVIOUS_BAD_START_TIME'] = str(run.previous_bad_run[2])
-            os.environ['PREVIOUS_BAD_STOP_TIME'] = str(run.previous_bad_run[3])
-            os.environ['PREVIOUS_BAD_EXIT_CODE'] = str(run.previous_bad_run[4])
+            environ['PREVIOUS_BAD_RUN_ID'] = run.previous_bad_run[0]
+            environ['PREVIOUS_BAD_SCHEDULE_TIME'] = str(run.previous_bad_run[1])
+            environ['PREVIOUS_BAD_START_TIME'] = str(run.previous_bad_run[2])
+            environ['PREVIOUS_BAD_STOP_TIME'] = str(run.previous_bad_run[3])
+            environ['PREVIOUS_BAD_EXIT_CODE'] = str(run.previous_bad_run[4])
         if job.config['jenkins_environment']:
-            os.environ['BUILD_NUMBER'] = run.id
-            os.environ['BUILD_ID'] = run.id
-            os.environ['BUILD_URL'] = 'file://%s' % os.path.join(self.config['data_dir'], 'runs', job.name, run.id, '')
-            os.environ['NODE_NAME'] = 'master'
-            os.environ['BUILD_TAG'] = 'dsari-%s-%s' % (job.name, run.id)
-            os.environ['JENKINS_URL'] = 'file://%s' % os.path.join(self.config['data_dir'], '')
-            os.environ['EXECUTOR_NUMBER'] = '0'
-            os.environ['WORKSPACE'] = os.path.join(self.config['data_dir'], 'runs', job.name, run.id)
+            environ['BUILD_NUMBER'] = run.id
+            environ['BUILD_ID'] = run.id
+            environ['BUILD_URL'] = 'file://%s' % os.path.join(self.config['data_dir'], 'runs', job.name, run.id, '')
+            environ['NODE_NAME'] = 'master'
+            environ['BUILD_TAG'] = 'dsari-%s-%s' % (job.name, run.id)
+            environ['JENKINS_URL'] = 'file://%s' % os.path.join(self.config['data_dir'], '')
+            environ['EXECUTOR_NUMBER'] = '0'
+            environ['WORKSPACE'] = os.path.join(self.config['data_dir'], 'runs', job.name, run.id)
         for (key, val) in job.config['environment'].items():
-            os.environ[key] = str(val)
+            environ[key] = str(val)
         if 'environment' in run.trigger_data and run.trigger_data['environment']:
             for (key, val) in run.trigger_data['environment'].items():
-                os.environ[key] = str(val)
+                environ[key] = str(val)
 
         # Set STDIN to /dev/null, and STDOUT/STDERR to the output file
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
@@ -374,6 +388,7 @@ class Scheduler():
 
         # chdir to the run directory
         os.chdir(os.path.join(self.config['data_dir'], 'runs', job.name, run.id))
+        environ['PWD'] = os.path.join(self.config['data_dir'], 'runs', job.name, run.id)
 
         # Close any remaining open filehandles.  At this point it should
         # just be /dev/urandom (usually on fd 4), but it's not worth it to
@@ -381,7 +396,7 @@ class Scheduler():
         os.closerange(3, 1024)
 
         # Finally!
-        os.execvp(command[0], command)
+        os.execvpe(command[0], command, environ)
 
     def process_next_child(self):
         self.logger.debug('Waiting up to %0.02fs for running jobs' % (self.next_wakeup - time.time()))
