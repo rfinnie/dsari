@@ -499,7 +499,7 @@ class Scheduler():
             self.logger.error('[%s] Cannot load trigger: Data must be a dict' % job.name)
             return
         if ('environment' in j) and (type(j['environment']) != dict):
-            self.logger.error('[%s] Cannot load trigger: key must be a dict' % job.name)
+            self.logger.error('[%s] Cannot load trigger: environment must be a dict' % job.name)
             return
 
         self.logger.info('[%s] Trigger detected, creating trigger run' % job.name)
