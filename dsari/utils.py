@@ -82,6 +82,8 @@ def load_config(config_dir):
         config['data_dir'] = DEFAULT_DATA_DIR
     if 'template_dir' not in config:
         config['template_dir'] = None
+    if 'report_html_gz' not in config:
+        config['report_html_gz'] = False
 
     if 'shutdown_kill_runs' not in config:
         config['shutdown_kill_runs'] = False

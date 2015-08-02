@@ -79,6 +79,15 @@ def read_output(filename):
         return None
 
 
+def write_html_file(filename, content):
+    if filename.endswith('.gz'):
+        with gzip.open(filename, 'wb') as f:
+            f.write(content.encode('utf-8'))
+    else:
+        with open(filename, 'wb') as f:
+            f.write(content.encode('utf-8'))
+
+
 def main(argv):
     args = parse_args()
     config = utils.load_config(args.config_dir)
@@ -166,15 +175,17 @@ def main(argv):
         if exit_code == 0:
             jobs[job_name]['last_successful_run'] = datetime.datetime.fromtimestamp(start_time)
         jobs[job_name]['runs'].append(context)
-        if os.path.isfile(os.path.join(config['data_dir'], 'html', job_name, run_id, 'index.html')):
+        run_html_filename = os.path.join(config['data_dir'], 'html', job_name, run_id, 'index.html')
+        if config['report_html_gz']:
+            run_html_filename = '%s.gz' % run_html_filename
+        if os.path.isfile(run_html_filename):
             if not args.regenerate:
                 continue
         if not os.path.exists(os.path.join(config['data_dir'], 'html', job_name, run_id)):
             os.makedirs(os.path.join(config['data_dir'], 'html', job_name, run_id))
         context['run_output'] = read_output(os.path.join(config['data_dir'], 'runs', job_name, run_id, 'output.txt'))
-        logger.info('Writing %s' % os.path.join(config['data_dir'], 'html', job_name, run_id, 'index.html'))
-        with open(os.path.join(config['data_dir'], 'html', job_name, run_id, 'index.html'), 'w') as f:
-            f.write(run_template.render(context).encode('utf-8'))
+        logger.info('Writing %s' % run_html_filename)
+        write_html_file(run_html_filename, run_template.render(context))
         if job_name not in jobs_written:
             jobs_written.append(job_name)
 
@@ -188,10 +199,12 @@ def main(argv):
         }
         if not os.path.exists(os.path.join(config['data_dir'], 'html', job_name)):
             os.makedirs(os.path.join(config['data_dir'], 'html', job_name))
-        index_template = templates.get_template('job.html')
-        logger.info('Writing %s' % os.path.join(config['data_dir'], 'html', job_name, 'index.html'))
-        with open(os.path.join(config['data_dir'], 'html', job_name, 'index.html'), 'w') as f:
-            f.write(index_template.render(context))
+        job_template = templates.get_template('job.html')
+        job_html_filename = os.path.join(config['data_dir'], 'html', job_name, 'index.html')
+        if config['report_html_gz']:
+            job_html_filename = '%s.gz' % job_html_filename
+        logger.info('Writing %s' % job_html_filename)
+        write_html_file(job_html_filename, job_template.render(context))
 
     if (len(jobs_written) > 0) or args.regenerate:
         context = {
@@ -199,6 +212,8 @@ def main(argv):
             'jobs': jobs,
         }
         index_template = templates.get_template('index.html')
-        logger.info('Writing %s' % os.path.join(config['data_dir'], 'html', 'index.html'))
-        with open(os.path.join(config['data_dir'], 'html', 'index.html'), 'w') as f:
-            f.write(index_template.render(context))
+        index_html_filename = os.path.join(config['data_dir'], 'html', 'index.html')
+        if config['report_html_gz']:
+            index_html_filename = '%s.gz' % index_html_filename
+        logger.info('Writing %s' % index_html_filename)
+        write_html_file(job_html_filename, index_template.render(context))
