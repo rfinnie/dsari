@@ -216,4 +216,4 @@ def main(argv):
         if config['report_html_gz']:
             index_html_filename = '%s.gz' % index_html_filename
         logger.info('Writing %s' % index_html_filename)
-        write_html_file(job_html_filename, index_template.render(context))
+        write_html_file(index_html_filename, index_template.render(context))
