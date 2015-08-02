@@ -28,6 +28,13 @@ import logging
 import __init__ as dsari
 import utils
 
+import gzip
+HAS_LZMA = True
+try:
+    import lzma
+except ImportError:
+    HAS_LZMA = False
+
 
 def guess_autoescape(template_name):
     if template_name is None or '.' not in template_name:
@@ -56,6 +63,20 @@ def parse_args():
         help='output additional debugging information',
     )
     return parser.parse_args()
+
+
+def read_output(filename):
+    if os.path.isfile(filename):
+        with open(filename, 'rb') as f:
+            return f.read().decode('utf-8')
+    elif os.path.isfile('%s.gz' % filename):
+        with gzip.open('%s.gz' % filename, 'rb') as f:
+            return f.read().decode('utf-8')
+    elif HAS_LZMA and os.path.isfile('%s.xz' % filename):
+        with open('%s.xz' % filename, 'rb') as f:
+            return lzma.LZMADecompressor().decompress(f.read()).decode('utf-8')
+    else:
+        return None
 
 
 def main(argv):
@@ -150,9 +171,7 @@ def main(argv):
                 continue
         if not os.path.exists(os.path.join(config['data_dir'], 'html', job_name, run_id)):
             os.makedirs(os.path.join(config['data_dir'], 'html', job_name, run_id))
-        if os.path.isfile(os.path.join(config['data_dir'], 'runs', job_name, run_id, 'output.txt')):
-            with open(os.path.join(config['data_dir'], 'runs', job_name, run_id, 'output.txt')) as f:
-                context['run_output'] = f.read().decode('utf-8')
+        context['run_output'] = read_output(os.path.join(config['data_dir'], 'runs', job_name, run_id, 'output.txt'))
         logger.info('Writing %s' % os.path.join(config['data_dir'], 'html', job_name, run_id, 'index.html'))
         with open(os.path.join(config['data_dir'], 'html', job_name, run_id, 'index.html'), 'w') as f:
             f.write(run_template.render(context).encode('utf-8'))
