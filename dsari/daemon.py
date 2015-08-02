@@ -82,6 +82,10 @@ def parse_args():
         '--debug', action='store_true',
         help='output additional debugging information',
     )
+    parser.add_argument(
+        '--no-timestamp', action='store_true',
+        help='do not show timestamps in logging output',
+    )
     return parser.parse_args()
 
 
@@ -112,7 +116,10 @@ class Scheduler():
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
         lh_console = logging.StreamHandler()
-        lh_console_formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+        if self.args.no_timestamp:
+            lh_console_formatter = logging.Formatter('%(levelname)s: %(message)s')
+        else:
+            lh_console_formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
         lh_console.setFormatter(lh_console_formatter)
         if self.args.debug:
             lh_console.setLevel(logging.DEBUG)

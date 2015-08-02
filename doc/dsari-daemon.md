@@ -25,6 +25,9 @@ It reads a configuration file containing job information, and schedules runs of 
 --debug
 :   Print extra debugging information while running.
 
+--no-timestamp
+:   Do not show timestamps in logging output (for process supervisors which add their own timestamps).
+
 # SEE ALSO
 
 * `dsari-render`
