@@ -75,6 +75,8 @@ def load_config(config_dir):
 
     if 'jobs' not in config:
         config['jobs'] = {}
+    if 'job_groups' not in config:
+        config['job_groups'] = {}
     if 'concurrency_groups' not in config:
         config['concurrency_groups'] = {}
 
@@ -89,6 +91,16 @@ def load_config(config_dir):
         config['shutdown_kill_runs'] = False
     if 'shutdown_kill_grace' not in config:
         config['shutdown_kill_grace'] = None
+
+    for job_group_name in config['job_groups'].keys():
+        job_template = copy.deepcopy(config['job_groups'][job_group_name])
+        del(config['job_groups'][job_group_name])
+        if 'job_names' not in job_template:
+            continue
+        for job_name in job_template['job_names']:
+            config['jobs'][job_name] = copy.deepcopy(job_template)
+            config['jobs'][job_name]['job_group'] = job_group_name
+            del(config['jobs'][job_name]['job_names'])
 
     for job_name in config['jobs'].keys():
         if '/' in job_name:
@@ -117,5 +129,7 @@ def load_config(config_dir):
             config['jobs'][job_name]['command_append_run'] = False
         if 'jenkins_environment' not in config['jobs'][job_name]:
             config['jobs'][job_name]['jenkins_environment'] = False
+        if 'job_group' not in config['jobs'][job_name]:
+            config['jobs'][job_name]['job_group'] = None
 
     return config

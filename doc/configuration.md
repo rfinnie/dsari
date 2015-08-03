@@ -127,6 +127,53 @@ They can be individually overridden by explicit `environment` options.
 
 Default: false
 
+    "job_group": "sample-job"
+
+If set, the `JOB_GROUP` environment variable is set to this during a run.
+Normally this is not set by hand, but is set automatically when a job_groups definition (see below) is expanded into multiple jobs.
+
+Default: none
+
+## Job Groups
+
+"job_groups" is an associative array of job group definitions.
+A job group accepts all standard job options, plus the addition of the list "job_names".
+Job groups are a way to save configuration effort when you have multiple jobs with the same configuration.
+
+For example, this:
+
+    {
+        "job_groups": {
+            "sample-jobs": {
+                "job_names": [
+                    "sample-job-1",
+                    "sample-job-2"
+                ],
+                "command": ["job-wrapper"],
+                "schedule": "H H * * *"
+            }
+        }
+    }
+
+is the exact same as this:
+
+    {
+        "jobs": {
+            "sample-job-1": {
+                "command": ["job-wrapper"],
+                "schedule": "H H * * *",
+                "job_group": "sample-jobs"
+            },
+            "sample-job-2": {
+                "command": ["job-wrapper"],
+                "schedule": "H H * * *",
+                "job_group": "sample-jobs"
+            }
+        }
+    }
+
+When a job_groups definition is internally expanded into multiple jobs, the group name is added to each job as "job_group", which sets the `JOB_GROUP` environment variable.
+
 ## Concurrency Groups
 
 "concurrency_groups" is an associative array of [concurrency group](concurrency.md) definitions, each of which is an associative array.

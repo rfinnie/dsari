@@ -362,6 +362,8 @@ class Scheduler():
             environ['PREVIOUS_BAD_START_TIME'] = str(run.previous_bad_run[2])
             environ['PREVIOUS_BAD_STOP_TIME'] = str(run.previous_bad_run[3])
             environ['PREVIOUS_BAD_EXIT_CODE'] = str(run.previous_bad_run[4])
+        if job.config['job_group']:
+            environ['JOB_GROUP'] = str(job.config['job_group'])
         if job.config['jenkins_environment']:
             environ['BUILD_NUMBER'] = run.id
             environ['BUILD_ID'] = run.id
