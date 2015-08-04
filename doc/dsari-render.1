@@ -1,0 +1,36 @@
+.TH "DSARI\-RENDER" "1" "" "" "dsari"
+.SH NAME
+.PP
+dsari\-render \- dsari HTML report rendering
+.SH SYNOPSIS
+.PP
+dsari\-render [\f[I]options\f[]]
+.SH DESCRIPTION
+.PP
+\f[C]dsari\-render\f[] takes data produced by \f[C]dsari\-daemon\f[],
+and formats it as HTML reports.
+.SH OPTIONS
+.TP
+.B \-\-config\-dir=\f[I]directory\f[], \-c \f[I]directory\f[]
+Base configuration directory.
+A file named \f[C]dsari.json\f[] is expected in this directory.
+.RS
+.RE
+.TP
+.B \-\-regenerate, \-r
+(Re)generate all report files, even if \f[C]dsari\-render\f[] determines
+regeneration is not needed.
+.RS
+.RE
+.TP
+.B \-\-debug
+Print extra debugging information while running.
+.RS
+.RE
+.SH SEE ALSO
+.IP \[bu] 2
+\f[C]dsari\-daemon\f[]
+.IP \[bu] 2
+dsari (https://github.com/rfinnie/dsari)
+.SH AUTHORS
+Ryan Finnie.

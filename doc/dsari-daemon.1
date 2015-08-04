@@ -1,0 +1,42 @@
+.TH "DSARI\-DAEMON" "1" "" "" "dsari"
+.SH NAME
+.PP
+dsari\-daemon \- dsari scheduling daemon
+.SH SYNOPSIS
+.PP
+dsari\-daemon [\f[I]options\f[]]
+.SH DESCRIPTION
+.PP
+\f[C]dsari\-daemon\f[] is a scheduling daemon.
+It reads a configuration file containing job information, and schedules
+runs of the jobs.
+.SH OPTIONS
+.TP
+.B \-\-config\-dir=\f[I]directory\f[], \-c \f[I]directory\f[]
+Base configuration directory.
+A file named \f[C]dsari.json\f[] is expected in this directory.
+.RS
+.RE
+.TP
+.B \-\-fork
+Fork into the background after starting.
+.RS
+.RE
+.TP
+.B \-\-debug
+Print extra debugging information while running.
+.RS
+.RE
+.TP
+.B \-\-no\-timestamp
+Do not show timestamps in logging output (for process supervisors which
+add their own timestamps).
+.RS
+.RE
+.SH SEE ALSO
+.IP \[bu] 2
+\f[C]dsari\-render\f[]
+.IP \[bu] 2
+dsari (https://github.com/rfinnie/dsari)
+.SH AUTHORS
+Ryan Finnie.
