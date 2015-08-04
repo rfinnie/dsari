@@ -57,7 +57,9 @@ def json_load_file(file):
 
 
 def load_config(config_dir):
-    config = json_load_file(os.path.join(config_dir, 'dsari.json'))
+    config = {}
+    if os.path.exists(os.path.join(config_dir, 'dsari.json')):
+        config = json_load_file(os.path.join(config_dir, 'dsari.json'))
     if 'config_d' not in config:
         config['config_d'] = os.path.join(config_dir, 'config.d')
     if config['config_d'] and os.path.isdir(config['config_d']):
