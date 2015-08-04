@@ -33,7 +33,7 @@ import copy
 import re
 import binascii
 import pwd
-import __init__ as dsari
+from __init__ import __version__
 import croniter_hash
 import utils
 
@@ -67,8 +67,12 @@ def backoff(a, b, min=5.0, max=300.0):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Do Something and Record It - scheduler daemon (%s)' % dsari.VERSION,
+        description='Do Something and Record It - scheduler daemon (%s)' % __version__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        '--version', action='store_true',
+        help='report the program version',
     )
     parser.add_argument(
         '--config-dir', '-c', type=str, default=utils.DEFAULT_CONFIG_DIR,
@@ -669,6 +673,9 @@ class Scheduler():
 
 def main(argv):
     args = parse_args()
+    if args.version:
+        print __version__
+        return
     if args.fork:
         child_pid = os.fork()
         if child_pid > 0:

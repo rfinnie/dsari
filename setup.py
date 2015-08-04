@@ -13,7 +13,7 @@ setup(
     name='dsari',
     description='Do Something and Record It',
     long_description=read('README'),
-    version=dsari.VERSION,
+    version=dsari.__version__,
     license='GPLv2+',
     platforms=['Unix'],
     author='Ryan Finnie',

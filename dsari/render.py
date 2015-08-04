@@ -25,7 +25,7 @@ import json
 import sqlite3
 import argparse
 import logging
-import __init__ as dsari
+from __init__ import __version__
 import utils
 
 import gzip
@@ -47,8 +47,12 @@ def guess_autoescape(template_name):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Do Something and Record It - report renderer (%s)' % dsari.VERSION,
+        description='Do Something and Record It - report renderer (%s)' % __version__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        '--version', action='store_true',
+        help='report the program version',
     )
     parser.add_argument(
         '--config-dir', '-c', type=str, default=utils.DEFAULT_CONFIG_DIR,
@@ -90,6 +94,9 @@ def write_html_file(filename, content):
 
 def main(argv):
     args = parse_args()
+    if args.version:
+        print __version__
+        return
     config = utils.load_config(args.config_dir)
 
     logger = logging.getLogger()
