@@ -1,7 +1,11 @@
 # Database
 
 dsari stores its metadata in a SQLite 3 database.
-It currently consists of a single table, `runs`.
+It currently consists of the following tables:
+
+## runs
+
+`runs` contains metadata related to all runs which have completed.
 
 *   `job_name` (text) - The name of the job, which must match the regexp `^([- A-Za-z0-9_+.:@]+)$'`.
 *   `run_id` (text) - A UUID which uniquely identifies the run.
@@ -21,3 +25,18 @@ It currently consists of a single table, `runs`.
 *   `run_data` (text) - A JSON associative array containing extra run data.
     Presently, the dsari scheduler inserts an empty array (`{}`) and otherwise does not use this field.
     It is included for third party use, and for future-proofing (additional functionality without requiring an SQL migration).
+
+## runs_running
+
+`runs_running` contains metadata related to runs which are currently in progress.
+When a run finishes, data is inserted to `runs` and deleted from `runs_running` in a single atomic action.
+
+For a description of each column, see `runs` above.
+
+*   `job_name` (text)
+*   `run_id` (text)
+*   `schedule_time` (real)
+*   `start_time` (real)
+*   `trigger_type` (text)
+*   `trigger_data` (text)
+*   `run_data` (text)

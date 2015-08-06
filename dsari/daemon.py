@@ -152,6 +152,37 @@ class Scheduler():
             self.db_conn.execute(sql_statement)
             self.db_conn.commit()
 
+        sql_statement = """
+            SELECT
+                name
+            FROM
+                sqlite_master
+            WHERE
+                type = 'table'
+            AND
+                name = 'runs_running'
+        """
+        res = self.db_conn.execute(sql_statement)
+        runs_running_exists = res.fetchone()
+        res.close()
+        if not runs_running_exists:
+            sql_statement = """
+                CREATE TABLE runs_running (
+                    job_name text,
+                    run_id text,
+                    schedule_time real,
+                    start_time real,
+                    trigger_type text,
+                    trigger_data text,
+                    run_data text
+                )
+            """
+            self.db_conn.execute(sql_statement)
+            self.db_conn.commit()
+
+        self.db_conn.execute('DELETE FROM runs_running')
+        self.db_conn.commit()
+
         self.reset_jobs()
 
         self.running_runs = []
@@ -455,6 +486,7 @@ class Scheduler():
             json.dumps(run.trigger_data),
             json.dumps({})
         ))
+        self.db_conn.execute('DELETE FROM runs_running WHERE run_id = ?', (run.id,))
         self.db_conn.commit()
         self.running_runs.remove(run)
         self.runs.remove(run)
@@ -619,6 +651,31 @@ class Scheduler():
         run.start_time = now
         run.term_sent = False
         run.kill_sent = False
+
+        sql_statement = """
+            INSERT INTO runs_running (
+                job_name,
+                run_id,
+                schedule_time,
+                start_time,
+                trigger_type,
+                trigger_data,
+                run_data
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?
+            )
+        """
+        self.db_conn.execute(sql_statement, (
+            job.name,
+            run.id,
+            run.schedule_time,
+            run.start_time,
+            run.trigger_type,
+            json.dumps(run.trigger_data),
+            json.dumps({})
+        ))
+        self.db_conn.commit()
+
         child_pid = os.fork()
         if child_pid == 0:
             self.run_child_executor(run)
