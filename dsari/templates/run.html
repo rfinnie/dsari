@@ -4,36 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="generator" content="dsari">
-  <title>{{ job_name }} - {{ run_id }}</title>
+  <title>{{ job.name }} - {{ run.id }}</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 </head>
 
 <body>
 <div class="container">
-<h1><a href="../">{{ job_name }}</a></h1>
+<h1><a href="../">{{ job.name }}</a></h1>
 <table class="table">
-<tr><th>Run ID</th><td>{{ run_id }}</td></tr>
-{% if trigger_type == 'schedule' %}
-<tr><th>Trigger</th><td>Schedule ({{ schedule_time }})</td></tr>
-{% elif trigger_type == 'file' %}
-{% if trigger_data.type %}
-<tr><th>Trigger</th><td>{{ trigger_data.type }} ({{ schedule_time }})</td></tr>
+<tr><th>Run ID</th><td>{{ run.id }}</td></tr>
+{% if run.trigger_type == 'schedule' %}
+<tr><th>Trigger</th><td>Schedule ({{ run.schedule_datetime }})</td></tr>
+{% elif run.trigger_type == 'file' %}
+{% if run.trigger_data.type %}
+<tr><th>Trigger</th><td>{{ run.trigger_data.type }} ({{ run.schedule_datetime }})</td></tr>
 {% else %}
-<tr><th>Trigger</th><td>File ({{ schedule_time }})</td></tr>
+<tr><th>Trigger</th><td>File ({{ run.schedule_datetime }})</td></tr>
 {% endif %}
 {% else %}
-<tr><th>Trigger</th><td>{{ trigger_type }} ({{ schedule_time }})</td></tr>
+<tr><th>Trigger</th><td>{{ run.trigger_type }} ({{ run.schedule_datetime }})</td></tr>
 {% endif %}
-{% if trigger_data.description %}
-<tr><th>Description</th><td>{{ trigger_data.description }}</td></tr>
+{% if run.trigger_data.description %}
+<tr><th>Description</th><td>{{ run.trigger_data.description }}</td></tr>
 {% endif %}
-<tr><th>Start time</th><td>{{ start_time }}</td></tr>
-<tr><th>Stop time</th><td>{{ stop_time }}</td></tr>
-<tr><th>Duration</th><td>{{ stop_time - start_time }}</td></tr>
-<tr{% if exit_code != 0 %} class="danger"{% endif %}><th>Exit code</th><td>{{ exit_code }}</td></tr>
+<tr><th>Start time</th><td>{{ run.start_datetime }}</td></tr>
+<tr><th>Stop time</th><td>{{ run.stop_datetime }}</td></tr>
+<tr><th>Duration</th><td>{{ run.stop_datetime - run.start_datetime }}</td></tr>
+<tr{% if exit_code != 0 %} class="danger"{% endif %}><th>Exit code</th><td>{{ run.exit_code }}</td></tr>
 </table>
 <h2>Run Output</h2>
-<pre>{{ run_output }}</pre>
+<pre>{{ run.output }}</pre>
 </div>
 <!-- Generated {{ now }} --> 
 </body>

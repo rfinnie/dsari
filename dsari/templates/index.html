@@ -19,14 +19,14 @@
     <th>Duration</th>
     <th>Exit code</th>
 </tr>
-{% for run in runs|sort(attribute='stop_time', reverse=True) %}{% if loop.index <= 25 %}
+{% for run in runs %}
 <tr{% if run.exit_code != 0 %} class="danger"{% endif %}>
-    <td><a href="{{ run.job_name }}/{{ run.run_id }}/">{{ run.stop_time }}</a></td>
-    <td>{{ run.job_name }}</td>
-    <td>{{ run.stop_time - run.start_time }}</td>
+    <td><a href="{{ run.job.name }}/{{ run.id }}/">{{ run.stop_datetime }}</a></td>
+    <td>{{ run.job.name }}</td>
+    <td>{{ run.stop_datetime - run.start_datetime }}</td>
     <td>{{ run.exit_code }}</td>
 </tr>
-{% endif %}{% endfor %}
+{% endfor %}
 </table>
 <h2>Jobs</h2>
 <table class="table table-striped">
@@ -36,12 +36,12 @@
     <th>Last duration</th>
     <th>Last successful run</th>
 </tr>
-{% for job in jobs|sort() %}
-<tr{% if jobs[job].last_run != jobs[job].last_successful_run %} class="danger"{% endif %}>
-    <td><a href="{{ job }}/">{{ job }}</a></td>
-    <td>{{ jobs[job].last_run }}</td>
-    <td>{{ jobs[job].last_duration }}</td>
-    <td>{{ jobs[job].last_successful_run }}</td>
+{% for job in jobs %}
+<tr{% if job.last_run_datetime != job.last_successful_run_datetime %} class="danger"{% endif %}>
+    <td><a href="{{ job.name }}/">{{ job.name }}</a></td>
+    <td>{{ job.last_run_datetime }}</td>
+    <td>{{ job.last_duration_datetime }}</td>
+    <td>{{ job.last_successful_run_datetime }}</td>
 </tr>
 {% endfor %}
 </table>

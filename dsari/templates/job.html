@@ -4,23 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="generator" content="dsari">
-  <title>{{ job_name }}</title>
+  <title>{{ job.name }}</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 </head>
 
 <body>
 <div class="container">
-<h1><a href="../">{{ job_name }}</a></h1>
+<h1><a href="../">{{ job.name }}</a></h1>
 <table class="table table-striped">
 <tr>
     <th>Stop time</th>
     <th>Duration</th>
     <th>Exit code</th>
 </tr>
-{% for run in runs|sort(attribute='stop_time', reverse=True) %}
+{% for run in runs %}
 <tr{% if run.exit_code != 0 %} class="danger"{% endif %}>
-    <td><a href="{{ run.run_id }}/">{{ run.stop_time }}</a></td>
-    <td>{{ run.stop_time - run.start_time }}</td>
+    <td><a href="{{ run.id }}/">{{ run.stop_datetime }}</a></td>
+    <td>{{ run.stop_datetime - run.start_datetime }}</td>
     <td>{{ run.exit_code }}</td>
 </tr>
 {% endfor %}
