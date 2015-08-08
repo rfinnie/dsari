@@ -188,7 +188,7 @@ def main(argv):
         job.last_run_datetime = run.start_datetime
         job.last_duration_datetime = run.stop_datetime - run.start_datetime
         if exit_code == 0:
-            job.last_successful_datetime = datetime.datetime.fromtimestamp(start_time)
+            job.last_successful_run_datetime = run.start_datetime
         run_html_filename = os.path.join(config.data_dir, 'html', job.name, run.id, 'index.html')
         if config.report_html_gz:
             run_html_filename = '%s.gz' % run_html_filename

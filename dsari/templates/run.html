@@ -30,7 +30,7 @@
 <tr><th>Start time</th><td>{{ run.start_datetime }}</td></tr>
 <tr><th>Stop time</th><td>{{ run.stop_datetime }}</td></tr>
 <tr><th>Duration</th><td>{{ run.stop_datetime - run.start_datetime }}</td></tr>
-<tr{% if exit_code != 0 %} class="danger"{% endif %}><th>Exit code</th><td>{{ run.exit_code }}</td></tr>
+<tr{% if run.exit_code != 0 %} class="danger"{% endif %}><th>Exit code</th><td>{{ run.exit_code }}</td></tr>
 </table>
 <h2>Run Output</h2>
 <pre>{{ run.output }}</pre>
