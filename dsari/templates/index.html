@@ -36,7 +36,7 @@
     <th>Last duration</th>
     <th>Last successful run</th>
 </tr>
-{% for job in jobs %}
+{% for (job_name, job) in jobs.items()|sort %}
 <tr{% if job.last_run_datetime != job.last_successful_run_datetime %} class="danger"{% endif %}>
     <td><a href="{{ job.name }}/">{{ job.name }}</a></td>
     <td>{{ job.last_run_datetime }}</td>

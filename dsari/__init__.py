@@ -54,7 +54,7 @@ class Job():
         self.command = []
         self.schedule = None
         self.subsecond_offset = 0.0
-        self.concurrency_groups = []
+        self.concurrency_groups = {}
         self.max_execution = None
         self.max_execution_grace = 60.0
         self.environment = {}
@@ -95,8 +95,8 @@ class Config():
     def __init__(self):
         self.raw_config = {}
 
-        self.jobs = []
-        self.concurrency_groups = []
+        self.jobs = {}
+        self.concurrency_groups = {}
         self.config_d = None
         self.data_dir = DEFAULT_DATA_DIR
         self.template_dir = None
@@ -140,7 +140,7 @@ class Config():
             for k in ('max',):
                 if k in concurrency_groups[concurrency_group_name]:
                     setattr(concurrency_group, k, concurrency_groups[concurrency_group_name][k])
-            self.concurrency_groups.append(concurrency_group)
+            self.concurrency_groups[concurrency_group_name] = concurrency_group
 
         jobs = {}
         if 'jobs' in config:
@@ -180,14 +180,12 @@ class Config():
             job_concurrency_group_names = []
             if 'concurrency_groups' in jobs[job_name]:
                 job_concurrency_group_names = jobs[job_name]['concurrency_groups']
-            concurrency_group_map = {x.name: x for x in self.concurrency_groups}
             for concurrency_group_name in job_concurrency_group_names:
-                if concurrency_group_name not in concurrency_group_map:
-                    concurrency_group_map[concurrency_group_name] = ConcurrencyGroup(concurrency_group_name)
-                    self.concurrency_groups.append(concurrency_group_map[concurrency_group_name])
-                job.concurrency_groups.append(concurrency_group_map[concurrency_group_name])
+                if concurrency_group_name not in self.concurrency_groups:
+                    self.concurrency_groups[concurrency_group_name] = ConcurrencyGroup(concurrency_group_name)
+                job.concurrency_groups[concurrency_group_name] = self.concurrency_groups[concurrency_group_name]
             if job.schedule:
                 job.subsecond_offset = float(binascii.crc32(job.name) & 0xffffffff) / float(2**32)
                 if len(job.schedule.split(' ')) == 5:
                     job.schedule = job.schedule + ' H'
-            self.jobs.append(job)
+            self.jobs[job.name] = job

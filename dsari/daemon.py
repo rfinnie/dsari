@@ -260,7 +260,7 @@ class Scheduler():
         if self.shutdown:
             return
         now = time.time()
-        for job in sorted(self.config.jobs, key=lambda x: x.name):
+        for (job_name, job) in sorted(self.config.jobs.items()):
             if not job.schedule:
                 self.logger.debug('[%s] No schedule defined, manual triggers only' % job.name)
                 continue
@@ -491,7 +491,7 @@ class Scheduler():
     def process_triggers(self):
         if self.shutdown:
             return
-        for job in self.config.jobs:
+        for job in self.config.jobs.values():
             self.process_trigger_job(job)
 
     def process_trigger_job(self, job):
@@ -543,8 +543,10 @@ class Scheduler():
             return
         run.concurrency_group = None
         if len(job.concurrency_groups) > 0:
-            random.shuffle(job.concurrency_groups)
-            for concurrency_group in job.concurrency_groups:
+            job_concurrency_groups = job.concurrency_groups.keys()
+            random.shuffle(job_concurrency_groups)
+            for concurrency_group_name in job_concurrency_groups:
+                concurrency_group = job.concurrency_groups[concurrency_group_name]
                 if concurrency_group not in self.running_groups:
                     self.running_groups[concurrency_group] = []
                 if len(self.running_groups[concurrency_group]) < concurrency_group.max:

@@ -133,9 +133,9 @@ class Renderer():
         self.db_conn.row_factory = sqlite3.Row
 
     def render(self):
-        self.jobs = {job for job in self.config.jobs if job.render_reports}
+        self.jobs = {job.name: job for job in self.config.jobs.values() if job.render_reports}
         self.job_runs = {}
-        for job in self.jobs:
+        for job in self.jobs.values():
             self.job_runs[job.name] = []
         self.runs = []
         self.jobs_written = []
@@ -146,7 +146,6 @@ class Renderer():
 
     def render_runs(self):
         self.run_template = self.templates.get_template('run.html')
-        job_map = {job.name: job for job in self.jobs}
         sql_statement = """
             SELECT
                 job_name,
@@ -163,13 +162,10 @@ class Renderer():
                 start_time
         """
         for db_result in self.db_conn.execute(sql_statement):
-            if db_result['job_name'] not in job_map:
+            if db_result['job_name'] not in self.jobs:
                 self.logger.debug('Cannot find job %s' % db_result['job_name'])
                 continue
-            job = job_map[db_result['job_name']]
-            if not job.render_reports:
-                self.logger.debug('Ignoring %s %s' % (job.name, db_result['run_id']))
-                continue
+            job = self.jobs[db_result['job_name']]
             run = self.build_run_object(job, db_result)
             self.render_run(run)
 
@@ -214,7 +210,7 @@ class Renderer():
 
     def render_jobs(self):
         self.job_template = self.templates.get_template('job.html')
-        for job in self.jobs:
+        for job in self.jobs.values():
             if job not in self.jobs_written:
                 if not self.args.regenerate:
                     continue
@@ -237,7 +233,7 @@ class Renderer():
         self.index_template = self.templates.get_template('index.html')
         if (len(self.jobs_written) > 0) or self.args.regenerate:
             context = {
-                'jobs': sorted(self.jobs, key=lambda job: job.name),
+                'jobs': self.jobs,
                 'runs': sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[:25],
             }
             index_html_filename = os.path.join(self.config.data_dir, 'html', 'index.html')
