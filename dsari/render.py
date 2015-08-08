@@ -94,144 +94,168 @@ def write_html_file(filename, content):
             f.write(content.encode('utf-8'))
 
 
+class Renderer():
+    def __init__(self, args):
+        self.args = args
+        self.config = dsari.Config()
+        self.config.load_dir(self.args.config_dir)
+
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.DEBUG)
+        lh_console = logging.StreamHandler()
+        lh_console_formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+        lh_console.setFormatter(lh_console_formatter)
+        if self.args.debug:
+            lh_console.setLevel(logging.DEBUG)
+        else:
+            lh_console.setLevel(logging.INFO)
+        self.logger.addHandler(lh_console)
+
+        if not os.path.exists(os.path.join(self.config.data_dir, 'dsari.sqlite3')):
+            return
+
+        if self.config.template_dir:
+            loader = jinja2.ChoiceLoader(
+                jinja2.FileSystemLoader(self.config.template_dir),
+                jinja2.PackageLoader('dsari'),
+            )
+        else:
+            loader = jinja2.PackageLoader('dsari')
+
+        self.templates = jinja2.Environment(
+            autoescape=guess_autoescape,
+            loader=loader,
+            extensions=['jinja2.ext.autoescape'],
+        )
+        self.templates.globals['now'] = datetime.datetime.now()
+
+        self.db_conn = sqlite3.connect(os.path.join(self.config.data_dir, 'dsari.sqlite3'))
+        self.db_conn.row_factory = sqlite3.Row
+
+    def render(self):
+        self.jobs = {job for job in self.config.jobs if job.render_reports}
+        self.job_runs = {}
+        for job in self.jobs:
+            self.job_runs[job.name] = []
+        self.runs = []
+        self.jobs_written = []
+
+        self.render_runs()
+        self.render_jobs()
+        self.render_index()
+
+    def render_runs(self):
+        self.run_template = self.templates.get_template('run.html')
+        job_map = {job.name: job for job in self.jobs}
+        sql_statement = """
+            SELECT
+                job_name,
+                run_id,
+                schedule_time,
+                start_time,
+                stop_time,
+                exit_code,
+                trigger_type,
+                trigger_data
+            FROM
+                runs
+            ORDER BY
+                start_time
+        """
+        for db_result in self.db_conn.execute(sql_statement):
+            if db_result['job_name'] not in job_map:
+                self.logger.debug('Cannot find job %s' % db_result['job_name'])
+                continue
+            job = job_map[db_result['job_name']]
+            if not job.render_reports:
+                self.logger.debug('Ignoring %s %s' % (job.name, db_result['run_id']))
+                continue
+            run = self.build_run_object(job, db_result)
+            self.render_run(run)
+
+    def render_run(self, run):
+        job = run.job
+        self.job_runs[job.name].append(run)
+        self.runs.append(run)
+        job.last_run_datetime = run.start_datetime
+        job.last_duration_datetime = run.stop_datetime - run.start_datetime
+        if run.exit_code == 0:
+            job.last_successful_run_datetime = run.start_datetime
+        run_html_filename = os.path.join(self.config.data_dir, 'html', job.name, run.id, 'index.html')
+        if self.config.report_html_gz:
+            run_html_filename = '%s.gz' % run_html_filename
+        if os.path.isfile(run_html_filename):
+            if not self.args.regenerate:
+                return
+        if not os.path.exists(os.path.join(self.config.data_dir, 'html', job.name, run.id)):
+            os.makedirs(os.path.join(self.config.data_dir, 'html', job.name, run.id))
+        run.output = read_output(os.path.join(self.config.data_dir, 'runs', job.name, run.id, 'output.txt'))
+        self.logger.info('Writing %s' % run_html_filename)
+        context = {
+            'job': job,
+            'run': run,
+        }
+        write_html_file(run_html_filename, self.run_template.render(context))
+        if job not in self.jobs_written:
+            self.jobs_written.append(job)
+
+    def build_run_object(self, job, db_result):
+        run = dsari.Run(job, db_result['run_id'])
+        run.schedule_time = db_result['schedule_time']
+        run.schedule_datetime = datetime.datetime.fromtimestamp(run.schedule_time)
+        run.start_time = db_result['start_time']
+        run.start_datetime = datetime.datetime.fromtimestamp(run.start_time)
+        run.stop_time = db_result['stop_time']
+        run.stop_datetime = datetime.datetime.fromtimestamp(run.stop_time)
+        run.exit_code = db_result['exit_code']
+        run.trigger_type = db_result['trigger_type']
+        run.trigger_data = json.loads(db_result['trigger_data'])
+        return run
+
+    def render_jobs(self):
+        self.job_template = self.templates.get_template('job.html')
+        for job in self.jobs:
+            if job not in self.jobs_written:
+                if not self.args.regenerate:
+                    continue
+            self.render_job(job)
+
+    def render_job(self, job):
+        context = {
+            'job': job,
+            'runs': sorted(self.job_runs[job.name], key=lambda run: run.stop_time, reverse=True),
+        }
+        if not os.path.exists(os.path.join(self.config.data_dir, 'html', job.name)):
+            os.makedirs(os.path.join(self.config.data_dir, 'html', job.name))
+        job_html_filename = os.path.join(self.config.data_dir, 'html', job.name, 'index.html')
+        if self.config.report_html_gz:
+            job_html_filename = '%s.gz' % job_html_filename
+        self.logger.info('Writing %s' % job_html_filename)
+        write_html_file(job_html_filename, self.job_template.render(context))
+
+    def render_index(self):
+        self.index_template = self.templates.get_template('index.html')
+        if (len(self.jobs_written) > 0) or self.args.regenerate:
+            context = {
+                'jobs': sorted(self.jobs, key=lambda job: job.name),
+                'runs': sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[:25],
+            }
+            index_html_filename = os.path.join(self.config.data_dir, 'html', 'index.html')
+            if self.config.report_html_gz:
+                index_html_filename = '%s.gz' % index_html_filename
+            self.logger.info('Writing %s' % index_html_filename)
+            write_html_file(index_html_filename, self.index_template.render(context))
+
+
 def main(argv):
     args = parse_args()
     if args.version:
         print __version__
         return
-    config = dsari.Config()
-    config.load_dir(args.config_dir)
+    r = Renderer(args)
+    r.render()
 
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    lh_console = logging.StreamHandler()
-    lh_console_formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
-    lh_console.setFormatter(lh_console_formatter)
-    if args.debug:
-        lh_console.setLevel(logging.DEBUG)
-    else:
-        lh_console.setLevel(logging.INFO)
-    logger.addHandler(lh_console)
 
-    if not os.path.exists(os.path.join(config.data_dir, 'dsari.sqlite3')):
-        return
-
-    if config.template_dir:
-        loader = jinja2.ChoiceLoader(
-            jinja2.FileSystemLoader(config.template_dir),
-            jinja2.PackageLoader('dsari'),
-        )
-    else:
-        loader = jinja2.PackageLoader('dsari')
-
-    templates = jinja2.Environment(
-        autoescape=guess_autoescape,
-        loader=loader,
-        extensions=['jinja2.ext.autoescape'],
-    )
-    templates.globals['now'] = datetime.datetime.now()
-
-    run_template = templates.get_template('run.html')
-
-    jobs = {job for job in config.jobs if job.render_reports}
-    job_runs = {}
-    for job in jobs:
-        job_runs[job.name] = []
-    job_map = {job.name: job for job in jobs}
-    runs = []
-    jobs_written = []
-    db_conn = sqlite3.connect(os.path.join(config.data_dir, 'dsari.sqlite3'))
-    sql_statement = """
-        SELECT
-            job_name,
-            run_id,
-            schedule_time,
-            start_time,
-            stop_time,
-            exit_code,
-            trigger_type,
-            trigger_data
-        FROM
-            runs
-        ORDER BY
-            start_time
-    """
-    for (
-        job_name,
-        run_id,
-        schedule_time,
-        start_time,
-        stop_time,
-        exit_code,
-        trigger_type,
-        trigger_data
-    ) in db_conn.execute(sql_statement):
-        if job_name not in job_map:
-            logger.debug('Cannot find job %s' % job_name)
-            continue
-        job = job_map[job_name]
-        if not job.render_reports:
-            logger.debug('Ignoring %s %s' % (job_name, run_id))
-            continue
-        run = dsari.Run(job, run_id)
-        run.schedule_time = schedule_time
-        run.schedule_datetime = datetime.datetime.fromtimestamp(schedule_time)
-        run.start_time = start_time
-        run.start_datetime = datetime.datetime.fromtimestamp(start_time)
-        run.stop_time = stop_time
-        run.stop_datetime = datetime.datetime.fromtimestamp(stop_time)
-        run.exit_code = exit_code
-        run.trigger_type = trigger_type
-        run.trigger_data = json.loads(trigger_data)
-        job_runs[job.name].append(run)
-        runs.append(run)
-        job.last_run_datetime = run.start_datetime
-        job.last_duration_datetime = run.stop_datetime - run.start_datetime
-        if exit_code == 0:
-            job.last_successful_run_datetime = run.start_datetime
-        run_html_filename = os.path.join(config.data_dir, 'html', job.name, run.id, 'index.html')
-        if config.report_html_gz:
-            run_html_filename = '%s.gz' % run_html_filename
-        if os.path.isfile(run_html_filename):
-            if not args.regenerate:
-                continue
-        if not os.path.exists(os.path.join(config.data_dir, 'html', job.name, run.id)):
-            os.makedirs(os.path.join(config.data_dir, 'html', job.name, run.id))
-        run.output = read_output(os.path.join(config.data_dir, 'runs', job.name, run.id, 'output.txt'))
-        logger.info('Writing %s' % run_html_filename)
-        context = {
-            'job': job,
-            'run': run,
-        }
-        write_html_file(run_html_filename, run_template.render(context))
-        if job not in jobs_written:
-            jobs_written.append(job)
-
-    for job in jobs:
-        if job not in jobs_written:
-            if not args.regenerate:
-                continue
-        context = {
-            'job': job,
-            'runs': sorted(job_runs[job.name], key=lambda run: run.stop_time, reverse=True),
-        }
-        if not os.path.exists(os.path.join(config.data_dir, 'html', job.name)):
-            os.makedirs(os.path.join(config.data_dir, 'html', job.name))
-        job_template = templates.get_template('job.html')
-        job_html_filename = os.path.join(config.data_dir, 'html', job.name, 'index.html')
-        if config.report_html_gz:
-            job_html_filename = '%s.gz' % job_html_filename
-        logger.info('Writing %s' % job_html_filename)
-        write_html_file(job_html_filename, job_template.render(context))
-
-    if (len(jobs_written) > 0) or args.regenerate:
-        context = {
-            'jobs': sorted(jobs, key=lambda job: job.name),
-            'runs': sorted(runs, key=lambda run: run.stop_time, reverse=True)[:25],
-        }
-        index_template = templates.get_template('index.html')
-        index_html_filename = os.path.join(config.data_dir, 'html', 'index.html')
-        if config.report_html_gz:
-            index_html_filename = '%s.gz' % index_html_filename
-        logger.info('Writing %s' % index_html_filename)
-        write_html_file(index_html_filename, index_template.render(context))
+if __name__ == '__main__':
+    import sys
+    sys.exit(main(sys.argv))

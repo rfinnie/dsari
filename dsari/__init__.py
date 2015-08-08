@@ -22,6 +22,7 @@ import os
 import copy
 import re
 import binascii
+import uuid
 
 import utils
 
@@ -70,7 +71,7 @@ class Job():
 
 
 class Run():
-    def __init__(self, job, id):
+    def __init__(self, job, id=None):
         self.job = job
         self.id = id
         self.schedule_time = None
@@ -82,6 +83,9 @@ class Run():
         self.stop_time = None
         self.exit_code = None
         self.output = None
+
+        if not self.id:
+            self.id = str(uuid.uuid4())
 
     def __repr__(self):
         return '<Run %s (%s)>' % (self.id, self.job.name)

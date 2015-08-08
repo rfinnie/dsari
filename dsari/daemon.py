@@ -22,7 +22,6 @@ import os
 import sys
 import json
 import time
-import uuid
 import math
 import random
 import logging
@@ -119,6 +118,7 @@ class Scheduler():
             os.makedirs(self.config.data_dir)
         db_exists = os.path.exists(os.path.join(self.config.data_dir, 'dsari.sqlite3'))
         self.db_conn = sqlite3.connect(os.path.join(self.config.data_dir, 'dsari.sqlite3'))
+        self.db_conn.row_factory = sqlite3.Row
         if not db_exists:
             sql_statement = """
                 CREATE TABLE runs (
@@ -273,7 +273,7 @@ class Scheduler():
             except Exception, e:
                 self.logger.warning('[%s] Invalid schedule: %s: %s' % (job.name, type(e), str(e)))
                 continue
-            run = dsari.Run(job, str(uuid.uuid4()))
+            run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'
             self.logger.debug(
@@ -356,23 +356,23 @@ class Scheduler():
         if run.concurrency_group:
             environ['CONCURRENCY_GROUP'] = run.concurrency_group.name
         if run.previous_run:
-            environ['PREVIOUS_RUN_ID'] = run.previous_run[0]
-            environ['PREVIOUS_SCHEDULE_TIME'] = str(run.previous_run[1])
-            environ['PREVIOUS_START_TIME'] = str(run.previous_run[2])
-            environ['PREVIOUS_STOP_TIME'] = str(run.previous_run[3])
-            environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run[4])
+            environ['PREVIOUS_RUN_ID'] = run.previous_run['run_id']
+            environ['PREVIOUS_SCHEDULE_TIME'] = str(run.previous_run['schedule_time'])
+            environ['PREVIOUS_START_TIME'] = str(run.previous_run['start_time'])
+            environ['PREVIOUS_STOP_TIME'] = str(run.previous_run['stop_time'])
+            environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run['exit_code'])
         if run.previous_good_run:
-            environ['PREVIOUS_GOOD_RUN_ID'] = run.previous_good_run[0]
-            environ['PREVIOUS_GOOD_SCHEDULE_TIME'] = str(run.previous_good_run[1])
-            environ['PREVIOUS_GOOD_START_TIME'] = str(run.previous_good_run[2])
-            environ['PREVIOUS_GOOD_STOP_TIME'] = str(run.previous_good_run[3])
-            environ['PREVIOUS_GOOD_EXIT_CODE'] = str(run.previous_good_run[4])
+            environ['PREVIOUS_GOOD_RUN_ID'] = run.previous_good_run['run_id']
+            environ['PREVIOUS_GOOD_SCHEDULE_TIME'] = str(run.previous_good_run['schedule_time'])
+            environ['PREVIOUS_GOOD_START_TIME'] = str(run.previous_good_run['start_time'])
+            environ['PREVIOUS_GOOD_STOP_TIME'] = str(run.previous_good_run['stop_time'])
+            environ['PREVIOUS_GOOD_EXIT_CODE'] = str(run.previous_good_run['exit_code'])
         if run.previous_bad_run:
-            environ['PREVIOUS_BAD_RUN_ID'] = run.previous_bad_run[0]
-            environ['PREVIOUS_BAD_SCHEDULE_TIME'] = str(run.previous_bad_run[1])
-            environ['PREVIOUS_BAD_START_TIME'] = str(run.previous_bad_run[2])
-            environ['PREVIOUS_BAD_STOP_TIME'] = str(run.previous_bad_run[3])
-            environ['PREVIOUS_BAD_EXIT_CODE'] = str(run.previous_bad_run[4])
+            environ['PREVIOUS_BAD_RUN_ID'] = run.previous_bad_run['run_id']
+            environ['PREVIOUS_BAD_SCHEDULE_TIME'] = str(run.previous_bad_run['schedule_time'])
+            environ['PREVIOUS_BAD_START_TIME'] = str(run.previous_bad_run['start_time'])
+            environ['PREVIOUS_BAD_STOP_TIME'] = str(run.previous_bad_run['stop_time'])
+            environ['PREVIOUS_BAD_EXIT_CODE'] = str(run.previous_bad_run['exit_code'])
         if job.job_group:
             environ['JOB_GROUP'] = str(job.job_group)
         if job.jenkins_environment:
@@ -469,7 +469,7 @@ class Scheduler():
         if run.concurrency_group and run in self.running_groups[run.concurrency_group]:
             self.running_groups[run.concurrency_group].remove(run)
         if (not self.shutdown) and run.respawn and job.schedule:
-            run = dsari.Run(job, str(uuid.uuid4()))
+            run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'
             t = croniter_hash.croniter_hash(
@@ -525,7 +525,7 @@ class Scheduler():
             return
 
         self.logger.info('[%s] Trigger detected, creating trigger run' % job.name)
-        run = dsari.Run(job, str(uuid.uuid4()))
+        run = dsari.Run(job)
         run.respawn = False
         run.trigger_type = 'file'
         run.trigger_data = j
