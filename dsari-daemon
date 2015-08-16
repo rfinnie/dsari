@@ -19,5 +19,5 @@
 # 02110-1301, USA.
 
 import sys
-from dsari import daemon
-sys.exit(daemon.main(sys.argv))
+from dsari.daemon import main
+sys.exit(main())

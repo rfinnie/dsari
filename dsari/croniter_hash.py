@@ -18,6 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+from __future__ import print_function
 import binascii
 import re
 import croniter
@@ -114,7 +115,7 @@ if __name__ == '__main__':
     iter = croniter_hash('1 2 * * *', base)
     iter = croniter_hash('3 4 * * *', base, hash_id=id)
     iter = croniter_hash('H(30-59)/10 H(2-5) H/3 H *', base, hash_id=id)
-    print iter.exprs
-    print iter.expanded
+    print(iter.exprs)
+    print(iter.expanded)
     for i in xrange(10):
-        print iter.get_next(datetime)
+        print(iter.get_next(datetime))

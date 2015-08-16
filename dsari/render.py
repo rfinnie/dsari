@@ -26,7 +26,7 @@ import sqlite3
 import argparse
 import logging
 
-import __init__ as dsari
+import dsari
 
 import gzip
 HAS_LZMA = True
@@ -53,7 +53,8 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        '--version', action='store_true',
+        '--version', action='version',
+        version=__version__,
         help='report the program version',
     )
     parser.add_argument(
@@ -243,15 +244,12 @@ class Renderer():
             write_html_file(index_html_filename, self.index_template.render(context))
 
 
-def main(argv):
+def main():
     args = parse_args()
-    if args.version:
-        print __version__
-        return
     r = Renderer(args)
     r.render()
 
 
 if __name__ == '__main__':
     import sys
-    sys.exit(main(sys.argv))
+    sys.exit(main())

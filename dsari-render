@@ -19,5 +19,5 @@
 # 02110-1301, USA.
 
 import sys
-from dsari import render
-sys.exit(render.main(sys.argv))
+from dsari.render import main
+sys.exit(main())

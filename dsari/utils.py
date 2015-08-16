@@ -39,6 +39,6 @@ def json_load_file(file):
     with open(file) as f:
         try:
             return json.load(f)
-        except ValueError, e:
+        except ValueError as e:
             e.args += (file,)
             raise

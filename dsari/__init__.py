@@ -24,7 +24,7 @@ import re
 import binascii
 import uuid
 
-import utils
+from . import utils
 
 __version__ = '1.2.0'
 

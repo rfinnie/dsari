@@ -19,7 +19,6 @@
 # 02110-1301, USA.
 
 import os
-import sys
 import json
 import time
 import math
@@ -31,8 +30,8 @@ import argparse
 import copy
 import pwd
 
-import __init__ as dsari
-import croniter_hash
+import dsari
+from . import croniter_hash
 
 __version__ = dsari.__version__
 
@@ -70,7 +69,8 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        '--version', action='store_true',
+        '--version', action='version',
+        version=__version__,
         help='report the program version',
     )
     parser.add_argument(
@@ -270,7 +270,7 @@ class Scheduler():
                     start_time=now,
                     hash_id=job.name
                 ).get_next() + job.subsecond_offset
-            except Exception, e:
+            except Exception as e:
                 self.logger.warning('[%s] Invalid schedule: %s: %s' % (job.name, type(e), str(e)))
                 continue
             run = dsari.Run(job)
@@ -501,18 +501,18 @@ class Scheduler():
         t = os.path.getmtime(trigger_file)
         try:
             f = open(trigger_file)
-        except IOError, e:
+        except IOError as e:
             # Return silently, otherwise we spam the log during each loop
             return
         try:
             os.remove(trigger_file)
-        except OSError, e:
+        except OSError as e:
             # Return silently, otherwise we spam the log during each loop
             f.close()
             return
         try:
             j = json.load(f)
-        except ValueError, e:
+        except ValueError as e:
             self.logger.error('[%s] Cannot load trigger: %s' % (job.name, e.message))
             f.close()
             return
@@ -698,11 +698,8 @@ class Scheduler():
                     self.reset_jobs()
 
 
-def main(argv):
+def main():
     args = parse_args()
-    if args.version:
-        print __version__
-        return
     if args.fork:
         child_pid = os.fork()
         if child_pid > 0:
@@ -712,4 +709,5 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    import sys
+    sys.exit(main())
