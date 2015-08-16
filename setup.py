@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-from distutils.core import setup
+from setuptools import setup
 import dsari
 
 
@@ -22,7 +22,6 @@ setup(
     download_url='https://github.com/rfinnie/dsari/releases',
     packages=['dsari'],
     package_data={'dsari': ['templates/*.html']},
-    scripts=['dsari-daemon', 'dsari-render'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -35,4 +34,14 @@ setup(
         'Topic :: Software Development :: Quality Assurance',
         'Topic :: Software Development :: Testing',
     ],
+    install_requires=[
+        'croniter',
+        'Jinja2>=2.4',
+    ],
+    entry_points={
+        'console_scripts': [
+            'dsari-daemon = dsari.daemon:main',
+            'dsari-render = dsari.render:main',
+        ],
+    },
 )
