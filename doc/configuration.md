@@ -140,7 +140,8 @@ By default, dsari will not allow a job's scheduled or triggered run to be run wh
 For example, a trigger may be detected while a scheduled run is running, or a long-running run overlaps with the next scheduled run of the job.
 If this happens, the next run will be executed after the existing run is finished.
 
-If "concurrent_runs" is true for a job, multiple runs of the same job can run concurrently at the times they are scheduled, regardless of whether a job has a run currently executing..
+If "concurrent_runs" is true for a job, multiple runs of the same job can run concurrently at the times they are scheduled, regardless of whether a job has a run currently executing.
+Note that your run execution environment must be capable of handling concurrent runs if this is enabled.
 
 Default: false
 
