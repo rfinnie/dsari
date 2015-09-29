@@ -167,10 +167,10 @@ class Scheduler():
         self.db_conn.execute('DELETE FROM runs_running')
         self.db_conn.commit()
 
-        self.reset_jobs()
-
         self.running_runs = []
         self.running_groups = {}
+
+        self.reset_jobs()
 
         self.wakeups = []
         self.next_wakeup = time.time() + 60.0
@@ -178,9 +178,11 @@ class Scheduler():
         self.logger.info('Scheduler running')
 
     def begin_shutdown(self):
-        for run in copy.copy(self.runs):
-            if run not in self.running_runs:
-                self.runs.remove(run)
+        self.shutdown = True
+        self.shutdown_begin = time.time()
+        self.scheduled_runs = []
+        for run in self.running_runs:
+            run.respawn = False
 
         if self.config.shutdown_kill_runs:
             for run in self.running_runs:
@@ -215,52 +217,54 @@ class Scheduler():
                 self.logger.info('SIGINT received, beginning shutdown')
             elif signum == signal.SIGTERM:
                 self.logger.info('SIGTERM received, beginning shutdown')
-            self.shutdown = True
-            self.shutdown_begin = time.time()
             self.begin_shutdown()
         elif signum == signal.SIGHUP:
-            self.logger.info('SIGHUP received, reloading config when next idle')
-            self.sighup_load_config = True
+            self.logger.info('SIGHUP received, reloading')
+            self.load_config()
+            self.reset_jobs()
         elif signum == signal.SIGQUIT:
             self.sigquit_status()
 
     def sigquit_status(self):
         now = time.time()
-        for run in sorted(self.runs, key=lambda x: x.job.name):
+        for run in sorted(self.running_runs, key=lambda x: x.job.name):
             job = run.job
-            if run in self.running_runs:
-                t = run.start_time
-                self.logger.info(
-                    '[%s %s] PID %d running since %s (%0.02fs)' % (
-                        job.name,
-                        run.id,
-                        run.pid,
-                        time.strftime('%c', time.localtime(t)),
-                        (now - t)
-                    )
+            t = run.start_time
+            self.logger.info(
+                '[%s %s] PID %d running since %s (%0.02fs)' % (
+                    job.name,
+                    run.id,
+                    run.pid,
+                    time.strftime('%c', time.localtime(t)),
+                    (now - t)
                 )
-            else:
-                t = run.schedule_time
-                self.logger.info(
-                    '[%s %s] Next scheduled run: %s (%0.02fs)' % (
-                        job.name,
-                        run.id,
-                        time.strftime('%c', time.localtime(t)),
-                        (t - now)
-                    )
+            )
+        for run in sorted(self.scheduled_runs, key=lambda x: x.job.name):
+            job = run.job
+            t = run.schedule_time
+            self.logger.info(
+                '[%s %s] Next scheduled run: %s (%0.02fs)' % (
+                    job.name,
+                    run.id,
+                    time.strftime('%c', time.localtime(t)),
+                    (t - now)
                 )
+            )
 
     def load_config(self):
-        self.sighup_load_config = False
         self.config = dsari.Config()
         self.config.load_dir(self.args.config_dir)
 
     def reset_jobs(self):
-        self.runs = []
         if self.shutdown:
             return
+        self.jobs = []
+        self.scheduled_runs = []
+        for run in self.running_runs:
+            run.respawn = False
         now = time.time()
         for (job_name, job) in sorted(self.config.jobs.items()):
+            self.jobs.append(job)
             if not job.schedule:
                 self.logger.debug('[%s] No schedule defined, manual triggers only' % job.name)
                 continue
@@ -272,6 +276,7 @@ class Scheduler():
                 ).get_next() + job.subsecond_offset
             except Exception as e:
                 self.logger.warning('[%s] Invalid schedule: %s: %s' % (job.name, type(e), str(e)))
+                job.schedule = None
                 continue
             run = dsari.Run(job)
             run.respawn = True
@@ -285,7 +290,7 @@ class Scheduler():
                 )
             )
             run.schedule_time = t
-            self.runs.append(run)
+            self.scheduled_runs.append(run)
 
     def process_run_execution_time(self, run):
         job = run.job
@@ -465,10 +470,9 @@ class Scheduler():
         self.db_conn.execute('DELETE FROM runs_running WHERE run_id = ?', (run.id,))
         self.db_conn.commit()
         self.running_runs.remove(run)
-        self.runs.remove(run)
         if run.concurrency_group and run in self.running_groups[run.concurrency_group]:
             self.running_groups[run.concurrency_group].remove(run)
-        if (not self.shutdown) and run.respawn and job.schedule:
+        if run.respawn and job.schedule:
             run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'
@@ -478,7 +482,7 @@ class Scheduler():
                 hash_id=job.name
             ).get_next() + job.subsecond_offset
             run.schedule_time = t
-            self.runs.append(run)
+            self.scheduled_runs.append(run)
             self.logger.debug(
                 '[%s %s] Next scheduled run: %s (%0.02fs)' % (
                     job.name,
@@ -491,7 +495,7 @@ class Scheduler():
     def process_triggers(self):
         if self.shutdown:
             return
-        for job in self.config.jobs.values():
+        for job in self.jobs:
             self.process_trigger_job(job)
 
     def process_trigger_job(self, job):
@@ -530,16 +534,20 @@ class Scheduler():
         run.trigger_type = 'file'
         run.trigger_data = j
         run.schedule_time = t
-        self.runs.append(run)
+        self.scheduled_runs.append(run)
 
-    def process_run(self, run):
+    def process_scheduled_run(self, run):
         now = time.time()
         job = run.job
-        if run in self.running_runs:
-            self.wakeups.append(now + backoff(run.schedule_time, now))
-            return
         if run.schedule_time > now:
             self.wakeups.append(run.schedule_time)
+            return
+        if job in [x.job for x in self.running_runs]:
+            self.wakeups.append(now + backoff(run.schedule_time, now))
+            return
+        if job.name in [x.job.name for x in self.running_runs]:
+            # Special case for a running run left during a SIGHUP reload
+            self.wakeups.append(now + backoff(run.schedule_time, now))
             return
         run.concurrency_group = None
         if len(job.concurrency_groups) > 0:
@@ -651,6 +659,7 @@ class Scheduler():
             self.run_child_executor(run)
             raise OSError('run_child_executor returned, when it should not have')
         run.pid = child_pid
+        self.scheduled_runs.remove(run)
         self.running_runs.append(run)
         if run.concurrency_group:
             self.running_groups[run.concurrency_group].append(run)
@@ -665,10 +674,11 @@ class Scheduler():
         while True:
             self.wakeups = []
             self.process_triggers()
-            runs = copy.copy(self.runs)
-            random.shuffle(runs)
-            for run in runs:
-                self.process_run(run)
+
+            scheduled_runs = copy.copy(self.scheduled_runs)
+            random.shuffle(scheduled_runs)
+            for run in scheduled_runs:
+                self.process_scheduled_run(run)
 
             for run in self.running_runs:
                 self.process_run_execution_time(run)
@@ -691,11 +701,6 @@ class Scheduler():
                 if to_sleep > 0:
                     self.logger.debug('No running jobs, waiting %0.02fs' % to_sleep)
                     time.sleep(to_sleep)
-
-                if self.sighup_load_config:
-                    self.logger.info('Reloading config')
-                    self.load_config()
-                    self.reset_jobs()
 
 
 def main():
