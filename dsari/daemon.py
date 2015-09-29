@@ -472,24 +472,6 @@ class Scheduler():
         self.running_runs.remove(run)
         if run.concurrency_group and run in self.running_groups[run.concurrency_group]:
             self.running_groups[run.concurrency_group].remove(run)
-        if run.respawn and job.schedule:
-            run = dsari.Run(job)
-            run.respawn = True
-            run.trigger_type = 'schedule'
-            t = croniter_hash.croniter_hash(
-                job.schedule,
-                start_time=now,
-                hash_id=job.name
-            ).get_next() + job.subsecond_offset
-            run.schedule_time = t
-            self.scheduled_runs.append(run)
-            self.logger.debug(
-                '[%s %s] Next scheduled run: %s (%0.02fs)' % (
-                    job.name,
-                    run.id,
-                    time.strftime('%c', time.localtime(t)), (t - now)
-                )
-            )
         return child_pid
 
     def process_triggers(self):
@@ -542,10 +524,10 @@ class Scheduler():
         if run.schedule_time > now:
             self.wakeups.append(run.schedule_time)
             return
-        if job in [x.job for x in self.running_runs]:
+        if (not job.concurrent_runs) and (job in [x.job for x in self.running_runs]):
             self.wakeups.append(now + backoff(run.schedule_time, now))
             return
-        if job.name in [x.job.name for x in self.running_runs]:
+        if (not job.concurrent_runs) and (job.name in [x.job.name for x in self.running_runs]):
             # Special case for a running run left during a SIGHUP reload
             self.wakeups.append(now + backoff(run.schedule_time, now))
             return
@@ -663,6 +645,24 @@ class Scheduler():
         self.running_runs.append(run)
         if run.concurrency_group:
             self.running_groups[run.concurrency_group].append(run)
+        if run.respawn and job.schedule:
+            run = dsari.Run(job)
+            run.respawn = True
+            run.trigger_type = 'schedule'
+            t = croniter_hash.croniter_hash(
+                job.schedule,
+                start_time=now,
+                hash_id=job.name
+            ).get_next() + job.subsecond_offset
+            run.schedule_time = t
+            self.scheduled_runs.append(run)
+            self.logger.debug(
+                '[%s %s] Next scheduled run: %s (%0.02fs)' % (
+                    job.name,
+                    run.id,
+                    time.strftime('%c', time.localtime(t)), (t - now)
+                )
+            )
 
     def process_wakeups(self):
         self.next_wakeup = time.time() + 60.0

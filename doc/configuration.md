@@ -134,6 +134,16 @@ Normally this is not set by hand, but is set automatically when a job_groups def
 
 Default: none
 
+    "concurrent_runs": true
+
+By default, dsari will not allow a job's scheduled or triggered run to be run while the job has an existing running run.
+For example, a trigger may be detected while a scheduled run is running, or a long-running run overlaps with the next scheduled run of the job.
+If this happens, the next run will be executed after the existing run is finished.
+
+If "concurrent_runs" is true for a job, multiple runs of the same job can run concurrently at the times they are scheduled, regardless of whether a job has a run currently executing..
+
+Default: false
+
 ## Job Groups
 
 "job_groups" is an associative array of job group definitions.

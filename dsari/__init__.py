@@ -62,6 +62,7 @@ class Job():
         self.command_append_run = False
         self.jenkins_environment = False
         self.job_group = None
+        self.concurrent_runs = False
 
     def __repr__(self):
         if self.schedule:
@@ -173,7 +174,7 @@ class Config():
             for k in (
                 'command', 'schedule', 'max_execution', 'max_execution_grace',
                 'environment', 'render_reports', 'command_append_run',
-                'jenkins_environment', 'job_group'
+                'jenkins_environment', 'job_group', 'concurrent_runs'
             ):
                 if k in jobs[job_name]:
                     setattr(job, k, jobs[job_name][k])
