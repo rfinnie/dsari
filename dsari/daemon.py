@@ -31,7 +31,12 @@ import copy
 import pwd
 
 import dsari
-from . import croniter_hash
+
+try:
+    from . import croniter_hash
+    HAS_CRONITER = True
+except ImportError:
+    HAS_CRONITER = False
 
 __version__ = dsari.__version__
 
@@ -265,6 +270,9 @@ class Scheduler():
         now = time.time()
         for (job_name, job) in sorted(self.config.jobs.items()):
             self.jobs.append(job)
+            if not HAS_CRONITER:
+                self.logger.debug('[%s] croniter not available, manual triggers only' % job.name)
+                continue
             if not job.schedule:
                 self.logger.debug('[%s] No schedule defined, manual triggers only' % job.name)
                 continue
@@ -645,7 +653,7 @@ class Scheduler():
         self.running_runs.append(run)
         if run.concurrency_group:
             self.running_groups[run.concurrency_group].append(run)
-        if run.respawn and job.schedule:
+        if HAS_CRONITER and run.respawn and job.schedule:
             run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'

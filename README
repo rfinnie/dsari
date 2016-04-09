@@ -1,22 +1,27 @@
-dsari - Do Something and Record It
-==================================
+
+
+DSARI - DO SOMETHING AND RECORD IT
+
 
 dsari is a lightweight continuous integration (CI) system. It provides
 scheduling, concurrency management and trigger capabilities, and is easy
 to configure. Job scheduling is handled via dsari-daemon, while
 dsari-render may be used to format job run information as HTML.
 
+
 Requirements
-------------
 
 dsari requires Python 2.7 or later, and will run on Unix-based
 platforms. It requires the following non-core modules:
 
 -   croniter, for parsing cron-style schedule definitions
+    -   If not installed, dsari-daemon will run, but will not process
+        scheduled runs (i.e. manual triggers only)
 -   Jinja2, for rendering HTML reports
+    -   Not required if you only intend to use dsari-daemon
+
 
 Installation
-------------
 
 dsari may be installed as any normal Python package:
 
@@ -41,8 +46,8 @@ data directories will be ~/.dsari/etc/ and ~/.dsari/var/, respectively.
 The rest of these documents assume a locally-running setup, i.e.
 ~/.dsari/.
 
+
 Configuration
--------------
 
 A basic configuration for dsari.json looks as follows:
 
@@ -58,8 +63,8 @@ A basic configuration for dsari.json looks as follows:
 This defines a job named "sample-job", which is run every 5 minutes.
 Many more configuration options are available in the doc/ directory.
 
+
 Running
--------
 
 Once dsari is configured, run dsari-daemon. By default, dsari-daemon
 will run in the foreground, and can be used with a supervisor (upstart,
@@ -95,15 +100,15 @@ setups:
     EXECUTOR_NUMBER=0
     WORKSPACE=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
 
+
 Reports
--------
 
 To render HTML reports, run dsari-render occasionally. This will produce
 a series of HTML files in ~/.dsari/var/html/. You may then serve these
 files, rsync them to a remote server, etc.
 
+
 License
--------
 
 dsari - Do Something and Record It
 

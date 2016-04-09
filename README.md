@@ -10,7 +10,9 @@ dsari requires Python 2.7 or later, and will run on Unix-based platforms.
 It requires the following non-core modules:
 
   - [`croniter`](https://pypi.python.org/pypi/croniter/), for parsing cron-style schedule definitions
+    - If not installed, `dsari-daemon` will run, but will not process scheduled runs (i.e. manual triggers only)
   - [`Jinja2`](http://jinja.pocoo.org/), for rendering HTML reports
+    - Not required if you only intend to use `dsari-daemon`
 
 ## Installation
 
