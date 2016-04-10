@@ -28,7 +28,10 @@ from . import utils
 
 __version__ = '1.2.0'
 
-if __file__.startswith('/usr/lib'):
+if 'DSARI_HOME' in os.environ:
+    DEFAULT_CONFIG_DIR = os.path.join(os.environ['DSARI_HOME'], 'etc')
+    DEFAULT_DATA_DIR = os.path.join(os.environ['DSARI_HOME'], 'var')
+elif __file__.startswith('/usr/lib'):
     DEFAULT_CONFIG_DIR = '/etc/dsari'
     DEFAULT_DATA_DIR = '/var/lib/dsari'
 elif __file__.startswith('/usr/local/lib'):
