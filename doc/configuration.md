@@ -135,7 +135,7 @@ Default: true
 
 If false, the job and all of its runs will be hidden from `dsari-render`.
 
-### render_reports
+### jenkins_environment
 
     "jenkins_environment": true
 
@@ -155,7 +155,7 @@ If true, several extra environment variables are available to the run, to aid wi
 These values may not be ideal in all situations (e.g. a migrated Jenkins job may expect a VCS checkout in `WORKSPACE`), but are present for maximum Jenkins compatibility.
 They can be individually overridden by explicit `environment` options.
 
-### sample-job
+### job_group
 
 Default: null
 
