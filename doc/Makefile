@@ -1,4 +1,4 @@
-MARKDOWN=dsari-daemon.md dsari-render.md
+MARKDOWN=dsari-daemon.md dsari-render.md dsari-info.md
 MAN=$(patsubst %.md,%.1,$(MARKDOWN)) 
 
 all: man

@@ -1,0 +1,76 @@
+.TH "DSARI\-INFO" "1" "" "" "dsari"
+.SH NAME
+.PP
+dsari\-info \- dsari job/run information
+.SH SYNOPSIS
+.PP
+dsari\-info \f[I]argument\f[] [\f[I]options\f[]]
+.SH DESCRIPTION
+.PP
+\f[C]dsari\-info\f[] lets you filter and output the dsari job
+configuration and run data.
+.SH ARGUMENTS
+.TP
+.B dump\-config
+Dump a compiled, assembled configuration.
+.RS
+.PP
+Options: none
+.RE
+.TP
+.B list\-jobs
+List known jobs.
+Note that while \f[I]list\-jobs\f[] \f[I]\-\-format=json\f[] looks like
+a valid job configuration array for dsari.json, it is not guaranteed to
+be.
+For a guaranteed loadable configuration, use \f[I]dump\-config\f[].
+.RS
+.PP
+Options: \f[I]\-\-job\f[], \f[I]\-\-format\f[]
+.RE
+.TP
+.B list\-runs
+List recorded runs.
+.RS
+.PP
+Options: \f[I]\-\-job\f[], \f[I]\-\-run\f[], \f[I]\-\-format\f[],
+\f[I]\-\-epoch\f[]
+.RE
+.SH OPTIONS
+.TP
+.B \-\-config\-dir=\f[I]directory\f[], \-c \f[I]directory\f[]
+Base configuration directory.
+A file named \f[C]dsari.json\f[] is expected in this directory.
+.RS
+.RE
+.TP
+.B \-\-job=\f[I]job_name\f[] [\-\-job=\f[I]job_name\f[]]
+Job name to filter.
+Can be given multiple times.
+.RS
+.RE
+.TP
+.B \-\-run=\f[I]run_id\f[] [\-\-run=\f[I]run_id\f[]]
+Run ID to filter.
+Can be given multiple times.
+.RS
+.RE
+.TP
+.B \-\-format=\f[I]format\f[]
+Output format to present data in.
+Valid values: \f[I]tabular\f[] (default), \f[I]json\f[], \f[I]yaml\f[].
+.RS
+.RE
+.TP
+.B \-\-epoch
+Output times in Unix epoch format (seconds since 1970\-01\-01), instead
+of ISO 8601.
+.RS
+.RE
+.SH SEE ALSO
+.IP \[bu] 2
+\f[C]dsari\-daemon\f[]
+.IP \[bu] 2
+dsari (https://github.com/rfinnie/dsari)
+.SH AUTHORS
+Ryan Finnie.
