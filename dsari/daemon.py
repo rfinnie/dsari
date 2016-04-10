@@ -420,8 +420,11 @@ class Scheduler():
             command.append(run.id)
 
         # chdir to the run directory
-        os.chdir(os.path.join(self.config.data_dir, 'runs', job.name, run.id))
-        environ['PWD'] = os.path.join(self.config.data_dir, 'runs', job.name, run.id)
+        run_pwd = os.path.join(self.config.data_dir, 'runs', job.name, run.id)
+        if ('PWD' in environ) and os.path.isdir(environ['PWD']):
+            run_pwd = environ['PWD']
+        os.chdir(run_pwd)
+        environ['PWD'] = run_pwd
 
         # Close any remaining open filehandles.  At this point it should
         # just be /dev/urandom (usually on fd 4), but it's not worth it to

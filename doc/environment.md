@@ -13,6 +13,7 @@ The following variables should always be present in a run:
 
     LOGNAME=user
     HOME=/home/user
+    PWD=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
     PATH=/usr/bin:/bin
     JOB_NAME=sample-job
     RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
@@ -21,6 +22,12 @@ The following variables should always be present in a run:
 
 Username and home directory of the running user.
 This should be present in almost all cases, but if `dsari-daemon` cannot determine the running user from the system password database, they will not be set.
+
+### PWD
+
+Working directory of the current run, same as the cwd when the run command is started.
+Shells such as bash will modify PWD when the directory is changed, but compiled programs and other scripting languages will not.
+PWD may be set in the job configuration and/or trigger environment to set the initial cwd of the run.
 
 ### PATH
 
