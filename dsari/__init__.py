@@ -26,7 +26,7 @@ import uuid
 
 from . import utils
 
-__version__ = '1.2.0'
+__version__ = '1.2.0.1dev'
 
 if 'DSARI_HOME' in os.environ:
     DEFAULT_CONFIG_DIR = os.path.join(os.environ['DSARI_HOME'], 'etc')
