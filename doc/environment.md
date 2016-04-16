@@ -17,6 +17,9 @@ The following variables should always be present in a run:
     PATH=/usr/bin:/bin
     JOB_NAME=sample-job
     RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    SCHEDULE_TIME=1460822675.99
+    START_TIME=1460822677.34
+    TRIGGER_TYPE=schedule
 
 ### LOGNAME / HOME
 
@@ -41,6 +44,18 @@ The defined name of the running job.
 ### RUN_ID
 
 An automatically created UUID to uniquely identify the run.
+
+### SCHEDULE_TIME
+
+Unix epoch time when the run was scheduled or triggered.
+
+### START_TIME
+
+Unix epoch time when the run actually began, sometime after SCHEDULE_TIME.
+
+### TRIGGER_TYPE
+
+The type of event which triggered the run, either "schedule" or "file".
 
 ## Conditional
 

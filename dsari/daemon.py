@@ -366,6 +366,9 @@ class Scheduler():
 
         environ['JOB_NAME'] = job.name
         environ['RUN_ID'] = run.id
+        environ['SCHEDULE_TIME'] = str(run.schedule_time)
+        environ['START_TIME'] = str(run.start_time)
+        environ['TRIGGER_TYPE'] = run.trigger_type
         if run.concurrency_group:
             environ['CONCURRENCY_GROUP'] = run.concurrency_group.name
         if run.previous_run:
