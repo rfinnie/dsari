@@ -15,7 +15,7 @@ configuration and run data.
 Dump a compiled, assembled configuration.
 .RS
 .PP
-Options: none
+Options: \f[I]\-\-raw\f[]
 .RE
 .TP
 .B list\-jobs
@@ -65,6 +65,12 @@ Valid values: \f[I]tabular\f[] (default), \f[I]json\f[], \f[I]yaml\f[].
 .B \-\-epoch
 Output times in Unix epoch format (seconds since 1970\-01\-01), instead
 of ISO 8601.
+.RS
+.RE
+.TP
+.B \-\-raw
+For \f[I]dump\-config\f[], instead of a compiled/normalized config,
+output the raw JSON config.
 .RS
 .RE
 .SH SEE ALSO

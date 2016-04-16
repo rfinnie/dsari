@@ -17,7 +17,7 @@ dsari-info *argument* [*options*]
 dump-config
 :   Dump a compiled, assembled configuration.
 
-    Options: none
+    Options: *--raw*
 
 list-jobs
 :   List known jobs.
@@ -51,6 +51,9 @@ list-runs
 
 --epoch
 :   Output times in Unix epoch format (seconds since 1970-01-01), instead of ISO 8601.
+
+--raw
+:   For *dump-config*, instead of a compiled/normalized config, output the raw JSON config.
 
 # SEE ALSO
 

@@ -65,9 +65,13 @@ def parse_args():
         'list-runs',
         help='list runs',
     )
-    subparsers.add_parser(
+    parser_dump_config = subparsers.add_parser(
         'dump-config',
         help='dump a compiled version of the loaded config'
+    )
+    parser_dump_config.add_argument(
+        '--raw', action='store_true',
+        help='output raw config instead of compiled/normalized config',
     )
 
     for p in (parser_list_jobs, parser_list_runs):
@@ -133,14 +137,17 @@ class Info():
 
     def main(self):
         if self.args.subcommand == 'dump-config':
-            config = {
-                'jobs': self.dump_jobs(),
-                'concurrency_groups': {},
-            }
-            for concurrency_group in self.config.concurrency_groups:
-                config['concurrency_groups'][concurrency_group] = {
-                    'max': self.config.concurrency_groups[concurrency_group].max,
+            if self.args.raw:
+                config = self.config.raw_config
+            else:
+                config = {
+                    'jobs': self.dump_jobs(),
+                    'concurrency_groups': {},
                 }
+                for concurrency_group in self.config.concurrency_groups:
+                    config['concurrency_groups'][concurrency_group] = {
+                        'max': self.config.concurrency_groups[concurrency_group].max,
+                    }
             print json_pretty_print(config)
         elif self.args.subcommand == 'list-jobs':
             if self.args.job:
