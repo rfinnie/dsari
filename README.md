@@ -88,7 +88,7 @@ You may then serve these files, rsync them to a remote server, etc.
 
 dsari - Do Something and Record It
 
-Copyright (C) 2015 [Ryan Finnie](http://www.finnie.org/)
+Copyright (C) 2015-2016 [Ryan Finnie](http://www.finnie.org/)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

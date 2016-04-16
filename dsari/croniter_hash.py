@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # croniter_hash - Extend croniter with hash support
-# Copyright (C) 2015 Ryan Finnie
+# Copyright (C) 2015-2016 Ryan Finnie
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
