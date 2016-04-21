@@ -153,7 +153,7 @@ class Info():
                         'max': self.config.concurrency_groups[concurrency_group].max,
                     }
             print json_pretty_print(config)
-        if self.args.subcommand == 'check-config':
+        elif self.args.subcommand == 'check-config':
             print 'Config OK'
         elif self.args.subcommand == 'list-jobs':
             if self.args.job:
