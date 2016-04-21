@@ -95,6 +95,10 @@ class Run():
         return '<Run %s (%s)>' % (self.id, self.job.name)
 
 
+class ConfigError(RuntimeError):
+    pass
+
+
 class Config():
     def __init__(self):
         self.raw_config = {}
@@ -108,10 +112,24 @@ class Config():
         self.shutdown_kill_runs = False
         self.shutdown_kill_grace = None
 
+    def is_valid_name(self, job_name):
+        if '/' in job_name:
+            return False
+        if job_name in ('.', '..'):
+            return False
+        if len(job_name) > 64:
+            return False
+        if not re.search('^([- A-Za-z0-9_+.:@]+)$', job_name):
+            return False
+        return True
+
     def load_dir(self, config_dir=DEFAULT_CONFIG_DIR):
         config = {}
         if os.path.exists(os.path.join(config_dir, 'dsari.json')):
-            config = utils.json_load_file(os.path.join(config_dir, 'dsari.json'))
+            try:
+                config = utils.json_load_file(os.path.join(config_dir, 'dsari.json'))
+            except ValueError as e:
+                raise ConfigError(e)
         self.config_d = os.path.join(config_dir, 'config.d')
         if 'config_d' in config:
             self.config_d = config['config_d']
@@ -126,13 +144,44 @@ class Config():
             ]
             config_files.sort()
             for file in config_files:
-                config = utils.dict_merge(config, utils.json_load_file(file))
+                try:
+                    config = utils.dict_merge(config, utils.json_load_file(file))
+                except ValueError as e:
+                    raise ConfigError(e)
         self.load(config)
 
     def load(self, config):
+        valid_values = {
+            'data_dir': (str, unicode),
+            'template_dir': (str, unicode),
+            'report_html_gz': (str, unicode),
+            'shutdown_kill_runs': (bool,),
+            'shutdown_kill_grace': (int, float),
+        }
+        valid_values_job = {
+            'command': (list,),
+            'schedule': (type(None), str, unicode),
+            'max_execution': (int, float),
+            'max_execution_grace': (int, float),
+            'environment': (dict,),
+            'render_reports': (bool,),
+            'command_append_run': (bool,),
+            'jenkins_environment': (bool,),
+            'job_group': (str, unicode),
+            'concurrent_runs': (bool,),
+        }
+        valid_values_concurrency_group = {
+            'max': (int,),
+        }
         self.raw_config = config
-        for k in ('data_dir', 'template_dir', 'report_html_gz', 'shutdown_kill_runs', 'shutdown_kill_grace'):
+        for k in valid_values.keys():
             if k in config:
+                if type(config[k]) not in valid_values[k]:
+                    raise ConfigError('%s: Invalid value %s (expected %s)' % (
+                        k,
+                        repr(type(config[k])),
+                        repr(valid_values[k]))
+                    )
                 setattr(self, k, config[k])
 
         concurrency_groups = {}
@@ -140,9 +189,18 @@ class Config():
             concurrency_groups = config['concurrency_groups']
 
         for concurrency_group_name in concurrency_groups.keys():
+            if not self.is_valid_name(concurrency_group_name):
+                raise ConfigError('Concurrency group %s: Invalid name' % concurrency_group_name)
             concurrency_group = ConcurrencyGroup(concurrency_group_name)
-            for k in ('max',):
+            for k in valid_values_concurrency_group.keys():
                 if k in concurrency_groups[concurrency_group_name]:
+                    if type(concurrency_groups[concurrency_group_name][k]) not in valid_values_concurrency_group[k]:
+                        raise ConfigError('Concurrency group %s: %s: Invalid value %s (expected %s)' % (
+                            concurrency_group_name,
+                            k,
+                            repr(type(concurrency_groups[concurrency_group_name][k])),
+                            repr(valid_values_concurrency_group[k]))
+                        )
                     setattr(concurrency_group, k, concurrency_groups[concurrency_group_name][k])
             self.concurrency_groups[concurrency_group_name] = concurrency_group
 
@@ -154,37 +212,38 @@ class Config():
             job_groups = config['job_groups']
 
         for job_group_name in job_groups:
+            if not self.is_valid_name(job_group_name):
+                raise ConfigError('Job group %s: Invalid name' % job_group_name)
             job_template = copy.deepcopy(job_groups[job_group_name])
             if 'job_names' not in job_template:
-                continue
+                raise ConfigError('Job group %s: job_names required' % job_group_name)
             for job_name in job_template['job_names']:
                 jobs[job_name] = copy.deepcopy(job_template)
                 jobs[job_name]['job_group'] = job_group_name
                 del(jobs[job_name]['job_names'])
 
         for job_name in jobs.keys():
-            if '/' in job_name:
-                continue
-            if job_name in ('.', '..'):
-                continue
+            if not self.is_valid_name(job_name):
+                raise ConfigError('Job %s: Invalid name' % job_name)
             if 'command' not in jobs[job_name]:
-                continue
-            if type(jobs[job_name]['command']) != list:
-                continue
-            if (len(job_name) > 64) or (not re.search('^([- A-Za-z0-9_+.:@]+)$', job_name)):
-                continue
+                raise ConfigError('Job %s: command required' % job_name)
             job = Job(job_name)
-            for k in (
-                'command', 'schedule', 'max_execution', 'max_execution_grace',
-                'environment', 'render_reports', 'command_append_run',
-                'jenkins_environment', 'job_group', 'concurrent_runs'
-            ):
+            for k in valid_values_job.keys():
                 if k in jobs[job_name]:
+                    if type(jobs[job_name][k]) not in valid_values_job[k]:
+                        raise ConfigError('Job %s: %s: Invalid value %s (expected %s)' % (
+                            job_name,
+                            k,
+                            repr(type(jobs[job_name][k])),
+                            repr(valid_values_job[k]))
+                        )
                     setattr(job, k, jobs[job_name][k])
             job_concurrency_group_names = []
             if 'concurrency_groups' in jobs[job_name]:
                 job_concurrency_group_names = jobs[job_name]['concurrency_groups']
             for concurrency_group_name in job_concurrency_group_names:
+                if not self.is_valid_name(concurrency_group_name):
+                    raise ConfigError('Concurrency group %s: Invalid name' % job_group_name)
                 if concurrency_group_name not in self.concurrency_groups:
                     self.concurrency_groups[concurrency_group_name] = ConcurrencyGroup(concurrency_group_name)
                 job.concurrency_groups[concurrency_group_name] = self.concurrency_groups[concurrency_group_name]
