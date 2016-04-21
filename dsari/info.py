@@ -66,6 +66,10 @@ def parse_args():
         help='list runs',
     )
     parser_dump_config = subparsers.add_parser(
+        'check-config',
+        help='validate configuration'
+    )
+    parser_dump_config = subparsers.add_parser(
         'dump-config',
         help='dump a compiled version of the loaded config'
     )
@@ -149,6 +153,8 @@ class Info():
                         'max': self.config.concurrency_groups[concurrency_group].max,
                     }
             print json_pretty_print(config)
+        if self.args.subcommand == 'check-config':
+            print 'Config OK'
         elif self.args.subcommand == 'list-jobs':
             if self.args.job:
                 jobs = self.dump_jobs(self.args.job)

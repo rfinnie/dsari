@@ -14,6 +14,11 @@ dsari-info *argument* [*options*]
 
 # ARGUMENTS
 
+check-config
+:   Check the configuration, return 0 for a valid configuration or 1 for invalid.
+
+    Options: None
+
 dump-config
 :   Dump a compiled, assembled configuration.
 
