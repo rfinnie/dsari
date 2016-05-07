@@ -173,7 +173,7 @@ class Config():
         valid_values_concurrency_group = {
             'max': (int,),
         }
-        self.raw_config = config
+        self.raw_config = copy.deepcopy(config)
         for k in valid_values.keys():
             if k in config:
                 if type(config[k]) not in valid_values[k]:
