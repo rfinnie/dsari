@@ -131,7 +131,7 @@ A list of [concurrency groups](concurrency.md) the job is a member of.
 
 Default: true
 
-    "render_reports:" false
+    "render_reports": false
 
 If false, the job and all of its runs will be hidden from `dsari-render`.
 
