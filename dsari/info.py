@@ -23,6 +23,7 @@ import json
 import sqlite3
 import argparse
 import datetime
+import pipes
 
 try:
     import yaml
@@ -171,7 +172,7 @@ class Info():
                     print '%s\t%s\t%s' % (
                         job_name,
                         schedule,
-                        ' '.join(job['command']),
+                        ' '.join([pipes.quote(x) for x in job['command']]),
                     )
         elif self.args.subcommand == 'list-runs':
             job_names = self.args.job
