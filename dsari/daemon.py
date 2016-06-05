@@ -364,8 +364,10 @@ class Scheduler():
         else:
             environ['PATH'] = '/usr/bin:/bin'
 
+        environ['DATA_DIR'] = self.config.data_dir
         environ['JOB_NAME'] = job.name
         environ['RUN_ID'] = run.id
+        environ['RUN_DIR'] = os.path.join(self.config.data_dir, 'runs', job.name, run.id)
         environ['SCHEDULE_TIME'] = str(run.schedule_time)
         environ['START_TIME'] = str(run.start_time)
         environ['TRIGGER_TYPE'] = run.trigger_type

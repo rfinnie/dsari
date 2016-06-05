@@ -37,9 +37,20 @@ PWD may be set in the job configuration and/or trigger environment to set the in
 Inherited from the process calling `dsari-daemon`.
 If it cannot be determined, it's set to "/usr/bin:/bin".
 
+### DATA_DIR
+
+The configured data base directory.
+This may be used to construct a trigger path (${DATA_DIR}/trigger/${OTHER_JOB}/trigger.json) for cascading job runs.
+
 ### JOB_NAME
 
 The defined name of the running job.
+
+### JOB_DIR
+
+The directory used by the run for storing the execution output (output.txt).
+By default, this will be the same as PWD at command execution time, but shells will usually update PWD when the cwd is changed during the script (see above).
+PWD may also be defined by the job and/or trigger and hence may be different at command execution time, so JOB_DIR may be easily referred to for knowing where output.txt is stored.
 
 ### RUN_ID
 
