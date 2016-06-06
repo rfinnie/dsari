@@ -66,7 +66,7 @@ def parse_args():
         'list-runs',
         help='list runs',
     )
-    parser_dump_config = subparsers.add_parser(
+    subparsers.add_parser(
         'check-config',
         help='validate configuration'
     )
