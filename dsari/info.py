@@ -166,7 +166,7 @@ class Info():
             elif self.args.format == 'yaml':
                 print yaml.safe_dump(jobs, default_flow_style=False)
             else:
-                for job_name in jobs:
+                for job_name in sorted(jobs):
                     job = jobs[job_name]
                     schedule = job['schedule'] or ''
                     print '%s\t%s\t%s' % (
@@ -185,7 +185,7 @@ class Info():
             elif self.args.format == 'yaml':
                 print yaml.safe_dump(runs, default_flow_style=False)
             else:
-                for run_id in runs:
+                for run_id in sorted(runs, key=lambda run: runs[run]['start_time']):
                     run = runs[run_id]
                     print '%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
                         run_id,
