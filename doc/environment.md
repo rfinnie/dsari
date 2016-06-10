@@ -46,15 +46,15 @@ This may be used to construct a trigger path (${DATA_DIR}/trigger/${OTHER_JOB}/t
 
 The defined name of the running job.
 
-### JOB_DIR
-
-The directory used by the run for storing the execution output (output.txt).
-By default, this will be the same as PWD at command execution time, but shells will usually update PWD when the cwd is changed during the script (see above).
-PWD may also be defined by the job and/or trigger and hence may be different at command execution time, so JOB_DIR may be easily referred to for knowing where output.txt is stored.
-
 ### RUN_ID
 
 An automatically created UUID to uniquely identify the run.
+
+### RUN_DIR
+
+The directory used by the run for storing the execution output (output.txt).
+By default, this will be the same as PWD at command execution time, but shells will usually update PWD when the cwd is changed during the script (see above).
+PWD may also be defined by the job and/or trigger and hence may be different at command execution time, so RUN_DIR may be easily referred to for knowing where output.txt is stored.
 
 ### SCHEDULE_TIME
 
