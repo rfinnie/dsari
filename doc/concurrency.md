@@ -137,5 +137,5 @@ The above example can be simplified using job groups, since they all have the sa
         }
     }
 
-If a scheduled run cannot be started due to concurrency limits, it is retried later on an exponential backoff scale, up to 5 minutes in the future.
+If a scheduled run cannot be started due to concurrency limits, it will be retried until there is a free concurrency group, on an exponential backoff scale (maximum 5 minutes between attempts).
 If a job is configured for multiple concurrency groups, it will not be backed off unless all groups have reached their max.
