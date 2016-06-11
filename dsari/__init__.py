@@ -111,6 +111,7 @@ class Config():
         self.report_html_gz = False
         self.shutdown_kill_runs = False
         self.shutdown_kill_grace = None
+        self.environment = {}
 
     def is_valid_name(self, job_name):
         if '/' in job_name:
@@ -157,6 +158,7 @@ class Config():
             'report_html_gz': (str, unicode),
             'shutdown_kill_runs': (bool,),
             'shutdown_kill_grace': (int, float),
+            'environment': (dict,),
         }
         valid_values_job = {
             'command': (list,),

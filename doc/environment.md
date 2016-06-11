@@ -162,15 +162,41 @@ Always set to "master".
 
 Set to the run directory (cwd of the run).
 
+## Global-Defined Configuration
+
+The global dsari.json may have multiple arbitrary variables set for all jobs' runs in the installation.
+For example:
+
+    {
+        "environment": {
+            "INSTALLATION_LOCATION": "dc-west",
+            "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        }
+    }
+
+would produce:
+
+    INSTALLATION_LOCATION=dc-west
+    PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin/sbin
+
+Globally-defined variables always override automatically-generated variables.
+In certain situations this is desirable (for example, PATH), but it wouldn't be a good idea to override e.g. RUN_ID.
+
 ## Job-Defined
 
 The run can have multiple arbitrary variables set as defined in the job's JSON.
 For example:
 
-    "environment": {
-        "JOB_LOCATION": "datacenter",
-        "JOB_CONTACT": "Jane User <jane@example.com>",
-        "PATH": "/usr/local/bin:/usr/bin:/bin"
+    {
+        "jobs": {
+            "example_job": {
+                "environment": {
+                    "JOB_LOCATION": "datacenter",
+                    "JOB_CONTACT": "Jane User <jane@example.com>",
+                    "PATH": "/usr/local/bin:/usr/bin:/bin"
+                }
+            }
+        }
     }
 
 would produce:
@@ -179,8 +205,7 @@ would produce:
     JOB_CONTACT="Jane User <jane@example.com>"
     PATH=/usr/local/bin:/usr/bin:/bin
 
-Job-defined variables always override automatically-generated variables.
-In certain situations this is desirable (for example, PATH), but it wouldn't be a good idea to override e.g. RUN_ID.
+Job-defined variables always override globally-defined and automatically-generated variables.
 
 ## Trigger-Defined
 
@@ -201,4 +226,4 @@ would produce:
     GIT_COMMIT=d1700a76c4e703040fa4545c9a40d702fb23e8eb
     GIT_AUTHOR="Joe User <joe@example.com>"
 
-Trigger-defined variables always override job-defined and automatically-generated variables.
+Trigger-defined variables always override job-defined, globally-defined and automatically-generated variables.

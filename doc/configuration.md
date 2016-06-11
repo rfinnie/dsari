@@ -31,6 +31,16 @@ Default: *varies by installation*
 
 Overridden path to the data (var) directory.
 
+### environment
+
+    "environment": {
+        "ENV_NAME": "value"
+    }
+
+Default: {}
+
+An associative array of environment variables to be set for all jobs' runs.
+
 ### shutdown_kill_runs
 
     "shutdown_kill_runs": true

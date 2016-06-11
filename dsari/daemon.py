@@ -402,6 +402,8 @@ class Scheduler():
             environ['JENKINS_URL'] = 'file://%s' % os.path.join(self.config.data_dir, '')
             environ['EXECUTOR_NUMBER'] = '0'
             environ['WORKSPACE'] = os.path.join(self.config.data_dir, 'runs', job.name, run.id)
+        for (key, val) in self.config.environment.items():
+            environ[str(key)] = str(val)
         for (key, val) in job.environment.items():
             environ[str(key)] = str(val)
         if 'environment' in run.trigger_data:
