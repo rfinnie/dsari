@@ -149,6 +149,16 @@ class Info():
                     'jobs': self.dump_jobs(),
                     'concurrency_groups': {},
                 }
+                for attr in (
+                    'config_d',
+                    'data_dir',
+                    'template_dir',
+                    'report_html_gz',
+                    'shutdown_kill_runs',
+                    'shutdown_kill_grace',
+                    'environment',
+                ):
+                    config[attr] = getattr(self.config, attr)
                 for concurrency_group in self.config.concurrency_groups:
                     config['concurrency_groups'][concurrency_group] = {
                         'max': self.config.concurrency_groups[concurrency_group].max,
