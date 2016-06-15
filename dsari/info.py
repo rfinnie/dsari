@@ -66,6 +66,10 @@ def parse_args():
         'list-runs',
         help='list runs',
     )
+    parser_get_output = subparsers.add_parser(
+        'get-run-output',
+        help='get run output',
+    )
     subparsers.add_parser(
         'check-config',
         help='validate configuration'
@@ -89,6 +93,11 @@ def parse_args():
             default='tabular',
             help='output format',
         )
+
+    parser_get_output.add_argument(
+        'run', type=str, default=None,
+        help='run UUID',
+    )
 
     parser_list_runs.add_argument(
         '--run', type=str, action='append',
@@ -207,11 +216,22 @@ class Info():
                         run['stop_time'],
                     )
 
+        elif self.args.subcommand == 'get-run-output':
+            run_id = self.args.run
+            runs = self.get_runs(runs=[run_id])
+            if len(runs) == 0:
+                self.args.parser.error('Cannot find run ID %s' % run_id)
+            run = runs[run_id]
+            fn = os.path.join(self.config.data_dir, 'runs', run['job_name'], run_id, 'output.txt')
+            with open(fn) as f:
+                for l in f:
+                    print l,
+
     def time_format(self, epoch):
-        if self.args.epoch:
-            return epoch
-        else:
+        if hasattr(self.args, 'epoch') and (not self.args.epoch):
             return datetime.datetime.fromtimestamp(epoch).isoformat()
+        else:
+            return epoch
 
     def get_runs(self, jobs=None, runs=None):
         if runs is not None:
