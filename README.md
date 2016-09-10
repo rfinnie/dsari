@@ -7,12 +7,14 @@ Job scheduling is handled via `dsari-daemon`, while `dsari-render` may be used t
 ## Requirements
 
 dsari requires Python 2.7 or later, and will run on Unix-based platforms.
-It requires the following non-core modules:
+It uses the following non-core packages:
 
-  - [`croniter`](https://pypi.python.org/pypi/croniter/), for parsing cron-style schedule definitions
-    - If not installed, `dsari-daemon` will run, but will not process scheduled runs (i.e. manual triggers only)
-  - [`Jinja2`](http://jinja.pocoo.org/), for rendering HTML reports
-    - Not required if you only intend to use `dsari-daemon`
+  - [`croniter`](https://pypi.python.org/pypi/croniter), for parsing cron-style schedule definitions
+  - [`python-dateutil`](https://pypi.python.org/pypi/python-dateutil), for parsing iCalendar RRULE-style schedule definitions
+  - [`Jinja2`](https://pypi.python.org/pypi/Jinja2), for rendering HTML reports
+
+If neither `croniter` nor `python-dateutil` are installed, `dsari-daemon` will run, but it will not process scheduled runs (i.e. manual triggers only).
+Jinja2 is only required if you intend to use `dsari-render`.
 
 ## Installation
 

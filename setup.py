@@ -36,6 +36,7 @@ setup(
     ],
     install_requires=[
         'croniter',
+        'python-dateutil',
         'Jinja2>=2.4',
     ],
     entry_points={

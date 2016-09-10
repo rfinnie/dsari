@@ -21,7 +21,6 @@
 import os
 import copy
 import re
-import binascii
 import uuid
 
 from . import utils
@@ -56,7 +55,6 @@ class Job():
         self.name = name
         self.command = []
         self.schedule = None
-        self.subsecond_offset = 0.0
         self.concurrency_groups = {}
         self.max_execution = None
         self.max_execution_grace = 60.0
@@ -256,8 +254,4 @@ class Config():
                 if concurrency_group_name not in self.concurrency_groups:
                     self.concurrency_groups[concurrency_group_name] = ConcurrencyGroup(concurrency_group_name)
                 job.concurrency_groups[concurrency_group_name] = self.concurrency_groups[concurrency_group_name]
-            if job.schedule:
-                job.subsecond_offset = float(binascii.crc32(job.name.encode('utf-8')) & 0xffffffff) / float(2**32)
-                if len(job.schedule.split(' ')) == 5:
-                    job.schedule = job.schedule + ' H'
             self.jobs[job.name] = job

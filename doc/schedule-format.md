@@ -1,6 +1,10 @@
 # Schedule Format
 
-dsari's scheduler supports the standard 5-field [cron syntax](https://en.wikipedia.org/wiki/Cron), with an optional 6th field as seconds:
+dsari's scheduler supports several scheduling formats.
+
+## Cron Syntax
+
+When the `croniter` Python package is installed, dsari's scheduler supports the standard 5-field [cron syntax](https://en.wikipedia.org/wiki/Cron), with an optional 6th field as seconds:
 
     * * * * * *
     └─│─│─│─│─│── Minute [0-59]
@@ -57,3 +61,29 @@ Here are a few examples of the extended syntax:
     @annually
     @yearly
     # Aliases for: H H H H *
+
+## iCalendar RRULE
+
+When the `python-dateutil` Python package is installed, dsari's scheduler supports the [iCalendar](https://tools.ietf.org/html/rfc5545) RRULE syntax.
+This syntax allows for more expansive expressions than the cron syntax, though the format is complex and not as well understood by most people.
+
+Here are a few examples:
+
+    RRULE:FREQ=MINUTELY;INTERVAL=5
+    # Every 5 minutes
+
+    RRULE:FREQ=DAILY
+    # Daily
+
+    RRULE:FREQ=DAILY;BYDAY=MO,TH;BYHOUR=14;BYMINUTE=30
+    # Each Monday and Thursday, at 14:30
+
+    RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1
+    # The last weekday of the month
+
+When a position is not supplied, it is hashed according to the job name.
+For example, "RRULE:FREQ=DAILY" is the same as "H H * * *", and the job will run at the same hour/minute/second each day.
+For more information about job name hashing, see above.
+
+dsari's scheduler support nearly all RRULE properties defined by RFC 5545 (or more accurately, supported by `python-dateutil`).
+Notable property not supported by dsari are COUNT and UNTIL; do not attempt to set these in the schedule.

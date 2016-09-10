@@ -29,6 +29,8 @@ import sqlite3
 import argparse
 import copy
 import pwd
+import datetime
+import binascii
 
 import dsari
 
@@ -38,7 +40,39 @@ try:
 except ImportError:
     HAS_CRONITER = False
 
+try:
+    import dateutil.rrule
+    HAS_DATEUTIL = True
+except ImportError:
+    HAS_DATEUTIL = False
+
 __version__ = dsari.__version__
+
+
+def get_next_schedule_time(schedule, job_name, start_time=None):
+    if start_time is None:
+        start_time = time.time()
+    crc = binascii.crc32(job_name.encode('utf-8')) & 0xffffffff
+    subsecond_offset = float(crc) / float(2**32)
+    if schedule.startswith('RRULE:'):
+        if not HAS_DATEUTIL:
+            raise ImportError('dateutil not available, manual triggers only')
+        hashed_epoch = datetime.datetime.fromtimestamp(start_time - (start_time % (crc % 86400)))
+        t_dt = dateutil.rrule.rrulestr(schedule, dtstart=hashed_epoch).after(datetime.datetime.fromtimestamp(start_time))
+        if t_dt is None:
+            raise ValueError('rrulestr returned None')
+        t = int(t_dt.strftime('%s')) + subsecond_offset
+        return t
+    if not HAS_CRONITER:
+        raise ImportError('croniter not available, manual triggers only')
+    if len(schedule.split(' ')) == 5:
+        schedule = schedule + ' H'
+    t = croniter_hash.croniter_hash(
+        schedule,
+        start_time=start_time,
+        hash_id=job_name
+    ).get_next() + subsecond_offset
+    return t
 
 
 def wait_deadline(pid, options, deadline, interval=0.05):
@@ -270,20 +304,13 @@ class Scheduler():
         now = time.time()
         for (job_name, job) in sorted(self.config.jobs.items()):
             self.jobs.append(job)
-            if not HAS_CRONITER:
-                self.logger.debug('[%s] croniter not available, manual triggers only' % job.name)
-                continue
             if not job.schedule:
                 self.logger.debug('[%s] No schedule defined, manual triggers only' % job.name)
                 continue
             try:
-                t = croniter_hash.croniter_hash(
-                    job.schedule,
-                    start_time=now,
-                    hash_id=job.name
-                ).get_next() + job.subsecond_offset
+                t = get_next_schedule_time(job.schedule, job.name, start_time=now)
             except Exception as e:
-                self.logger.warning('[%s] Invalid schedule: %s: %s' % (job.name, type(e), str(e)))
+                self.logger.warning('[%s] Invalid schedule (%s): %s: %s' % (job.name, job.schedule, type(e), str(e)))
                 job.schedule = None
                 continue
             run = dsari.Run(job)
@@ -663,15 +690,11 @@ class Scheduler():
         self.running_runs.append(run)
         if run.concurrency_group:
             self.running_groups[run.concurrency_group].append(run)
-        if HAS_CRONITER and run.respawn and job.schedule:
+        if run.respawn and job.schedule:
             run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'
-            t = croniter_hash.croniter_hash(
-                job.schedule,
-                start_time=now,
-                hash_id=job.name
-            ).get_next() + job.subsecond_offset
+            t = get_next_schedule_time(job.schedule, job.name, start_time=now)
             run.schedule_time = t
             self.scheduled_runs.append(run)
             self.logger.debug(
