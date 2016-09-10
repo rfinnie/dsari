@@ -85,5 +85,5 @@ When a position is not supplied, it is hashed according to the job name.
 For example, "RRULE:FREQ=DAILY" is the same as "H H * * *", and the job will run at the same hour/minute/second each day.
 For more information about job name hashing, see above.
 
-dsari's scheduler support nearly all RRULE properties defined by RFC 5545 (or more accurately, supported by `python-dateutil`).
-Notable property not supported by dsari are COUNT and UNTIL; do not attempt to set these in the schedule.
+dsari's scheduler supports nearly all RRULE properties defined by RFC 5545 (or more accurately, supported by `python-dateutil`).
+Notable properties not supported by dsari are COUNT and UNTIL; do not attempt to set these in the schedule.
