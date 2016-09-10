@@ -604,7 +604,9 @@ class Scheduler():
                     run.concurrency_group = concurrency_group
                     break
             if not run.concurrency_group:
-                self.wakeups.append(now + backoff(run.schedule_time, now))
+                backoff_time = backoff(run.schedule_time, now)
+                self.logger.debug('[%s %s] Cannot run due to concurrency limits, will try again within %s' % (job.name, run.id, backoff_time))
+                self.wakeups.append(now + backoff_time)
                 return
 
         sql_statement = """
