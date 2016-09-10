@@ -57,7 +57,7 @@ class Job():
         self.schedule = None
         self.concurrency_groups = {}
         self.max_execution = None
-        self.max_execution_grace = 60.0
+        self.max_execution_grace = utils.seconds_to_td(60.0)
         self.environment = {}
         self.render_reports = True
         self.command_append_run = False
@@ -189,7 +189,10 @@ class Config():
                         repr(type(config[k])),
                         repr(valid_values[k]))
                     )
-                setattr(self, k, config[k])
+                if k in ('shutdown_kill_grace',):
+                    setattr(self, k, utils.seconds_to_td(config[k]))
+                else:
+                    setattr(self, k, config[k])
 
         concurrency_groups = {}
         if 'concurrency_groups' in config:
@@ -244,7 +247,10 @@ class Config():
                             repr(type(jobs[job_name][k])),
                             repr(valid_values_job[k]))
                         )
-                    setattr(job, k, jobs[job_name][k])
+                    if k in ('max_execution', 'max_execution_grace'):
+                        setattr(job, k, utils.seconds_to_td(jobs[job_name][k]))
+                    else:
+                        setattr(job, k, jobs[job_name][k])
             job_concurrency_group_names = []
             if 'concurrency_groups' in jobs[job_name]:
                 job_concurrency_group_names = jobs[job_name]['concurrency_groups']

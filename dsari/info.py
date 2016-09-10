@@ -37,6 +37,7 @@ except ImportError:
     HAS_YAML = False
 
 import dsari
+from dsari.utils import td_to_seconds
 
 __version__ = dsari.__version__
 
@@ -153,6 +154,9 @@ class Info():
                 'job_group': job.job_group,
                 'concurrent_runs': job.concurrent_runs,
             }
+            for k in ('max_execution', 'max_execution_grace'):
+                if jobs[job.name][k] is not None:
+                    jobs[job.name][k] = td_to_seconds(jobs[job.name][k])
         return jobs
 
     def main(self):
@@ -174,6 +178,9 @@ class Info():
                     'environment',
                 ):
                     config[attr] = getattr(self.config, attr)
+                for attr in ('shutdown_kill_grace',):
+                    if config[attr] is not None:
+                        config[attr] = td_to_seconds(config[attr])
                 for concurrency_group in self.config.concurrency_groups:
                     config['concurrency_groups'][concurrency_group] = {
                         'max': self.config.concurrency_groups[concurrency_group].max,

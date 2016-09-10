@@ -20,6 +20,7 @@
 
 import json
 import copy
+import datetime
 
 
 def dict_merge(s, m):
@@ -42,3 +43,19 @@ def json_load_file(file):
         except ValueError as e:
             e.args += (file,)
             raise
+
+
+def seconds_to_td(seconds):
+    return datetime.timedelta(seconds=seconds)
+
+
+def td_to_seconds(td):
+    return td.total_seconds()
+
+
+def epoch_to_dt(epoch):
+    return datetime.datetime.fromtimestamp(epoch)
+
+
+def dt_to_epoch(dt):
+    return float(dt.strftime('%s')) + (float(dt.microsecond) / float(1000000))
