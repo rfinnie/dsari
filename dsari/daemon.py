@@ -401,23 +401,23 @@ class Scheduler():
         if run.concurrency_group:
             environ['CONCURRENCY_GROUP'] = run.concurrency_group.name
         if run.previous_run:
-            environ['PREVIOUS_RUN_ID'] = run.previous_run['run_id']
-            environ['PREVIOUS_SCHEDULE_TIME'] = str(run.previous_run['schedule_time'])
-            environ['PREVIOUS_START_TIME'] = str(run.previous_run['start_time'])
-            environ['PREVIOUS_STOP_TIME'] = str(run.previous_run['stop_time'])
-            environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run['exit_code'])
+            environ['PREVIOUS_RUN_ID'] = run.previous_run.id
+            environ['PREVIOUS_SCHEDULE_TIME'] = str(run.previous_run.schedule_time)
+            environ['PREVIOUS_START_TIME'] = str(run.previous_run.start_time)
+            environ['PREVIOUS_STOP_TIME'] = str(run.previous_run.stop_time)
+            environ['PREVIOUS_EXIT_CODE'] = str(run.previous_run.exit_code)
         if run.previous_good_run:
-            environ['PREVIOUS_GOOD_RUN_ID'] = run.previous_good_run['run_id']
-            environ['PREVIOUS_GOOD_SCHEDULE_TIME'] = str(run.previous_good_run['schedule_time'])
-            environ['PREVIOUS_GOOD_START_TIME'] = str(run.previous_good_run['start_time'])
-            environ['PREVIOUS_GOOD_STOP_TIME'] = str(run.previous_good_run['stop_time'])
-            environ['PREVIOUS_GOOD_EXIT_CODE'] = str(run.previous_good_run['exit_code'])
+            environ['PREVIOUS_GOOD_RUN_ID'] = run.previous_good_run.id
+            environ['PREVIOUS_GOOD_SCHEDULE_TIME'] = str(run.previous_good_run.schedule_time)
+            environ['PREVIOUS_GOOD_START_TIME'] = str(run.previous_good_run.start_time)
+            environ['PREVIOUS_GOOD_STOP_TIME'] = str(run.previous_good_run.stop_time)
+            environ['PREVIOUS_GOOD_EXIT_CODE'] = str(run.previous_good_run.exit_code)
         if run.previous_bad_run:
-            environ['PREVIOUS_BAD_RUN_ID'] = run.previous_bad_run['run_id']
-            environ['PREVIOUS_BAD_SCHEDULE_TIME'] = str(run.previous_bad_run['schedule_time'])
-            environ['PREVIOUS_BAD_START_TIME'] = str(run.previous_bad_run['start_time'])
-            environ['PREVIOUS_BAD_STOP_TIME'] = str(run.previous_bad_run['stop_time'])
-            environ['PREVIOUS_BAD_EXIT_CODE'] = str(run.previous_bad_run['exit_code'])
+            environ['PREVIOUS_BAD_RUN_ID'] = run.previous_bad_run.id
+            environ['PREVIOUS_BAD_SCHEDULE_TIME'] = str(run.previous_bad_run.schedule_time)
+            environ['PREVIOUS_BAD_START_TIME'] = str(run.previous_bad_run.start_time)
+            environ['PREVIOUS_BAD_STOP_TIME'] = str(run.previous_bad_run.stop_time)
+            environ['PREVIOUS_BAD_EXIT_CODE'] = str(run.previous_bad_run.exit_code)
         if job.job_group:
             environ['JOB_GROUP'] = str(job.job_group)
         if job.jenkins_environment:
@@ -597,7 +597,10 @@ class Scheduler():
                 schedule_time,
                 start_time,
                 stop_time,
-                exit_code
+                exit_code,
+                trigger_type,
+                trigger_data,
+                run_data
             FROM
                 runs
             WHERE
@@ -606,8 +609,19 @@ class Scheduler():
                 stop_time DESC
         """
         res = self.db_conn.execute(sql_statement, (job.name,))
-        run.previous_run = res.fetchone()
+        f = res.fetchone()
         res.close()
+        if f:
+            run.previous_run = dsari.Run(run.job, id=f['run_id'])
+            run.previous_run.schedule_time = f['schedule_time']
+            run.previous_run.start_time = f['start_time']
+            run.previous_run.stop_time = f['stop_time']
+            run.previous_run.exit_code = f['exit_code']
+            run.previous_run.trigger_type = f['trigger_type']
+            run.previous_run.trigger_data = json.loads(f['trigger_data'])
+            run.previous_run.run_data = json.loads(f['run_data'])
+        else:
+            run.previous_run = None
 
         sql_statement = """
             SELECT
@@ -615,7 +629,10 @@ class Scheduler():
                 schedule_time,
                 start_time,
                 stop_time,
-                exit_code
+                exit_code,
+                trigger_type,
+                trigger_data,
+                run_data
             FROM
                 runs
             WHERE
@@ -626,8 +643,19 @@ class Scheduler():
                 stop_time DESC
         """
         res = self.db_conn.execute(sql_statement, (job.name,))
-        run.previous_good_run = res.fetchone()
+        f = res.fetchone()
         res.close()
+        if f:
+            run.previous_good_run = dsari.Run(run.job, id=f['run_id'])
+            run.previous_good_run.schedule_time = f['schedule_time']
+            run.previous_good_run.start_time = f['start_time']
+            run.previous_good_run.stop_time = f['stop_time']
+            run.previous_good_run.exit_code = f['exit_code']
+            run.previous_good_run.trigger_type = f['trigger_type']
+            run.previous_good_run.trigger_data = json.loads(f['trigger_data'])
+            run.previous_good_run.run_data = json.loads(f['run_data'])
+        else:
+            run.previous_good_run = None
 
         sql_statement = """
             SELECT
@@ -635,7 +663,10 @@ class Scheduler():
                 schedule_time,
                 start_time,
                 stop_time,
-                exit_code
+                exit_code,
+                trigger_type,
+                trigger_data,
+                run_data
             FROM
                 runs
             WHERE
@@ -646,8 +677,19 @@ class Scheduler():
                 stop_time DESC
         """
         res = self.db_conn.execute(sql_statement, (job.name,))
-        run.previous_bad_run = res.fetchone()
+        f = res.fetchone()
         res.close()
+        if f:
+            run.previous_bad_run = dsari.Run(run.job, id=f['run_id'])
+            run.previous_bad_run.schedule_time = f['schedule_time']
+            run.previous_bad_run.start_time = f['start_time']
+            run.previous_bad_run.stop_time = f['stop_time']
+            run.previous_bad_run.exit_code = f['exit_code']
+            run.previous_bad_run.trigger_type = f['trigger_type']
+            run.previous_bad_run.trigger_data = json.loads(f['trigger_data'])
+            run.previous_bad_run.run_data = json.loads(f['run_data'])
+        else:
+            run.previous_bad_run = None
 
         if not os.path.exists(os.path.join(self.config.data_dir, 'runs', job.name, run.id)):
             os.makedirs(os.path.join(self.config.data_dir, 'runs', job.name, run.id))
