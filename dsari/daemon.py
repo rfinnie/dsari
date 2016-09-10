@@ -54,7 +54,7 @@ def get_next_schedule_time(schedule, job_name, start_time=None):
         start_time = time.time()
     crc = binascii.crc32(job_name.encode('utf-8')) & 0xffffffff
     subsecond_offset = float(crc) / float(2**32)
-    if schedule.startswith('RRULE:'):
+    if schedule.upper().startswith('RRULE:'):
         if not HAS_DATEUTIL:
             raise ImportError('dateutil not available, manual triggers only')
         hashed_epoch = datetime.datetime.fromtimestamp(start_time - (start_time % (crc % 86400)))
