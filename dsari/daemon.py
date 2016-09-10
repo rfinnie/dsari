@@ -551,7 +551,7 @@ class Scheduler():
             return
         run.concurrency_group = None
         if len(job.concurrency_groups) > 0:
-            job_concurrency_groups = job.concurrency_groups.keys()
+            job_concurrency_groups = list(job.concurrency_groups.keys())
             random.shuffle(job_concurrency_groups)
             for concurrency_group_name in job_concurrency_groups:
                 concurrency_group = job.concurrency_groups[concurrency_group_name]

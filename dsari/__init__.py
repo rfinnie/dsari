@@ -152,24 +152,31 @@ class Config():
         self.load(config)
 
     def load(self, config):
+        try:
+            # Python 2
+            str_unicode = (str, unicode)
+        except NameError:
+            # Python 3
+            str_unicode = (str, )
+
         valid_values = {
-            'data_dir': (str, unicode),
-            'template_dir': (str, unicode),
-            'report_html_gz': (str, unicode),
+            'data_dir': str_unicode,
+            'template_dir': str_unicode,
+            'report_html_gz': str_unicode,
             'shutdown_kill_runs': (bool,),
             'shutdown_kill_grace': (int, float),
             'environment': (dict,),
         }
         valid_values_job = {
             'command': (list,),
-            'schedule': (type(None), str, unicode),
+            'schedule': (type(None),) + str_unicode,
             'max_execution': (int, float),
             'max_execution_grace': (int, float),
             'environment': (dict,),
             'render_reports': (bool,),
             'command_append_run': (bool,),
             'jenkins_environment': (bool,),
-            'job_group': (str, unicode),
+            'job_group': str_unicode,
             'concurrent_runs': (bool,),
         }
         valid_values_concurrency_group = {
@@ -250,7 +257,7 @@ class Config():
                     self.concurrency_groups[concurrency_group_name] = ConcurrencyGroup(concurrency_group_name)
                 job.concurrency_groups[concurrency_group_name] = self.concurrency_groups[concurrency_group_name]
             if job.schedule:
-                job.subsecond_offset = float(binascii.crc32(job.name) & 0xffffffff) / float(2**32)
+                job.subsecond_offset = float(binascii.crc32(job.name.encode('utf-8')) & 0xffffffff) / float(2**32)
                 if len(job.schedule.split(' ')) == 5:
                     job.schedule = job.schedule + ' H'
             self.jobs[job.name] = job

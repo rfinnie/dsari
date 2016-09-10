@@ -37,7 +37,7 @@ class croniter_hash(croniter.croniter):
             range_end = self.RANGES[position][1]
         if not range_begin:
             range_begin = self.RANGES[position][0]
-        crc = binascii.crc32(id) & 0xffffffff
+        crc = binascii.crc32(id.encode('utf-8')) & 0xffffffff
         return ((crc >> position) % (range_end - range_begin + 1)) + range_begin
 
     def _hash_expand(self, expr_format, id):
@@ -117,5 +117,5 @@ if __name__ == '__main__':
     iter = croniter_hash('H(30-59)/10 H(2-5) H/3 H *', base, hash_id=id)
     print(iter.exprs)
     print(iter.expanded)
-    for i in xrange(10):
+    for i in range(10):
         print(iter.get_next(datetime))

@@ -18,12 +18,17 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+from __future__ import print_function
 import os
 import json
 import sqlite3
 import argparse
 import datetime
-import pipes
+
+try:
+    from shlex import quote as shquote
+except ImportError:
+    from pipes import quote as shquote
 
 try:
     import yaml
@@ -58,6 +63,7 @@ def parse_args():
     subparsers = parser.add_subparsers(
         dest='subcommand',
     )
+    subparsers.required = True
     parser_list_jobs = subparsers.add_parser(
         'list-jobs',
         help='list jobs',
@@ -141,7 +147,7 @@ class Info():
                 'environment': job.environment,
                 'max_execution': job.max_execution,
                 'max_execution_grace': job.max_execution_grace,
-                'concurrency_groups': job.concurrency_groups.keys(),
+                'concurrency_groups': list(job.concurrency_groups.keys()),
                 'render_reports': job.render_reports,
                 'jenkins_environment': job.jenkins_environment,
                 'job_group': job.job_group,
@@ -172,27 +178,27 @@ class Info():
                     config['concurrency_groups'][concurrency_group] = {
                         'max': self.config.concurrency_groups[concurrency_group].max,
                     }
-            print json_pretty_print(config)
+            print(json_pretty_print(config))
         elif self.args.subcommand == 'check-config':
-            print 'Config OK'
+            print('Config OK')
         elif self.args.subcommand == 'list-jobs':
             if self.args.job:
                 jobs = self.dump_jobs(self.args.job)
             else:
                 jobs = self.dump_jobs()
             if self.args.format == 'json':
-                print json_pretty_print(jobs)
+                print(json_pretty_print(jobs))
             elif self.args.format == 'yaml':
-                print yaml.safe_dump(jobs, default_flow_style=False)
+                print(yaml.safe_dump(jobs, default_flow_style=False))
             else:
                 for job_name in sorted(jobs):
                     job = jobs[job_name]
                     schedule = job['schedule'] or ''
-                    print '%s\t%s\t%s' % (
+                    print('%s\t%s\t%s' % (
                         job_name,
                         schedule,
-                        ' '.join([pipes.quote(x) for x in job['command']]),
-                    )
+                        ' '.join([shquote(x) for x in job['command']]),
+                    ))
         elif self.args.subcommand == 'list-runs':
             job_names = self.args.job
             run_ids = self.args.run
@@ -200,13 +206,13 @@ class Info():
                 job_names = [job.name for job in self.config.jobs.values()]
             runs = self.get_runs(jobs=job_names, runs=run_ids)
             if self.args.format == 'json':
-                print json_pretty_print(runs)
+                print(json_pretty_print(runs))
             elif self.args.format == 'yaml':
-                print yaml.safe_dump(runs, default_flow_style=False)
+                print(yaml.safe_dump(runs, default_flow_style=False))
             else:
                 for run_id in sorted(runs, key=lambda run: runs[run]['start_time']):
                     run = runs[run_id]
-                    print '%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
+                    print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
                         run_id,
                         run['job_name'],
                         run['exit_code'],
@@ -214,7 +220,7 @@ class Info():
                         run['schedule_time'],
                         run['start_time'],
                         run['stop_time'],
-                    )
+                    ))
 
         elif self.args.subcommand == 'get-run-output':
             run_id = self.args.run
@@ -225,7 +231,7 @@ class Info():
             fn = os.path.join(self.config.data_dir, 'runs', run['job_name'], run_id, 'output.txt')
             with open(fn) as f:
                 for l in f:
-                    print l,
+                    print(l, end='')
 
     def time_format(self, epoch):
         if hasattr(self.args, 'epoch') and (not self.args.epoch):
