@@ -43,6 +43,7 @@ except ImportError:
 
 try:
     import dateutil.rrule
+    import dateutil.parser
     HAS_DATEUTIL = True
 except ImportError:
     HAS_DATEUTIL = False
@@ -557,13 +558,26 @@ class Scheduler():
             self.logger.error('[%s] Cannot load trigger: environment must be a dict' % job.name)
             return
 
-        self.logger.info('[%s] Trigger detected, creating trigger run' % job.name)
+        if 'schedule_time' in j:
+            if type(j['schedule_time']) in (int, float):
+                t = epoch_to_dt(float(j['schedule_time']))
+            elif HAS_DATEUTIL:
+                try:
+                    t = dateutil.parser.parse(j['schedule_time'])
+                except ValueError:
+                    self.logger.error('[%s] Invalid schedule_time "%s" for trigger' % (job.name, j['schedule_time']))
+                    return
+            else:
+                self.logger.error('[%s] Cannot parse schedule_time "%s" for trigger' % (job.name, j['schedule_time']))
+                return
+
         run = dsari.Run(job)
         run.respawn = False
         run.trigger_type = 'file'
         run.trigger_data = j
         run.schedule_time = t
         self.scheduled_runs.append(run)
+        self.logger.info('[%s %s] Trigger detected, created run for %s' % (job.name, run.id, t))
 
     def process_scheduled_run(self, run):
         now = datetime.datetime.now()

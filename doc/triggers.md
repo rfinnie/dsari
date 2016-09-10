@@ -24,3 +24,17 @@ That script could produce JSON which looks like this:
 
 The contents of the "environment" dict are set as environment variables in the run.
 "type" and "description" are rendered in the HTML report; if "type" is not specified, it is shown simply as "file" in the HTML report.
+
+By default, triggered runs will be run immediately, but can also be scheduled for the future using an epoch time:
+
+    {
+        "schedule_time": 1473546507
+    }
+
+Or, if the `python-dateutil` Python package is installed, ISO 8601 times may be specified:
+
+    {
+        "schedule_time": "2016-09-10T14:28:27"
+    }
+
+Care should be taken when scheduling in the future via triggers, as scheduled triggers do not survive across `dsari-daemon` restarts.
