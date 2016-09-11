@@ -33,7 +33,7 @@ import datetime
 import binascii
 
 import dsari
-from dsari.utils import seconds_to_td, td_to_seconds, epoch_to_dt, dt_to_epoch
+from dsari.utils import seconds_to_td, td_to_seconds, epoch_to_dt, dt_to_epoch, validate_environment_dict
 
 try:
     from . import croniter_hash
@@ -450,7 +450,7 @@ class Scheduler():
             environ[str(key)] = str(val)
         if 'environment' in run.trigger_data:
             for (key, val) in run.trigger_data['environment'].items():
-                environ[str(key)] = str(val)
+                environ[key] = val
 
         # Set STDIN to /dev/null, and STDOUT/STDERR to the output file
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
@@ -581,6 +581,13 @@ class Scheduler():
                     return
             else:
                 self.logger.error('[%s] Cannot parse schedule_time "%s" for trigger' % (job.name, j['schedule_time']))
+                return
+
+        if 'environment' in j:
+            try:
+                j['environment'] = validate_environment_dict(copy.deepcopy(j['environment']))
+            except (KeyError, ValueError) as e:
+                self.logger.error('[%s] Cannot load trigger: %s' % (job.name, str(e)))
                 return
 
         run = dsari.Run(job)

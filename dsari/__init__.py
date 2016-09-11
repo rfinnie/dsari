@@ -150,31 +150,24 @@ class Config():
         self.load(config)
 
     def load(self, config):
-        try:
-            # Python 2
-            str_unicode = (str, unicode)
-        except NameError:
-            # Python 3
-            str_unicode = (str, )
-
         valid_values = {
-            'data_dir': str_unicode,
-            'template_dir': str_unicode,
-            'report_html_gz': str_unicode,
+            'data_dir': utils.STR_UNICODE,
+            'template_dir': utils.STR_UNICODE,
+            'report_html_gz': utils.STR_UNICODE,
             'shutdown_kill_runs': (bool,),
             'shutdown_kill_grace': (int, float),
             'environment': (dict,),
         }
         valid_values_job = {
             'command': (list,),
-            'schedule': (type(None),) + str_unicode,
+            'schedule': (type(None),) + utils.STR_UNICODE,
             'max_execution': (int, float),
             'max_execution_grace': (int, float),
             'environment': (dict,),
             'render_reports': (bool,),
             'command_append_run': (bool,),
             'jenkins_environment': (bool,),
-            'job_group': str_unicode,
+            'job_group': utils.STR_UNICODE,
             'concurrent_runs': (bool,),
         }
         valid_values_concurrency_group = {
@@ -191,6 +184,12 @@ class Config():
                     )
                 if k in ('shutdown_kill_grace',):
                     setattr(self, k, utils.seconds_to_td(config[k]))
+                elif k == 'environment':
+                    try:
+                        config[k] = utils.validate_environment_dict(copy.deepcopy(config[k]))
+                    except (KeyError, ValueError) as e:
+                        raise ConfigError('Invalid environment: %s' % str(e))
+                        return
                 else:
                     setattr(self, k, config[k])
 
@@ -249,6 +248,12 @@ class Config():
                         )
                     if k in ('max_execution', 'max_execution_grace'):
                         setattr(job, k, utils.seconds_to_td(jobs[job_name][k]))
+                    elif k == 'environment':
+                        try:
+                            jobs[job_name][k] = utils.validate_environment_dict(copy.deepcopy(jobs[job_name][k]))
+                        except (KeyError, ValueError) as e:
+                            raise ConfigError('Job %s: Invalid environment: %s' % (job_name, str(e)))
+                            return
                     else:
                         setattr(job, k, jobs[job_name][k])
             job_concurrency_group_names = []

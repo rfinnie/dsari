@@ -23,6 +23,14 @@ import copy
 import datetime
 
 
+try:
+    # Python 2
+    STR_UNICODE = (str, unicode)
+except NameError:
+    # Python 3
+    STR_UNICODE = (str, )
+
+
 def dict_merge(s, m):
     """Recursively merge one dict into another."""
     if not isinstance(m, dict):
@@ -59,3 +67,17 @@ def epoch_to_dt(epoch):
 
 def dt_to_epoch(dt):
     return float(dt.strftime('%s')) + (float(dt.microsecond) / float(1000000))
+
+
+def validate_environment_dict(env_in):
+    env_out = {}
+    for k in env_in:
+        if type(k) not in STR_UNICODE:
+            raise KeyError('Invalid environment key name: %s (%s)' % (repr(k), repr(type(k))))
+        if type(env_in[k]) in STR_UNICODE:
+            env_out[k] = env_in[k]
+        elif type(env_in[k]) in (int, float):
+            env_out[k] = str(env_in[k])
+        else:
+            raise ValueError('Invalid environment value name: %s (%s)' % (repr(env_in[k]), repr(type(env_in[k]))))
+    return env_out
