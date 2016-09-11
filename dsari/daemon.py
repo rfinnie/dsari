@@ -48,6 +48,11 @@ try:
 except ImportError:
     HAS_DATEUTIL = False
 
+try:
+    from shlex import quote as shquote
+except ImportError:
+    from pipes import quote as shquote
+
 __version__ = dsari.__version__
 
 
@@ -231,7 +236,7 @@ class Scheduler():
                 if run.term_sent:
                     continue
                 job = run.job
-                self.logger.info('[%s %s] Shutdown requested, sending SIGTERM to %d' % (job.name, run.id, run.pid))
+                self.logger.info('[%s %s] Shutdown requested, sending SIGTERM to PID %d' % (job.name, run.id, run.pid))
                 os.kill(run.pid, signal.SIGTERM)
                 run.term_sent = True
         elif len(self.running_runs) > 0:
@@ -249,7 +254,7 @@ class Scheduler():
             if run.kill_sent:
                 continue
             job = run.job
-            self.logger.info('[%s %s] Shutdown grace time exceeded, sending SIGKILL to %d' % (job.name, run.id, run.pid))
+            self.logger.info('[%s %s] Shutdown grace time exceeded, sending SIGKILL to PID %d' % (job.name, run.id, run.pid))
             os.kill(run.pid, signal.SIGKILL)
             run.kill_sent = True
 
@@ -284,12 +289,19 @@ class Scheduler():
         for run in sorted(self.scheduled_runs, key=lambda x: x.job.name):
             job = run.job
             t = run.schedule_time
+
+            # timedelta gets weird when dealing with negatives
+            if t < now:
+                delta_str = '-' + str(now - t)
+            else:
+                delta_str = str(t - now)
+
             self.logger.info(
                 '[%s %s] Next scheduled run: %s (%s)' % (
                     job.name,
                     run.id,
                     t,
-                    (t - now)
+                    delta_str,
                 )
             )
 
@@ -605,7 +617,17 @@ class Scheduler():
                     break
             if not run.concurrency_group:
                 backoff_time = backoff(run.schedule_time, now)
-                self.logger.debug('[%s %s] Cannot run due to concurrency limits, will try again within %s' % (job.name, run.id, backoff_time))
+                self.logger.debug('[%s %s] Cannot run due to concurrency limits (%s), will try again within %s' % (
+                    job.name,
+                    run.id,
+                    ', '.join([
+                        '%s=%d' % (
+                            concurrency_group_name,
+                            job.concurrency_groups[concurrency_group_name].max,
+                        ) for concurrency_group_name in sorted(job_concurrency_groups)
+                    ]),
+                    backoff_time,
+                ))
                 self.wakeups.append(now + backoff_time)
                 return
 
@@ -712,7 +734,6 @@ class Scheduler():
         if not os.path.exists(os.path.join(self.config.data_dir, 'runs', job.name, run.id)):
             os.makedirs(os.path.join(self.config.data_dir, 'runs', job.name, run.id))
 
-        self.logger.info('[%s %s] Running: %s' % (job.name, run.id, job.command))
         run.start_time = now
         run.term_sent = False
         run.kill_sent = False
@@ -746,6 +767,12 @@ class Scheduler():
             self.run_child_executor(run)
             raise OSError('run_child_executor returned, when it should not have')
         run.pid = child_pid
+        self.logger.info('[%s %s] Running PID %d: %s' % (
+            job.name,
+            run.id,
+            run.pid,
+            ' '.join([shquote(x) for x in job.command]),
+        ))
         self.scheduled_runs.remove(run)
         self.running_runs.append(run)
         if run.concurrency_group:
