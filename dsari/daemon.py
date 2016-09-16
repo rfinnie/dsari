@@ -286,6 +286,17 @@ class Scheduler():
                     (now - t)
                 )
             )
+            if run.concurrency_group:
+                concurrency_group = run.concurrency_group
+                self.logger.info(
+                    '[%s %s] Concurrency group: %s (%d out of %d)' % (
+                        job.name,
+                        run.id,
+                        concurrency_group.name,
+                        len(self.running_groups[concurrency_group]),
+                        concurrency_group.max,
+                    )
+                )
         for run in sorted(self.scheduled_runs, key=lambda x: x.job.name):
             job = run.job
             t = run.schedule_time
@@ -297,9 +308,10 @@ class Scheduler():
                 delta_str = str(t - now)
 
             self.logger.info(
-                '[%s %s] Next scheduled run: %s (%s)' % (
+                '[%s %s] Next run (%s): %s (%s)' % (
                     job.name,
                     run.id,
+                    run.trigger_type,
                     t,
                     delta_str,
                 )
