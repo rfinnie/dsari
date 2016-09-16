@@ -37,8 +37,8 @@ Or, if the `python-dateutil` Python package is installed, ISO 8601 times may be 
         "schedule_time": "2016-09-10T14:28:27"
     }
 
-Care should be taken when scheduling in the future via triggers, as scheduled triggers do not survive across `dsari-daemon` restarts.
+Care should be taken when scheduling in the future via triggers, as scheduled triggers do not survive across `dsari-daemon` restarts or reloads.
 
-If the job does not have `concurrent_runs` set (default behavior), the triggered run replace any existing scheduled run, ensuring only one run will be running at any given time.
+If the job does not have `concurrent_runs` set (default behavior), the triggered run replaces any existing scheduled run, ensuring only one run will be running at any given time.
 Afterward, runs will be scheduled as normal, if configured for scheduled runs.
 If the job does have `concurrent_runs` set, the triggered run will simply be scheduled as an additional run, regardless of existing triggered runs, scheduled runs or running runs.
