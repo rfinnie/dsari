@@ -95,8 +95,11 @@ def parse_args():
             '--job', type=str, action='append',
             help='job name to filter (can be given multiple times)',
         )
+        choices = ['tabular', 'json']
+        if HAS_YAML:
+            choices.append('yaml')
         p.add_argument(
-            '--format', type=str, choices=['tabular', 'json', 'yaml'],
+            '--format', type=str, choices=choices,
             default='tabular',
             help='output format',
         )
@@ -117,9 +120,6 @@ def parse_args():
 
     args = parser.parse_args()
     args.parser = parser
-
-    if hasattr(args, 'format') and (args.format == 'yaml') and (not HAS_YAML):
-        parser.error('yaml package is not available')
 
     return args
 
