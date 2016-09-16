@@ -23,6 +23,15 @@ Here is a sample format:
 
 Main options are in the root of the configuration array.
 
+### config_d
+
+    "config_d": "/path/to/additional/config/dir"
+
+Default: "config.d" subdirectory of configuration directory
+
+Additional configuration JSON files may be placed in the config.d subdirectory, and will be merged into the main configuration from `dsari.json`.
+Files must end in `.json`, and are loaded in alphanumeric order.
+
 ### data_dir
 
     "data_dir": "/path/to/data/dir"
