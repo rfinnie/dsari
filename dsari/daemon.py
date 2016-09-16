@@ -595,8 +595,22 @@ class Scheduler():
         run.trigger_type = 'file'
         run.trigger_data = j
         run.schedule_time = t
-        self.scheduled_runs.append(run)
-        self.logger.info('[%s %s] Trigger detected, created run for %s' % (job.name, run.id, t))
+
+        if job.concurrent_runs:
+            self.logger.info('[%s %s] Trigger detected, created run for %s' % (job.name, run.id, t))
+            self.scheduled_runs.append(run)
+        else:
+            scheduled_job_runs = [x for x in self.scheduled_runs if x.job == job]
+            if len(scheduled_job_runs) > 0:
+                old_run = scheduled_job_runs[0]
+                run.respawn = old_run.respawn
+                self.scheduled_runs.remove(old_run)
+                self.logger.info('[%s %s] Trigger detected, created run for %s, replacing %s' % (
+                    job.name, run.id, t, old_run.id
+                ))
+            else:
+                self.logger.info('[%s %s] Trigger detected, created run for %s' % (job.name, run.id, t))
+            self.scheduled_runs.append(run)
 
     def process_scheduled_run(self, run):
         now = datetime.datetime.now()
