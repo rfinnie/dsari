@@ -217,7 +217,7 @@ class Info():
             elif self.args.format == 'yaml':
                 print(yaml.safe_dump(runs, default_flow_style=False))
             else:
-                for run_id in sorted(runs, key=lambda run: runs[run]['start_time']):
+                for run_id in sorted(runs, key=lambda run: runs[run]['stop_time']):
                     run = runs[run_id]
                     print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
                         run_id,
