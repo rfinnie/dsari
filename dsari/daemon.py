@@ -342,6 +342,25 @@ class Scheduler():
             run.schedule_time = t
             self.scheduled_runs.append(run)
 
+        # Regenerate running runs' jobs and concurrency groups
+        self.running_groups = {}
+        for run in self.running_runs:
+            if run.job.name in self.config.jobs:
+                run.job = self.config.jobs[run.job.name]
+            else:
+                # Job disappeared from config during SIGHUP
+                run.respawn = False
+            if run.concurrency_group:
+                if run.concurrency_group.name in self.config.concurrency_groups:
+                    concurrency_group = self.config.concurrency_groups[run.concurrency_group.name]
+                    run.concurrency_group = concurrency_group
+                    if concurrency_group not in self.running_groups:
+                        self.running_groups[concurrency_group] = []
+                    self.running_groups[concurrency_group].append(run)
+                else:
+                    # Concurrency group disappeared from config during SIGHUP
+                    run.concurrency_group = None
+
     def process_run_execution_time(self, run):
         job = run.job
         if not job.max_execution:
@@ -619,10 +638,6 @@ class Scheduler():
             self.wakeups.append(run.schedule_time)
             return
         if (not job.concurrent_runs) and (job in [x.job for x in self.running_runs]):
-            self.wakeups.append(now + backoff(run.schedule_time, now))
-            return
-        if (not job.concurrent_runs) and (job.name in [x.job.name for x in self.running_runs]):
-            # Special case for a running run left during a SIGHUP reload
             self.wakeups.append(now + backoff(run.schedule_time, now))
             return
         run.concurrency_group = None
