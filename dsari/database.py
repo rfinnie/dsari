@@ -470,7 +470,6 @@ class SQLite3Database(BaseDatabase):
 
     def __init__(self, config):
         self.config = config
-        print repr(config.database)
         self.db_conn = sqlite3.connect(config.database['file'])
         self.db_conn.row_factory = sqlite3.Row
         self.populate_schema()
