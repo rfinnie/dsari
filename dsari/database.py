@@ -326,6 +326,8 @@ class PostgreSQLDatabase(BaseDatabase):
             FROM
                 information_schema.tables
             WHERE
+                table_catalog = current_database()
+            AND
                 table_name = 'runs'
         """
         cur = self.db_conn.cursor()
@@ -358,6 +360,8 @@ class PostgreSQLDatabase(BaseDatabase):
             FROM
                 information_schema.tables
             WHERE
+                table_catalog = current_database()
+            AND
                 table_name = 'runs_running'
         """
         cur = self.db_conn.cursor()
