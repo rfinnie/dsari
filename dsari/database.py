@@ -341,15 +341,15 @@ class PostgreSQLDatabase(BaseDatabase):
         if not runs_exists:
             sql_statement = """
                 CREATE TABLE runs (
-                    job_name text,
-                    run_id uuid,
-                    schedule_time timestamp,
-                    start_time timestamp,
-                    stop_time timestamp,
-                    exit_code integer,
-                    trigger_type text,
-                    trigger_data json,
-                    run_data json
+                    job_name text NOT NULL,
+                    run_id uuid PRIMARY KEY,
+                    schedule_time timestamp NOT NULL,
+                    start_time timestamp NOT NULL,
+                    stop_time timestamp NOT NULL,
+                    exit_code smallint NOT NULL,
+                    trigger_type text NOT NULL,
+                    trigger_data json NOT NULL,
+                    run_data json NOT NULL
                 )
             """
             cur = self.db_conn.cursor()
@@ -375,13 +375,13 @@ class PostgreSQLDatabase(BaseDatabase):
         if not runs_running_exists:
             sql_statement = """
                 CREATE TABLE runs_running (
-                    job_name text,
-                    run_id uuid,
-                    schedule_time timestamp,
-                    start_time timestamp,
-                    trigger_type text,
-                    trigger_data text,
-                    run_data json
+                    job_name text NOT NULL,
+                    run_id uuid PRIMARY KEY,
+                    schedule_time timestamp NOT NULL,
+                    start_time timestamp NOT NULL,
+                    trigger_type text NOT NULL,
+                    trigger_data json NOT NULL,
+                    run_data json NOT NULL
                 )
             """
             cur = self.db_conn.cursor()
@@ -420,15 +420,15 @@ class MySQLDatabase(BaseDatabase):
         if not runs_exists:
             sql_statement = """
                 CREATE TABLE runs (
-                    job_name varchar(255),
-                    run_id char(36) primary key,
-                    schedule_time datetime(6),
-                    start_time datetime(6),
-                    stop_time datetime(6),
-                    exit_code tinyint unsigned,
-                    trigger_type varchar(127),
-                    trigger_data text,
-                    run_data text
+                    job_name varchar(255) NOT NULL,
+                    run_id char(36) PRIMARY KEY,
+                    schedule_time datetime(6) NOT NULL,
+                    start_time datetime(6) NOT NULL,
+                    stop_time datetime(6) NOT NULL,
+                    exit_code tinyint unsigned NOT NULL,
+                    trigger_type varchar(127) NOT NULL,
+                    trigger_data text NOT NULL,
+                    run_data text NOT NULL
                 )
             """
             cur = self.db_conn.cursor()
@@ -454,13 +454,13 @@ class MySQLDatabase(BaseDatabase):
         if not runs_running_exists:
             sql_statement = """
                 CREATE TABLE runs_running (
-                    job_name varchar(255),
-                    run_id char(36) primary key,
-                    schedule_time datetime(6),
-                    start_time datetime(6),
-                    trigger_type varchar(127),
-                    trigger_data text,
-                    run_data text
+                    job_name varchar(255) NOT NULL,
+                    run_id char(36) PRIMARY KEY,
+                    schedule_time datetime(6) NOT NULL,
+                    start_time datetime(6) NOT NULL,
+                    trigger_type varchar(127) NOT NULL,
+                    trigger_data text NOT NULL,
+                    run_data text NOT NULL
                 )
             """
             cur = self.db_conn.cursor()
