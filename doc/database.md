@@ -27,6 +27,20 @@ The default file is "dsari.sqlite3" in the data directory.
 
 `dsn` may be any valid PGSQL Data Source Name (DSN).
 
+### MySQL
+
+    {
+        "database": {
+            "type": "mysql",
+            "connection": {
+                "host": "dbserver",
+                "user": "dbuser",
+                "passwd": "dbpassword",
+                "db": "dsari"
+            }
+        }
+    }
+
 ## Tables
 
 The following is a quick reference of all defined tables.

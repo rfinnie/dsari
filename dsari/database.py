@@ -21,6 +21,7 @@
 import sqlite3
 import json
 import os
+import copy
 
 try:
     import psycopg2
@@ -36,6 +37,8 @@ from dsari.utils import epoch_to_dt, dt_to_epoch
 def get_database(config):
     if HAS_PSYCOPG2 and (config.database['type'] == 'postgresql'):
         return PostgreSQLDatabase(config)
+    elif config.database['type'] == 'mysql':
+        return MySQLDatabase(config)
     else:
         if 'file' not in config.database:
             config.database['file'] = None
@@ -379,6 +382,85 @@ class PostgreSQLDatabase(BaseDatabase):
                     trigger_type text,
                     trigger_data text,
                     run_data json
+                )
+            """
+            cur = self.db_conn.cursor()
+            cur.execute(sql_statement)
+            cur.close()
+            self.db_conn.commit()
+
+
+class MySQLDatabase(BaseDatabase):
+    def __init__(self, config):
+        import MySQLdb
+        import MySQLdb.cursors
+
+        self.config = config
+        connection = copy.deepcopy(config.database['connection'])
+        connection['cursorclass'] = MySQLdb.cursors.DictCursor
+        self.db_conn = MySQLdb.connect(**connection)
+        self.populate_schema()
+
+    def populate_schema(self):
+        sql_statement = """
+            SELECT
+                table_name
+            FROM
+                information_schema.tables
+            WHERE
+                table_schema = database()
+            AND
+                table_name = 'runs'
+        """
+        cur = self.db_conn.cursor()
+        cur.execute(sql_statement)
+        runs_exists = cur.fetchone()
+        cur.close()
+
+        if not runs_exists:
+            sql_statement = """
+                CREATE TABLE runs (
+                    job_name varchar(255),
+                    run_id char(36) primary key,
+                    schedule_time datetime(6),
+                    start_time datetime(6),
+                    stop_time datetime(6),
+                    exit_code tinyint unsigned,
+                    trigger_type varchar(127),
+                    trigger_data text,
+                    run_data text
+                )
+            """
+            cur = self.db_conn.cursor()
+            cur.execute(sql_statement)
+            cur.close()
+            self.db_conn.commit()
+
+        sql_statement = """
+            SELECT
+                table_name
+            FROM
+                information_schema.tables
+            WHERE
+                table_schema = database()
+            AND
+                table_name = 'runs_running'
+        """
+        cur = self.db_conn.cursor()
+        cur.execute(sql_statement)
+        runs_running_exists = cur.fetchone()
+        cur.close()
+
+        if not runs_running_exists:
+            sql_statement = """
+                CREATE TABLE runs_running (
+                    job_name varchar(255),
+                    run_id char(36) primary key,
+                    schedule_time datetime(6),
+                    start_time datetime(6),
+                    trigger_type varchar(127),
+                    trigger_data text,
+                    run_data text
                 )
             """
             cur = self.db_conn.cursor()
