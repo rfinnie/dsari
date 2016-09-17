@@ -12,9 +12,14 @@ It uses the following non-core packages:
   - [`croniter`](https://pypi.python.org/pypi/croniter), for parsing cron-style schedule definitions
   - [`python-dateutil`](https://pypi.python.org/pypi/python-dateutil), for parsing iCalendar RRULE-style schedule definitions
   - [`Jinja2`](https://pypi.python.org/pypi/Jinja2), for rendering HTML reports
+  - [`psycopg2`](https://pypi.python.org/pypi/psycopg2), for PostgreSQL database support
 
-If neither `croniter` nor `python-dateutil` are installed, `dsari-daemon` will run, but it will not process scheduled runs (i.e. manual triggers only).
-Jinja2 is only required if you intend to use `dsari-render`.
+All non-core packages are optional, with the following limitations:
+
+  - If neither `croniter` nor `python-dateutil` are installed, `dsari-daemon` will run, but it will not process scheduled runs (i.e. manual triggers only).
+  - `Jinja2` is only required if you intend to use `dsari-render`.
+  - `psycopg2` is only required if you intend to use dsari with a PostgreSQL-backed database.
+    By default, dsari uses a SQLite 3 database.
 
 ## Installation
 

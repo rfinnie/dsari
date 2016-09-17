@@ -21,9 +21,7 @@
 from __future__ import print_function
 import os
 import json
-import sqlite3
 import argparse
-import datetime
 
 try:
     from shlex import quote as shquote
@@ -37,6 +35,7 @@ except ImportError:
     HAS_YAML = False
 
 import dsari
+import dsari.database
 from dsari.utils import td_to_seconds
 
 __version__ = dsari.__version__
@@ -113,10 +112,6 @@ def parse_args():
         '--run', type=str, action='append',
         help='run ID to filter (can be given multiple times)',
     )
-    parser_list_runs.add_argument(
-        '--epoch', action='store_true',
-        help='output times in Unix epoch instead of ISO 8601',
-    )
 
     args = parser.parse_args()
     args.parser = parser
@@ -130,11 +125,7 @@ class Info():
         self.config = dsari.Config()
         self.config.load_dir(self.args.config_dir)
 
-        if not os.path.exists(os.path.join(self.config.data_dir, 'dsari.sqlite3')):
-            return
-
-        self.db_conn = sqlite3.connect(os.path.join(self.config.data_dir, 'dsari.sqlite3'))
-        self.db_conn.row_factory = sqlite3.Row
+        self.db = dsari.database.get_database(self.config)
 
     def dump_jobs(self, filter=None):
         jobs = {}
@@ -176,6 +167,7 @@ class Info():
                     'shutdown_kill_runs',
                     'shutdown_kill_grace',
                     'environment',
+                    'database',
                 ):
                     config[attr] = getattr(self.config, attr)
                 for attr in ('shutdown_kill_grace',):
@@ -209,87 +201,46 @@ class Info():
         elif self.args.subcommand == 'list-runs':
             job_names = self.args.job
             run_ids = self.args.run
-            if (job_names is None) and (run_ids is None):
-                job_names = [job.name for job in self.config.jobs.values()]
-            runs = self.get_runs(jobs=job_names, runs=run_ids)
-            if self.args.format == 'json':
-                print(json_pretty_print(runs))
-            elif self.args.format == 'yaml':
-                print(yaml.safe_dump(runs, default_flow_style=False))
+            runs = self.db.get_runs(jobs=job_names, runs=run_ids)
+            if self.args.format in ('json', 'yaml'):
+                out = {}
+                for run in runs:
+                    out[run.id] = {
+                        'job_name': run.job.name,
+                        'schedule_time': run.schedule_time.isoformat(),
+                        'start_time': run.start_time.isoformat(),
+                        'stop_time': run.stop_time.isoformat(),
+                        'exit_code': run.exit_code,
+                        'trigger_type': run.trigger_type,
+                        'trigger_data': run.trigger_data,
+                        'run_data': run.run_data,
+                    }
+                if self.args.format == 'json':
+                    print(json_pretty_print(out))
+                elif self.args.format == 'yaml':
+                    print(yaml.safe_dump(out, default_flow_style=False))
             else:
-                for run_id in sorted(runs, key=lambda run: runs[run]['stop_time']):
-                    run = runs[run_id]
+                for run in sorted(runs, key=lambda run: run.stop_time):
                     print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
-                        run_id,
-                        run['job_name'],
-                        run['exit_code'],
-                        run['trigger_type'],
-                        run['schedule_time'],
-                        run['start_time'],
-                        run['stop_time'],
+                        run.id,
+                        run.job.name,
+                        run.exit_code,
+                        run.trigger_type,
+                        run.schedule_time.isoformat(),
+                        run.start_time.isoformat(),
+                        run.stop_time.isoformat(),
                     ))
 
         elif self.args.subcommand == 'get-run-output':
             run_id = self.args.run
-            runs = self.get_runs(runs=[run_id])
+            runs = self.db.get_runs(runs=[run_id])
             if len(runs) == 0:
                 self.args.parser.error('Cannot find run ID %s' % run_id)
-            run = runs[run_id]
-            fn = os.path.join(self.config.data_dir, 'runs', run['job_name'], run_id, 'output.txt')
+            run = runs[0]
+            fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
             with open(fn) as f:
                 for l in f:
                     print(l, end='')
-
-    def time_format(self, epoch):
-        if hasattr(self.args, 'epoch') and (not self.args.epoch):
-            return datetime.datetime.fromtimestamp(epoch).isoformat()
-        else:
-            return epoch
-
-    def get_runs(self, jobs=None, runs=None):
-        if runs is not None:
-            where = 'run_id'
-            where_in = runs
-        elif jobs is not None:
-            where = 'job_name'
-            where_in = jobs
-        else:
-            return {}
-
-        sql_statement = """
-            SELECT
-                job_name,
-                run_id,
-                schedule_time,
-                start_time,
-                stop_time,
-                exit_code,
-                trigger_type,
-                trigger_data,
-                run_data
-            FROM
-                runs
-            WHERE
-                %s in (%s)
-        """ % (
-            where,
-            ','.join('?' * len(where_in)),
-        )
-        res = self.db_conn.execute(sql_statement, where_in)
-
-        runs = {}
-        for db_result in res:
-            runs[db_result['run_id']] = {
-                'job_name': db_result['job_name'],
-                'schedule_time': self.time_format(db_result['schedule_time']),
-                'start_time': self.time_format(db_result['start_time']),
-                'stop_time': self.time_format(db_result['stop_time']),
-                'exit_code': db_result['exit_code'],
-                'trigger_type': db_result['trigger_type'],
-                'trigger_data': json.loads(db_result['trigger_data']),
-                'run_data': json.loads(db_result['run_data']),
-            }
-        return runs
 
 
 def main():

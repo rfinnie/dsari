@@ -25,7 +25,6 @@ import math
 import random
 import logging
 import signal
-import sqlite3
 import argparse
 import copy
 import pwd
@@ -33,6 +32,7 @@ import datetime
 import binascii
 
 import dsari
+import dsari.database
 from dsari.utils import seconds_to_td, td_to_seconds, epoch_to_dt, dt_to_epoch, validate_environment_dict
 
 try:
@@ -163,56 +163,9 @@ class Scheduler():
 
         if not os.path.exists(self.config.data_dir):
             os.makedirs(self.config.data_dir)
-        db_exists = os.path.exists(os.path.join(self.config.data_dir, 'dsari.sqlite3'))
-        self.db_conn = sqlite3.connect(os.path.join(self.config.data_dir, 'dsari.sqlite3'))
-        self.db_conn.row_factory = sqlite3.Row
-        if not db_exists:
-            sql_statement = """
-                CREATE TABLE runs (
-                    job_name text,
-                    run_id text,
-                    schedule_time real,
-                    start_time real,
-                    stop_time real,
-                    exit_code integer,
-                    trigger_type text,
-                    trigger_data text,
-                    run_data text
-                )
-            """
-            self.db_conn.execute(sql_statement)
-            self.db_conn.commit()
 
-        sql_statement = """
-            SELECT
-                name
-            FROM
-                sqlite_master
-            WHERE
-                type = 'table'
-            AND
-                name = 'runs_running'
-        """
-        res = self.db_conn.execute(sql_statement)
-        runs_running_exists = res.fetchone()
-        res.close()
-        if not runs_running_exists:
-            sql_statement = """
-                CREATE TABLE runs_running (
-                    job_name text,
-                    run_id text,
-                    schedule_time real,
-                    start_time real,
-                    trigger_type text,
-                    trigger_data text,
-                    run_data text
-                )
-            """
-            self.db_conn.execute(sql_statement)
-            self.db_conn.commit()
-
-        self.db_conn.execute('DELETE FROM runs_running')
-        self.db_conn.commit()
+        self.db = dsari.database.get_database(self.config)
+        self.db.clear_runs_running()
 
         self.running_runs = []
         self.running_groups = {}
@@ -420,7 +373,7 @@ class Scheduler():
         os.setpgid(os.getpid(), 0)
 
         # Close the database in the child
-        self.db_conn.close()
+        self.db.child_close_fd()
 
         # Set environment variables
         job = run.job
@@ -528,38 +481,15 @@ class Scheduler():
             return child_pid
         job = run.job
         now = datetime.datetime.now()
-        schedule_time = run.schedule_time
-        start_time = run.start_time
-        stop_time = now
-        self.logger.info('[%s %s] Finished with status %d in %s' % (job.name, run.id, child_exit, (stop_time - start_time)))
-        sql_statement = """
-            INSERT INTO runs (
-                job_name,
-                run_id,
-                schedule_time,
-                start_time,
-                stop_time,
-                exit_code,
-                trigger_type,
-                trigger_data,
-                run_data
-            ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?
-            )
-        """
-        self.db_conn.execute(sql_statement, (
+        run.stop_time = now
+        run.exit_code = child_exit
+        self.logger.info('[%s %s] Finished with status %d in %s' % (
             job.name,
             run.id,
-            dt_to_epoch(schedule_time),
-            dt_to_epoch(start_time),
-            dt_to_epoch(stop_time),
             child_exit,
-            run.trigger_type,
-            json.dumps(run.trigger_data),
-            json.dumps({})
+            (run.stop_time - run.start_time),
         ))
-        self.db_conn.execute('DELETE FROM runs_running WHERE run_id = ?', (run.id,))
-        self.db_conn.commit()
+        self.db.insert_run(run)
         self.running_runs.remove(run)
         if run.concurrency_group and run in self.running_groups[run.concurrency_group]:
             self.running_groups[run.concurrency_group].remove(run)
@@ -679,105 +609,7 @@ class Scheduler():
                 self.wakeups.append(now + backoff_time)
                 return
 
-        sql_statement = """
-            SELECT
-                run_id,
-                schedule_time,
-                start_time,
-                stop_time,
-                exit_code,
-                trigger_type,
-                trigger_data,
-                run_data
-            FROM
-                runs
-            WHERE
-                job_name = ?
-            ORDER BY
-                stop_time DESC
-        """
-        res = self.db_conn.execute(sql_statement, (job.name,))
-        f = res.fetchone()
-        res.close()
-        if f:
-            run.previous_run = dsari.Run(run.job, id=f['run_id'])
-            run.previous_run.schedule_time = epoch_to_dt(f['schedule_time'])
-            run.previous_run.start_time = epoch_to_dt(f['start_time'])
-            run.previous_run.stop_time = epoch_to_dt(f['stop_time'])
-            run.previous_run.exit_code = f['exit_code']
-            run.previous_run.trigger_type = f['trigger_type']
-            run.previous_run.trigger_data = json.loads(f['trigger_data'])
-            run.previous_run.run_data = json.loads(f['run_data'])
-        else:
-            run.previous_run = None
-
-        sql_statement = """
-            SELECT
-                run_id,
-                schedule_time,
-                start_time,
-                stop_time,
-                exit_code,
-                trigger_type,
-                trigger_data,
-                run_data
-            FROM
-                runs
-            WHERE
-                job_name = ?
-            AND
-                exit_code = 0
-            ORDER BY
-                stop_time DESC
-        """
-        res = self.db_conn.execute(sql_statement, (job.name,))
-        f = res.fetchone()
-        res.close()
-        if f:
-            run.previous_good_run = dsari.Run(run.job, id=f['run_id'])
-            run.previous_good_run.schedule_time = epoch_to_dt(f['schedule_time'])
-            run.previous_good_run.start_time = epoch_to_dt(f['start_time'])
-            run.previous_good_run.stop_time = epoch_to_dt(f['stop_time'])
-            run.previous_good_run.exit_code = f['exit_code']
-            run.previous_good_run.trigger_type = f['trigger_type']
-            run.previous_good_run.trigger_data = json.loads(f['trigger_data'])
-            run.previous_good_run.run_data = json.loads(f['run_data'])
-        else:
-            run.previous_good_run = None
-
-        sql_statement = """
-            SELECT
-                run_id,
-                schedule_time,
-                start_time,
-                stop_time,
-                exit_code,
-                trigger_type,
-                trigger_data,
-                run_data
-            FROM
-                runs
-            WHERE
-                job_name = ?
-            AND
-                exit_code != 0
-            ORDER BY
-                stop_time DESC
-        """
-        res = self.db_conn.execute(sql_statement, (job.name,))
-        f = res.fetchone()
-        res.close()
-        if f:
-            run.previous_bad_run = dsari.Run(run.job, id=f['run_id'])
-            run.previous_bad_run.schedule_time = epoch_to_dt(f['schedule_time'])
-            run.previous_bad_run.start_time = epoch_to_dt(f['start_time'])
-            run.previous_bad_run.stop_time = epoch_to_dt(f['stop_time'])
-            run.previous_bad_run.exit_code = f['exit_code']
-            run.previous_bad_run.trigger_type = f['trigger_type']
-            run.previous_bad_run.trigger_data = json.loads(f['trigger_data'])
-            run.previous_bad_run.run_data = json.loads(f['run_data'])
-        else:
-            run.previous_bad_run = None
+        (run.previous_run, run.previous_good_run, run.previous_bad_run) = self.db.get_previous_runs(job)
 
         if not os.path.exists(os.path.join(self.config.data_dir, 'runs', job.name, run.id)):
             os.makedirs(os.path.join(self.config.data_dir, 'runs', job.name, run.id))
@@ -786,29 +618,7 @@ class Scheduler():
         run.term_sent = False
         run.kill_sent = False
 
-        sql_statement = """
-            INSERT INTO runs_running (
-                job_name,
-                run_id,
-                schedule_time,
-                start_time,
-                trigger_type,
-                trigger_data,
-                run_data
-            ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?
-            )
-        """
-        self.db_conn.execute(sql_statement, (
-            job.name,
-            run.id,
-            dt_to_epoch(run.schedule_time),
-            dt_to_epoch(run.start_time),
-            run.trigger_type,
-            json.dumps(run.trigger_data),
-            json.dumps({})
-        ))
-        self.db_conn.commit()
+        self.db.insert_running_run(run)
 
         child_pid = os.fork()
         if child_pid == 0:

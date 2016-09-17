@@ -19,8 +19,8 @@
 </tr>
 {% for run in runs %}
 <tr{% if run.exit_code != 0 %} class="danger"{% endif %}>
-    <td><a href="{{ run.id }}/">{{ run.stop_datetime }}</a></td>
-    <td>{{ run.stop_datetime - run.start_datetime }}</td>
+    <td><a href="{{ run.id }}/">{{ run.stop_time }}</a></td>
+    <td>{{ run.stop_time - run.start_time }}</td>
     <td>{{ run.exit_code }}</td>
 </tr>
 {% endfor %}

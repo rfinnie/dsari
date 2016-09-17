@@ -21,12 +21,11 @@
 import os
 import jinja2
 import datetime
-import json
-import sqlite3
 import argparse
 import logging
 
 import dsari
+import dsari.database
 
 import gzip
 HAS_LZMA = True
@@ -112,9 +111,6 @@ class Renderer():
             lh_console.setLevel(logging.INFO)
         self.logger.addHandler(lh_console)
 
-        if not os.path.exists(os.path.join(self.config.data_dir, 'dsari.sqlite3')):
-            return
-
         if self.config.template_dir:
             loader = jinja2.ChoiceLoader(
                 jinja2.FileSystemLoader(self.config.template_dir),
@@ -130,13 +126,14 @@ class Renderer():
         )
         self.templates.globals['now'] = datetime.datetime.now()
 
-        self.db_conn = sqlite3.connect(os.path.join(self.config.data_dir, 'dsari.sqlite3'))
-        self.db_conn.row_factory = sqlite3.Row
+        self.db = dsari.database.get_database(self.config)
 
     def render(self):
         self.jobs = {job.name: job for job in self.config.jobs.values() if job.render_reports}
         self.job_runs = {}
         for job in self.jobs.values():
+            job.last_run = None
+            job.last_successful_run = None
             self.job_runs[job.name] = []
         self.runs = []
         self.jobs_written = []
@@ -147,37 +144,17 @@ class Renderer():
 
     def render_runs(self):
         self.run_template = self.templates.get_template('run.html')
-        sql_statement = """
-            SELECT
-                job_name,
-                run_id,
-                schedule_time,
-                start_time,
-                stop_time,
-                exit_code,
-                trigger_type,
-                trigger_data
-            FROM
-                runs
-            ORDER BY
-                start_time
-        """
-        for db_result in self.db_conn.execute(sql_statement):
-            if db_result['job_name'] not in self.jobs:
-                self.logger.debug('Cannot find job %s' % db_result['job_name'])
-                continue
-            job = self.jobs[db_result['job_name']]
-            run = self.build_run_object(job, db_result)
+        runs = self.db.get_runs(jobs=self.jobs.keys())
+        for run in runs:
             self.render_run(run)
 
     def render_run(self, run):
         job = run.job
         self.job_runs[job.name].append(run)
         self.runs.append(run)
-        job.last_run_datetime = run.start_datetime
-        job.last_duration_datetime = run.stop_datetime - run.start_datetime
+        job.last_run = run
         if run.exit_code == 0:
-            job.last_successful_run_datetime = run.start_datetime
+            job.last_successful_run = run
         run_html_filename = os.path.join(self.config.data_dir, 'html', job.name, run.id, 'index.html')
         if self.config.report_html_gz:
             run_html_filename = '%s.gz' % run_html_filename
@@ -189,25 +166,11 @@ class Renderer():
         run.output = read_output(os.path.join(self.config.data_dir, 'runs', job.name, run.id, 'output.txt'))
         self.logger.info('Writing %s' % run_html_filename)
         context = {
-            'job': job,
             'run': run,
         }
         write_html_file(run_html_filename, self.run_template.render(context))
         if job not in self.jobs_written:
             self.jobs_written.append(job)
-
-    def build_run_object(self, job, db_result):
-        run = dsari.Run(job, db_result['run_id'])
-        run.schedule_time = db_result['schedule_time']
-        run.schedule_datetime = datetime.datetime.fromtimestamp(run.schedule_time)
-        run.start_time = db_result['start_time']
-        run.start_datetime = datetime.datetime.fromtimestamp(run.start_time)
-        run.stop_time = db_result['stop_time']
-        run.stop_datetime = datetime.datetime.fromtimestamp(run.stop_time)
-        run.exit_code = db_result['exit_code']
-        run.trigger_type = db_result['trigger_type']
-        run.trigger_data = json.loads(db_result['trigger_data'])
-        return run
 
     def render_jobs(self):
         self.job_template = self.templates.get_template('job.html')
@@ -234,7 +197,7 @@ class Renderer():
         self.index_template = self.templates.get_template('index.html')
         if (len(self.jobs_written) > 0) or self.args.regenerate:
             context = {
-                'jobs': self.jobs,
+                'jobs': sorted(self.jobs.values(), key=lambda job: job.name),
                 'runs': sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[:25],
             }
             index_html_filename = os.path.join(self.config.data_dir, 'html', 'index.html')

@@ -4,32 +4,32 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="generator" content="dsari">
-  <title>{{ job.name }} - {{ run.id }}</title>
+  <title>{{ run.job.name }} - {{ run.id }}</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 </head>
 
 <body>
 <div class="container">
-<h1><a href="../">{{ job.name }}</a></h1>
+<h1><a href="../">{{ run.job.name }}</a></h1>
 <table class="table">
 <tr><th>Run ID</th><td>{{ run.id }}</td></tr>
 {% if run.trigger_type == 'schedule' %}
-<tr><th>Trigger</th><td>Schedule ({{ run.schedule_datetime }})</td></tr>
+<tr><th>Trigger</th><td>Schedule ({{ run.schedule_time }})</td></tr>
 {% elif run.trigger_type == 'file' %}
 {% if run.trigger_data.type %}
-<tr><th>Trigger</th><td>{{ run.trigger_data.type }} ({{ run.schedule_datetime }})</td></tr>
+<tr><th>Trigger</th><td>{{ run.trigger_data.type }} ({{ run.schedule_time }})</td></tr>
 {% else %}
-<tr><th>Trigger</th><td>File ({{ run.schedule_datetime }})</td></tr>
+<tr><th>Trigger</th><td>File ({{ run.schedule_time }})</td></tr>
 {% endif %}
 {% else %}
-<tr><th>Trigger</th><td>{{ run.trigger_type }} ({{ run.schedule_datetime }})</td></tr>
+<tr><th>Trigger</th><td>{{ run.trigger_type }} ({{ run.schedule_time }})</td></tr>
 {% endif %}
 {% if run.trigger_data.description %}
 <tr><th>Description</th><td>{{ run.trigger_data.description }}</td></tr>
 {% endif %}
-<tr><th>Start time</th><td>{{ run.start_datetime }}</td></tr>
-<tr><th>Stop time</th><td>{{ run.stop_datetime }}</td></tr>
-<tr><th>Duration</th><td>{{ run.stop_datetime - run.start_datetime }}</td></tr>
+<tr><th>Start time</th><td>{{ run.start_time }}</td></tr>
+<tr><th>Stop time</th><td>{{ run.stop_time }}</td></tr>
+<tr><th>Duration</th><td>{{ run.stop_time - run.start_time }}</td></tr>
 <tr{% if run.exit_code != 0 %} class="danger"{% endif %}><th>Exit code</th><td>{{ run.exit_code }}</td></tr>
 </table>
 <h2>Run Output</h2>

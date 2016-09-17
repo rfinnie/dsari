@@ -40,6 +40,18 @@ Default: *varies by installation*
 
 Overridden path to the data (var) directory.
 
+### database
+
+    "database": {
+        "type": "sqlite3",
+        "file": "/path/to/dsari.sqlite3"
+    }
+
+Default: *automatically generated sqlite3 configuration*
+
+An associative array of database connection parameters.
+For more information, see the [database documentation](database.md).
+
 ### environment
 
     "environment": {

@@ -110,6 +110,10 @@ class Config():
         self.shutdown_kill_runs = False
         self.shutdown_kill_grace = None
         self.environment = {}
+        self.database = {
+            'type': 'sqlite3',
+            'file': None,
+        }
 
     def is_valid_name(self, job_name):
         if '/' in job_name:
@@ -157,6 +161,7 @@ class Config():
             'shutdown_kill_runs': (bool,),
             'shutdown_kill_grace': (int, float),
             'environment': (dict,),
+            'database': (dict,),
         }
         valid_values_job = {
             'command': (list,),
