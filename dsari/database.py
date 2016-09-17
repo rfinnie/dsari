@@ -23,19 +23,12 @@ import json
 import os
 import copy
 
-try:
-    import psycopg2
-    import psycopg2.extras
-    HAS_PSYCOPG2 = True
-except ImportError:
-    HAS_PSYCOPG2 = False
-
 import dsari
 from dsari.utils import epoch_to_dt, dt_to_epoch
 
 
 def get_database(config):
-    if HAS_PSYCOPG2 and (config.database['type'] == 'postgresql'):
+    if config.database['type'] == 'postgresql':
         return PostgreSQLDatabase(config)
     elif config.database['type'] == 'mysql':
         return MySQLDatabase(config)
@@ -317,6 +310,9 @@ class BaseDatabase():
 
 class PostgreSQLDatabase(BaseDatabase):
     def __init__(self, config):
+        import psycopg2
+        import psycopg2.extras
+
         self.config = config
         self.db_conn = psycopg2.connect(config.database['dsn'])
         self.db_conn.cursor_factory = psycopg2.extras.DictCursor
