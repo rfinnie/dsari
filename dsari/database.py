@@ -32,6 +32,8 @@ def get_database(config):
         return PostgreSQLDatabase(config)
     elif config.database['type'] == 'mysql':
         return MySQLDatabase(config)
+    elif config.database['type'] == 'mongodb':
+        return MongoDBDatabase(config)
     else:
         if 'file' not in config.database:
             config.database['file'] = None
@@ -562,3 +564,131 @@ class SQLite3Database(BaseDatabase):
             else:
                 out.append(v)
         return out
+
+
+class MongoDBDatabase():
+    def __init__(self, config):
+        import pymongo
+
+        self.config = config
+        self.pymongo = pymongo
+        if ('uri' in config.database) and config.database['uri']:
+            self.client = pymongo.MongoClient(config.database['uri'])
+        else:
+            self.client = pymongo.MongoClient()
+        if ('database' in config.database) and config.database['database']:
+            database = config.database['database']
+        else:
+            database = 'dsari'
+        self.db = self.client[database]
+        self.populate_schema()
+
+    def populate_schema(self):
+        pass
+
+    def build_run_from_result(self, job, f):
+        run = dsari.Run(job, id=f['run_id'])
+        for k in (
+            'schedule_time',
+            'start_time',
+            'stop_time',
+            'exit_code',
+            'trigger_type',
+            'trigger_data',
+            'run_data',
+        ):
+            if k not in f:
+                continue
+            setattr(run, k, f[k])
+        return run
+
+    def get_previous_runs(self, job):
+        result = self.db.runs.find({
+            'job_name': job.name,
+        }).sort([
+            ('stop_time', self.pymongo.DESCENDING),
+        ]).limit(1)
+        try:
+            previous_run = self.build_run_from_result(job, result[0])
+        except IndexError:
+            previous_run = None
+
+        result = self.db.runs.find({
+            'job_name': job.name,
+            'exit_code': 0,
+        }).sort([
+            ('stop_time', self.pymongo.DESCENDING),
+        ]).limit(1)
+        try:
+            previous_good_run = self.build_run_from_result(job, result[0])
+        except IndexError:
+            previous_good_run = None
+
+        result = self.db.runs.find({
+            'job_name': job.name,
+            'exit_code': { '$ne': 0 },
+        }).sort([
+            ('stop_time', self.pymongo.DESCENDING),
+        ]).limit(1)
+        try:
+            previous_bad_run = self.build_run_from_result(job, result[0])
+        except IndexError:
+            previous_bad_run = None
+
+        return (previous_run, previous_good_run, previous_bad_run)
+
+    def insert_running_run(self, run):
+        result = self.db.runs_running.insert_one({
+            'job_name': run.job.name,
+            'run_id': run.id,
+            'schedule_time': run.schedule_time,
+            'start_time': run.start_time,
+            'trigger_type': run.trigger_type,
+            'trigger_data': run.trigger_data,
+            'run_data': {},
+        })
+
+    def insert_run(self, run):
+        result = self.db.runs.insert_one({
+            'job_name': run.job.name,
+            'run_id': run.id,
+            'schedule_time': run.schedule_time,
+            'start_time': run.start_time,
+            'stop_time': run.stop_time,
+            'exit_code': run.exit_code,
+            'trigger_type': run.trigger_type,
+            'trigger_data': run.trigger_data,
+            'run_data': {},
+        })
+        self.db.runs_running.delete_many({'run_id': run.id})
+
+    def clear_runs_running(self):
+        self.db.runs_running.delete_many({})
+
+    def child_close_fd(self):
+        pass
+
+    def get_runs(self, jobs=None, runs=None):
+        if runs is not None:
+            where = {'run_id': { '$in': runs }}
+        elif jobs is not None:
+            where = {'job_name': { '$in': jobs }}
+        else:
+            where = {}
+
+        result = self.db.runs.find(where)
+
+        runs = []
+        # Fake up a stub job object if the job has disappeared from
+        # the config.
+        fake_jobs = {}
+        for db_result in result:
+            if db_result['job_name'] in self.config.jobs:
+                job = self.config.jobs[db_result['job_name']]
+            elif db_result['job_name'] in fake_jobs:
+                job = fake_jobs[db_result['job_name']]
+            else:
+                job = dsari.Job(db_result['job_name'])
+                fake_jobs[db_result['job_name']] = job
+            runs.append(self.build_run_from_result(job, db_result))
+        return runs

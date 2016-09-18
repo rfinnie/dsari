@@ -14,12 +14,13 @@ It uses the following non-core packages:
   - [`Jinja2`](https://pypi.python.org/pypi/Jinja2), for rendering HTML reports
   - [`psycopg2`](https://pypi.python.org/pypi/psycopg2), for PostgreSQL database support
   - [`mysqlclient`](https://pypi.python.org/pypi/mysqlclient) (mysqldb), for MySQL database support
+  - [`pymongo`](https://pypi.python.org/pypi/pymongo), for MongoDB database support
 
 All non-core packages are optional, with the following limitations:
 
   - If neither `croniter` nor `python-dateutil` are installed, `dsari-daemon` will run, but it will not process scheduled runs (i.e. manual triggers only).
   - `Jinja2` is only required if you intend to use `dsari-render`.
-  - `psycopg2` or `mysqlclient` are only required if you intend to use dsari with a PostgreSQL-backed or MySQL-backed database.
+  - `psycopg2`, `mysqlclient` or `pymongo` are only required if you intend to use dsari with a PostgreSQL-backed or MySQL-backed database.
     By default, dsari uses a SQLite 3 database.
 
 ## Installation

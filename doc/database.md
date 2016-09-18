@@ -41,6 +41,16 @@ The default file is "dsari.sqlite3" in the data directory.
         }
     }
 
+### MongoDB
+
+    {
+        "database": {
+            "type": "mongodb",
+            "uri": "mongodb://localhost/dsari",
+            "database": "dsari"
+        }
+    }
+
 ## Tables
 
 The following is a quick reference of all defined tables.
