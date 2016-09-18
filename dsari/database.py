@@ -71,17 +71,18 @@ class BaseDatabase():
             if k not in f:
                 continue
             if type(f[k]) in (int, float):
-                run.schedule_time = epoch_to_dt(f[k])
+                setattr(run, k, epoch_to_dt(f[k]))
             else:
-                run.schedule_time = f[k]
+                setattr(run, k, f[k])
         if 'exit_code' in f:
             run.exit_code = f['exit_code']
         run.trigger_type = f['trigger_type']
         for k in ('trigger_data', 'run_data'):
             if type(f[k]) == dict:
-                run.trigger_data = f[k]
+                setattr(run, k, f[k])
             else:
-                run.trigger_data = json.loads(f[k])
+                setattr(run, k, json.loads(f[k]))
+        return run
 
     def get_previous_runs(self, job):
         sql_statement = """
