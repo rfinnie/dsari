@@ -142,9 +142,9 @@ class Config():
             config_files = [
                 os.path.join(config_d, fn)
                 for fn in os.listdir(config_d)
-                if fn.endswith('.json')
-                and os.path.isfile(os.path.join(config_d, fn))
-                and os.access(os.path.join(config_d, fn), os.R_OK)
+                if fn.endswith('.json') and
+                os.path.isfile(os.path.join(config_d, fn)) and
+                os.access(os.path.join(config_d, fn), os.R_OK)
             ]
             config_files.sort()
             for file in config_files:
