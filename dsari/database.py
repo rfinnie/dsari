@@ -43,6 +43,33 @@ def get_database(config):
 
 
 class BaseDatabase():
+    def __init__(self, config):
+        self.config = config
+        self.populate_schema()
+
+    def child_close_fd(self):
+        pass
+
+    def populate_schema(self):
+        pass
+
+    def get_previous_runs(self, job):
+        return (None, None, None)
+
+    def insert_running_run(self, run):
+        pass
+
+    def insert_run(self, run):
+        pass
+
+    def clear_runs_running(self):
+        pass
+
+    def get_runs(self, jobs=None, runs=None):
+        return []
+
+
+class BaseSQLDatabase(BaseDatabase):
     placeholder = '%s'
 
     def __init__(self, config):
@@ -52,10 +79,10 @@ class BaseDatabase():
     def populate_schema(self):
         pass
 
-    def modify_statement(self, sql):
+    def _modify_statement(self, sql):
         return sql.format(*((self.placeholder,) * sql.count('{}')))
 
-    def build_insert(self, pairs):
+    def _build_insert(self, pairs):
         out = []
         for (k, v) in pairs:
             if k in (
@@ -67,7 +94,7 @@ class BaseDatabase():
                 out.append(v)
         return out
 
-    def build_run_from_result(self, job, f):
+    def _build_run_from_result(self, job, f):
         run = dsari.Run(job, id=f['run_id'])
         for k in ('schedule_time', 'start_time', 'stop_time'):
             if k not in f:
@@ -104,13 +131,13 @@ class BaseDatabase():
             ORDER BY
                 stop_time DESC
         """
-        sql_statement = self.modify_statement(sql_statement)
+        sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
         cur.execute(sql_statement, (job.name,))
         f = cur.fetchone()
         cur.close()
         if f:
-            previous_run = self.build_run_from_result(job, f)
+            previous_run = self._build_run_from_result(job, f)
         else:
             previous_run = None
 
@@ -133,13 +160,13 @@ class BaseDatabase():
             ORDER BY
                 stop_time DESC
         """
-        sql_statement = self.modify_statement(sql_statement)
+        sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
         cur.execute(sql_statement, (job.name,))
         f = cur.fetchone()
         cur.close()
         if f:
-            previous_good_run = self.build_run_from_result(job, f)
+            previous_good_run = self._build_run_from_result(job, f)
         else:
             previous_good_run = None
 
@@ -162,13 +189,13 @@ class BaseDatabase():
             ORDER BY
                 stop_time DESC
         """
-        sql_statement = self.modify_statement(sql_statement)
+        sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
         cur.execute(sql_statement, (job.name,))
         f = cur.fetchone()
         cur.close()
         if f:
-            previous_bad_run = self.build_run_from_result(job, f)
+            previous_bad_run = self._build_run_from_result(job, f)
         else:
             previous_bad_run = None
 
@@ -188,9 +215,9 @@ class BaseDatabase():
                 {}, {}, {}, {}, {}, {}, {}
             )
         """
-        sql_statement = self.modify_statement(sql_statement)
+        sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
-        cur.execute(sql_statement, self.build_insert([
+        cur.execute(sql_statement, self._build_insert([
             ('job_name', run.job.name),
             ('run_id', run.id),
             ('schedule_time', run.schedule_time),
@@ -218,8 +245,8 @@ class BaseDatabase():
                 {}, {}, {}, {}, {}, {}, {}, {}, {}
             )
         """
-        sql_statement = self.modify_statement(sql_statement)
-        cur.execute(sql_statement, self.build_insert([
+        sql_statement = self._modify_statement(sql_statement)
+        cur.execute(sql_statement, self._build_insert([
             ('job_name', run.job.name),
             ('run_id', run.id),
             ('schedule_time', run.schedule_time),
@@ -238,7 +265,7 @@ class BaseDatabase():
             WHERE
                 run_id = {}
         """
-        sql_statement = self.modify_statement(sql_statement)
+        sql_statement = self._modify_statement(sql_statement)
         cur.execute(sql_statement, (
             run.id,
         ))
@@ -250,7 +277,7 @@ class BaseDatabase():
             FROM
                 runs_running
         """
-        sql_statement = self.modify_statement(sql_statement)
+        sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
         cur.execute(sql_statement)
         self.db_conn.commit()
@@ -291,7 +318,7 @@ class BaseDatabase():
                 where,
                 ','.join(['{}'] * len(where_in)),
             )
-        sql_statement = self.modify_statement(sql_statement)
+        sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
         cur.execute(sql_statement, where_in)
         runs = []
@@ -306,12 +333,12 @@ class BaseDatabase():
             else:
                 job = dsari.Job(db_result['job_name'])
                 fake_jobs[db_result['job_name']] = job
-            runs.append(self.build_run_from_result(job, db_result))
+            runs.append(self._build_run_from_result(job, db_result))
         cur.close()
         return runs
 
 
-class PostgreSQLDatabase(BaseDatabase):
+class PostgreSQLDatabase(BaseSQLDatabase):
     def __init__(self, config):
         import psycopg2
         import psycopg2.extras
@@ -389,7 +416,7 @@ class PostgreSQLDatabase(BaseDatabase):
             self.db_conn.commit()
 
 
-class MySQLDatabase(BaseDatabase):
+class MySQLDatabase(BaseSQLDatabase):
     def __init__(self, config):
         import MySQLdb
         import MySQLdb.cursors
@@ -468,7 +495,7 @@ class MySQLDatabase(BaseDatabase):
             self.db_conn.commit()
 
 
-class SQLite3Database(BaseDatabase):
+class SQLite3Database(BaseSQLDatabase):
     placeholder = '?'
 
     def __init__(self, config):
@@ -547,7 +574,7 @@ class SQLite3Database(BaseDatabase):
     def child_close_fd(self):
         self.db_conn.close()
 
-    def build_insert(self, pairs):
+    def _build_insert(self, pairs):
         out = []
         for (k, v) in pairs:
             if k in (
@@ -566,7 +593,7 @@ class SQLite3Database(BaseDatabase):
         return out
 
 
-class MongoDBDatabase():
+class MongoDBDatabase(BaseDatabase):
     def __init__(self, config):
         import pymongo
 
@@ -583,10 +610,7 @@ class MongoDBDatabase():
         self.db = self.client[database]
         self.populate_schema()
 
-    def populate_schema(self):
-        pass
-
-    def build_run_from_result(self, job, f):
+    def _build_run_from_result(self, job, f):
         run = dsari.Run(job, id=f['run_id'])
         for k in (
             'schedule_time',
@@ -609,7 +633,7 @@ class MongoDBDatabase():
             ('stop_time', self.pymongo.DESCENDING),
         ]).limit(1)
         try:
-            previous_run = self.build_run_from_result(job, result[0])
+            previous_run = self._build_run_from_result(job, result[0])
         except IndexError:
             previous_run = None
 
@@ -620,7 +644,7 @@ class MongoDBDatabase():
             ('stop_time', self.pymongo.DESCENDING),
         ]).limit(1)
         try:
-            previous_good_run = self.build_run_from_result(job, result[0])
+            previous_good_run = self._build_run_from_result(job, result[0])
         except IndexError:
             previous_good_run = None
 
@@ -631,7 +655,7 @@ class MongoDBDatabase():
             ('stop_time', self.pymongo.DESCENDING),
         ]).limit(1)
         try:
-            previous_bad_run = self.build_run_from_result(job, result[0])
+            previous_bad_run = self._build_run_from_result(job, result[0])
         except IndexError:
             previous_bad_run = None
 
@@ -665,9 +689,6 @@ class MongoDBDatabase():
     def clear_runs_running(self):
         self.db.runs_running.delete_many({})
 
-    def child_close_fd(self):
-        pass
-
     def get_runs(self, jobs=None, runs=None):
         if runs is not None:
             where = {'run_id': { '$in': runs }}
@@ -690,5 +711,5 @@ class MongoDBDatabase():
             else:
                 job = dsari.Job(db_result['job_name'])
                 fake_jobs[db_result['job_name']] = job
-            runs.append(self.build_run_from_result(job, db_result))
+            runs.append(self._build_run_from_result(job, db_result))
         return runs
