@@ -650,7 +650,7 @@ class MongoDBDatabase(BaseDatabase):
 
         result = self.db.runs.find({
             'job_name': job.name,
-            'exit_code': { '$ne': 0 },
+            'exit_code': {'$ne': 0},
         }).sort([
             ('stop_time', self.pymongo.DESCENDING),
         ]).limit(1)
@@ -662,7 +662,7 @@ class MongoDBDatabase(BaseDatabase):
         return (previous_run, previous_good_run, previous_bad_run)
 
     def insert_running_run(self, run):
-        result = self.db.runs_running.insert_one({
+        self.db.runs_running.insert_one({
             'job_name': run.job.name,
             'run_id': run.id,
             'schedule_time': run.schedule_time,
@@ -673,7 +673,7 @@ class MongoDBDatabase(BaseDatabase):
         })
 
     def insert_run(self, run):
-        result = self.db.runs.insert_one({
+        self.db.runs.insert_one({
             'job_name': run.job.name,
             'run_id': run.id,
             'schedule_time': run.schedule_time,
@@ -691,9 +691,9 @@ class MongoDBDatabase(BaseDatabase):
 
     def get_runs(self, jobs=None, runs=None):
         if runs is not None:
-            where = {'run_id': { '$in': runs }}
+            where = {'run_id': {'$in': runs}}
         elif jobs is not None:
-            where = {'job_name': { '$in': jobs }}
+            where = {'job_name': {'$in': jobs}}
         else:
             where = {}
 
