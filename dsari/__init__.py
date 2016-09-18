@@ -79,6 +79,7 @@ class Run():
         self.schedule_time = None
         self.trigger_type = None
         self.trigger_data = {}
+        self.run_data = {}
         self.respawn = False
         self.concurrency_group = None
         self.start_time = None

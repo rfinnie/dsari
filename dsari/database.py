@@ -224,7 +224,7 @@ class BaseSQLDatabase(BaseDatabase):
             ('start_time', run.start_time),
             ('trigger_type', run.trigger_type),
             ('trigger_data', run.trigger_data),
-            ('run_data', {}),
+            ('run_data', run.run_data),
         ]))
         self.db_conn.commit()
 
@@ -255,7 +255,7 @@ class BaseSQLDatabase(BaseDatabase):
             ('exit_code', run.exit_code),
             ('trigger_type', run.trigger_type),
             ('trigger_data', run.trigger_data),
-            ('run_data', {}),
+            ('run_data', run.run_data),
         ]))
 
         sql_statement = """
@@ -669,7 +669,7 @@ class MongoDBDatabase(BaseDatabase):
             'start_time': run.start_time,
             'trigger_type': run.trigger_type,
             'trigger_data': run.trigger_data,
-            'run_data': {},
+            'run_data': run.run_data,
         })
 
     def insert_run(self, run):
@@ -682,7 +682,7 @@ class MongoDBDatabase(BaseDatabase):
             'exit_code': run.exit_code,
             'trigger_type': run.trigger_type,
             'trigger_data': run.trigger_data,
-            'run_data': {},
+            'run_data': run.run_data,
         })
         self.db.runs_running.delete_many({'run_id': run.id})
 
