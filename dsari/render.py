@@ -129,9 +129,9 @@ class Renderer():
         self.db = dsari.database.get_database(self.config)
 
     def render(self):
-        self.jobs = {job.name: job for job in self.config.jobs.values() if job.render_reports}
+        self.jobs = sorted(self.config.jobs)
         self.job_runs = {}
-        for job in self.jobs.values():
+        for job in self.jobs:
             job.last_run = None
             job.last_successful_run = None
             self.job_runs[job.name] = []
@@ -144,7 +144,7 @@ class Renderer():
 
     def render_runs(self):
         self.run_template = self.templates.get_template('run.html')
-        runs = self.db.get_runs(jobs=self.jobs.keys())
+        runs = self.db.get_runs(job_names=[job.name for job in self.jobs])
         for run in runs:
             self.render_run(run)
 
@@ -174,7 +174,7 @@ class Renderer():
 
     def render_jobs(self):
         self.job_template = self.templates.get_template('job.html')
-        for job in self.jobs.values():
+        for job in self.jobs:
             if job not in self.jobs_written:
                 if not self.args.regenerate:
                     continue
@@ -197,7 +197,7 @@ class Renderer():
         self.index_template = self.templates.get_template('index.html')
         if (len(self.jobs_written) > 0) or self.args.regenerate:
             context = {
-                'jobs': sorted(self.jobs.values(), key=lambda job: job.name),
+                'jobs': self.jobs,
                 'runs': sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[:25],
             }
             index_html_filename = os.path.join(self.config.data_dir, 'html', 'index.html')

@@ -41,21 +41,26 @@ else:
     DEFAULT_DATA_DIR = os.path.join(os.path.expanduser('~'), '.dsari', 'var')
 
 
-class ConcurrencyGroup():
+class ConcurrencyGroup(object):
     def __init__(self, name):
         self.name = name
         self.max = 1
+
+    def __lt__(self, other):
+        if isinstance(other, self.__class__):
+            return (self.name < other.name)
+        return NotImplemented
 
     def __repr__(self):
         return '<ConcurrencyGroup %s (%s)>' % (self.name, self.max)
 
 
-class Job():
+class Job(object):
     def __init__(self, name):
         self.name = name
         self.command = []
         self.schedule = None
-        self.concurrency_groups = {}
+        self.concurrency_groups = []
         self.max_execution = None
         self.max_execution_grace = utils.seconds_to_td(60.0)
         self.environment = {}
@@ -65,6 +70,11 @@ class Job():
         self.job_group = None
         self.concurrent_runs = False
 
+    def __lt__(self, other):
+        if isinstance(other, self.__class__):
+            return (self.name < other.name)
+        return NotImplemented
+
     def __repr__(self):
         if self.schedule:
             return '<Job %s (%s)>' % (self.name, self.schedule)
@@ -72,7 +82,7 @@ class Job():
             return '<Job %s>' % self.name
 
 
-class Run():
+class Run(object):
     def __init__(self, job, id=None):
         self.job = job
         self.id = id
@@ -90,6 +100,11 @@ class Run():
         if not self.id:
             self.id = str(uuid.uuid4())
 
+    def __lt__(self, other):
+        if isinstance(other, self.__class__):
+            return (self.id < other.id)
+        return NotImplemented
+
     def __repr__(self):
         return '<Run %s (%s)>' % (self.id, self.job.name)
 
@@ -102,8 +117,8 @@ class Config():
     def __init__(self):
         self.raw_config = {}
 
-        self.jobs = {}
-        self.concurrency_groups = {}
+        self.jobs = []
+        self.concurrency_groups = []
         self.config_d = None
         self.data_dir = DEFAULT_DATA_DIR
         self.template_dir = None
@@ -217,7 +232,7 @@ class Config():
                             repr(valid_values_concurrency_group[k]))
                         )
                     setattr(concurrency_group, k, concurrency_groups[concurrency_group_name][k])
-            self.concurrency_groups[concurrency_group_name] = concurrency_group
+            self.concurrency_groups.append(concurrency_group)
 
         jobs = {}
         if 'jobs' in config:
@@ -237,6 +252,10 @@ class Config():
                 jobs[job_name]['job_group'] = job_group_name
                 del(jobs[job_name]['job_names'])
 
+        concurrency_groups_hash = {
+            concurrency_group.name: concurrency_group
+            for concurrency_group in self.concurrency_groups
+        }
         for job_name in jobs.keys():
             if not self.is_valid_name(job_name):
                 raise ConfigError('Job %s: Invalid name' % job_name)
@@ -268,7 +287,11 @@ class Config():
             for concurrency_group_name in job_concurrency_group_names:
                 if not self.is_valid_name(concurrency_group_name):
                     raise ConfigError('Concurrency group %s: Invalid name' % job_group_name)
-                if concurrency_group_name not in self.concurrency_groups:
-                    self.concurrency_groups[concurrency_group_name] = ConcurrencyGroup(concurrency_group_name)
-                job.concurrency_groups[concurrency_group_name] = self.concurrency_groups[concurrency_group_name]
-            self.jobs[job.name] = job
+                if concurrency_group_name not in concurrency_groups_hash:
+                    concurrency_group = ConcurrencyGroup(concurrency_group_name)
+                    concurrency_groups_hash[concurrency_group_name] = concurrency_group
+                    self.concurrency_groups.append(concurrency_group)
+                else:
+                    concurrency_group = concurrency_groups_hash[concurrency_group_name]
+                job.concurrency_groups.append(concurrency_group)
+            self.jobs.append(job)

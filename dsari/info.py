@@ -129,7 +129,7 @@ class Info():
 
     def dump_jobs(self, filter=None):
         jobs = {}
-        for job in self.config.jobs.values():
+        for job in self.config.jobs:
             if filter is not None and job.name not in filter:
                 continue
             jobs[job.name] = {
@@ -139,7 +139,7 @@ class Info():
                 'environment': job.environment,
                 'max_execution': job.max_execution,
                 'max_execution_grace': job.max_execution_grace,
-                'concurrency_groups': list(job.concurrency_groups.keys()),
+                'concurrency_groups': sorted([concurrency_group.name for concurrency_group in job.concurrency_groups]),
                 'render_reports': job.render_reports,
                 'jenkins_environment': job.jenkins_environment,
                 'job_group': job.job_group,
@@ -174,8 +174,8 @@ class Info():
                     if config[attr] is not None:
                         config[attr] = td_to_seconds(config[attr])
                 for concurrency_group in self.config.concurrency_groups:
-                    config['concurrency_groups'][concurrency_group] = {
-                        'max': self.config.concurrency_groups[concurrency_group].max,
+                    config['concurrency_groups'][concurrency_group.name] = {
+                        'max': concurrency_group.max,
                     }
             print(json_pretty_print(config))
         elif self.args.subcommand == 'check-config':
@@ -201,7 +201,7 @@ class Info():
         elif self.args.subcommand == 'list-runs':
             job_names = self.args.job
             run_ids = self.args.run
-            runs = self.db.get_runs(jobs=job_names, runs=run_ids)
+            runs = self.db.get_runs(job_names=job_names, run_ids=run_ids)
             if self.args.format in ('json', 'yaml'):
                 out = {}
                 for run in runs:
@@ -233,7 +233,7 @@ class Info():
 
         elif self.args.subcommand == 'get-run-output':
             run_id = self.args.run
-            runs = self.db.get_runs(runs=[run_id])
+            runs = self.db.get_runs(run_ids=[run_id])
             if len(runs) == 0:
                 self.args.parser.error('Cannot find run ID %s' % run_id)
             run = runs[0]

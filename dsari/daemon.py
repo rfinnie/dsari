@@ -282,7 +282,7 @@ class Scheduler():
         for run in self.running_runs:
             run.respawn = False
         now = datetime.datetime.now()
-        for (job_name, job) in sorted(self.config.jobs.items()):
+        for job in sorted(self.config.jobs):
             self.jobs.append(job)
             if not job.schedule:
                 self.logger.debug('[%s] No schedule defined, manual triggers only' % job.name)
@@ -307,17 +307,22 @@ class Scheduler():
             run.schedule_time = t
             self.scheduled_runs.append(run)
 
+        jobs_hash = {job.name: job for job in self.config.jobs}
+        concurrency_groups_hash = {
+            concurrency_group.name: concurrency_group
+            for concurrency_group in self.config.concurrency_groups
+        }
         # Regenerate running runs' jobs and concurrency groups
         self.running_groups = {}
         for run in self.running_runs:
-            if run.job.name in self.config.jobs:
-                run.job = self.config.jobs[run.job.name]
+            if run.job.name in jobs_hash:
+                run.job = jobs_hash[run.job.name]
             else:
                 # Job disappeared from config during SIGHUP
                 run.respawn = False
             if run.concurrency_group:
-                if run.concurrency_group.name in self.config.concurrency_groups:
-                    concurrency_group = self.config.concurrency_groups[run.concurrency_group.name]
+                if run.concurrency_group.name in concurrency_groups_hash:
+                    concurrency_group = concurrency_groups_hash[run.concurrency_group.name]
                     run.concurrency_group = concurrency_group
                     if concurrency_group not in self.running_groups:
                         self.running_groups[concurrency_group] = []
@@ -584,10 +589,9 @@ class Scheduler():
             return
         run.concurrency_group = None
         if len(job.concurrency_groups) > 0:
-            job_concurrency_groups = list(job.concurrency_groups.keys())
+            job_concurrency_groups = copy.copy(job.concurrency_groups)
             random.shuffle(job_concurrency_groups)
-            for concurrency_group_name in job_concurrency_groups:
-                concurrency_group = job.concurrency_groups[concurrency_group_name]
+            for concurrency_group in job_concurrency_groups:
                 if concurrency_group not in self.running_groups:
                     self.running_groups[concurrency_group] = []
                 if len(self.running_groups[concurrency_group]) < concurrency_group.max:
@@ -600,9 +604,9 @@ class Scheduler():
                     run.id,
                     ', '.join([
                         '%s=%d' % (
-                            concurrency_group_name,
-                            job.concurrency_groups[concurrency_group_name].max,
-                        ) for concurrency_group_name in sorted(job_concurrency_groups)
+                            concurrency_group.name,
+                            concurrency_group.max,
+                        ) for concurrency_group in sorted(job_concurrency_groups)
                     ]),
                     backoff_time,
                 ))

@@ -60,7 +60,7 @@ class BaseDatabase():
     def clear_runs_running(self):
         pass
 
-    def get_runs(self, jobs=None, runs=None):
+    def get_runs(self, job_names=None, run_ids=None):
         return []
 
 
@@ -280,13 +280,13 @@ class BaseSQLDatabase(BaseDatabase):
     def child_close_fd(self):
         pass
 
-    def get_runs(self, jobs=None, runs=None):
-        if runs is not None:
+    def get_runs(self, job_names=None, run_ids=None):
+        if run_ids is not None:
             where = 'run_id'
-            where_in = runs
-        elif jobs is not None:
+            where_in = run_ids
+        elif job_names is not None:
             where = 'job_name'
-            where_in = jobs
+            where_in = job_names
         else:
             where = None
             where_in = []
@@ -317,12 +317,13 @@ class BaseSQLDatabase(BaseDatabase):
         cur = self.db_conn.cursor()
         cur.execute(sql_statement, where_in)
         runs = []
+        jobs_hash = {job.name: job for job in self.config.jobs}
         # Fake up a stub job object if the job has disappeared from
         # the config.
         fake_jobs = {}
         for db_result in cur:
-            if db_result['job_name'] in self.config.jobs:
-                job = self.config.jobs[db_result['job_name']]
+            if db_result['job_name'] in jobs_hash:
+                job = jobs_hash[db_result['job_name']]
             elif db_result['job_name'] in fake_jobs:
                 job = fake_jobs[db_result['job_name']]
             else:
@@ -690,23 +691,24 @@ class MongoDBDatabase(BaseDatabase):
     def clear_runs_running(self):
         self.db.runs_running.delete_many({})
 
-    def get_runs(self, jobs=None, runs=None):
-        if runs is not None:
-            where = {'run_id': {'$in': runs}}
-        elif jobs is not None:
-            where = {'job_name': {'$in': jobs}}
+    def get_runs(self, job_names=None, run_ids=None):
+        if run_ids is not None:
+            where = {'run_id': {'$in': run_ids}}
+        elif job_names is not None:
+            where = {'job_name': {'$in': job_names}}
         else:
             where = {}
 
         result = self.db.runs.find(where)
 
         runs = []
+        jobs_hash = {job.name: job for job in self.config.jobs}
         # Fake up a stub job object if the job has disappeared from
         # the config.
         fake_jobs = {}
         for db_result in result:
-            if db_result['job_name'] in self.config.jobs:
-                job = self.config.jobs[db_result['job_name']]
+            if db_result['job_name'] in jobs_hash:
+                job = jobs_hash[db_result['job_name']]
             elif db_result['job_name'] in fake_jobs:
                 job = fake_jobs[db_result['job_name']]
             else:
