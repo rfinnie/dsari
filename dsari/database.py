@@ -18,7 +18,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import sqlite3
 import json
 import os
 import copy
@@ -35,10 +34,6 @@ def get_database(config):
     elif config.database['type'] == 'mongodb':
         return MongoDBDatabase(config)
     else:
-        if 'file' not in config.database:
-            config.database['file'] = None
-        if config.database['file'] is None:
-            config.database['file'] = os.path.join(config.data_dir, 'dsari.sqlite3')
         return SQLite3Database(config)
 
 
@@ -499,6 +494,12 @@ class SQLite3Database(BaseSQLDatabase):
     placeholder = '?'
 
     def __init__(self, config):
+        import sqlite3
+
+        if 'file' not in config.database:
+            config.database['file'] = None
+        if config.database['file'] is None:
+            config.database['file'] = os.path.join(config.data_dir, 'dsari.sqlite3')
         self.config = config
         self.db_conn = sqlite3.connect(config.database['file'])
         self.db_conn.row_factory = sqlite3.Row
