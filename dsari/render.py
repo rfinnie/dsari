@@ -25,6 +25,7 @@ import argparse
 import logging
 
 import dsari
+import dsari.config
 import dsari.database
 
 import gzip
@@ -57,7 +58,7 @@ def parse_args():
         help='report the program version',
     )
     parser.add_argument(
-        '--config-dir', '-c', type=str, default=dsari.DEFAULT_CONFIG_DIR,
+        '--config-dir', '-c', type=str, default=dsari.config.DEFAULT_CONFIG_DIR,
         help='configuration directory for dsari.json',
     )
     parser.add_argument(
@@ -97,8 +98,7 @@ def write_html_file(filename, content):
 class Renderer():
     def __init__(self, args):
         self.args = args
-        self.config = dsari.Config()
-        self.config.load_dir(self.args.config_dir)
+        self.config = dsari.config.get_config(self.args.config_dir)
 
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)

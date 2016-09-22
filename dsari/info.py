@@ -35,6 +35,7 @@ except ImportError:
     HAS_YAML = False
 
 import dsari
+import dsari.config
 import dsari.database
 from dsari.utils import td_to_seconds
 
@@ -56,7 +57,7 @@ def parse_args():
         help='report the program version',
     )
     parser.add_argument(
-        '--config-dir', '-c', type=str, default=dsari.DEFAULT_CONFIG_DIR,
+        '--config-dir', '-c', type=str, default=dsari.config.DEFAULT_CONFIG_DIR,
         help='configuration directory for dsari.json',
     )
 
@@ -122,9 +123,7 @@ def parse_args():
 class Info():
     def __init__(self, args):
         self.args = args
-        self.config = dsari.Config()
-        self.config.load_dir(self.args.config_dir)
-
+        self.config = dsari.config.get_config(self.args.config_dir)
         self.db = dsari.database.get_database(self.config)
 
     def dump_jobs(self, filter=None):

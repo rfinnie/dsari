@@ -32,6 +32,7 @@ import datetime
 import binascii
 
 import dsari
+import dsari.config
 import dsari.database
 from dsari.utils import seconds_to_td, td_to_seconds, epoch_to_dt, dt_to_epoch, validate_environment_dict
 
@@ -121,7 +122,7 @@ def parse_args():
         help='report the program version',
     )
     parser.add_argument(
-        '--config-dir', '-c', type=str, default=dsari.DEFAULT_CONFIG_DIR,
+        '--config-dir', '-c', type=str, default=dsari.config.DEFAULT_CONFIG_DIR,
         help='configuration directory for dsari.json',
     )
     parser.add_argument(
@@ -271,8 +272,7 @@ class Scheduler():
             )
 
     def load_config(self):
-        self.config = dsari.Config()
-        self.config.load_dir(self.args.config_dir)
+        self.config = dsari.config.get_config(self.args.config_dir)
 
     def reset_jobs(self):
         if self.shutdown:
