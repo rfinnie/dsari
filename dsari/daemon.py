@@ -113,8 +113,6 @@ class Scheduler():
         self.shutdown = False
         self.args = args
         self.load_config()
-        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM, signal.SIGQUIT):
-            signal.signal(signum, self.signal_handler)
 
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
@@ -133,16 +131,21 @@ class Scheduler():
         if not os.path.exists(self.config.data_dir):
             os.makedirs(self.config.data_dir)
 
-        self.db = dsari.database.get_database(self.config)
-        self.db.clear_runs_running()
-
+        self.jobs = []
+        self.scheduled_runs = []
         self.running_runs = []
         self.running_groups = {}
 
-        self.reset_jobs()
-
         self.wakeups = []
         self.next_wakeup = datetime.datetime.now() + seconds_to_td(60.0)
+
+        self.db = dsari.database.get_database(self.config)
+        self.db.clear_runs_running()
+
+        self.reset_jobs()
+
+        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM, signal.SIGQUIT):
+            signal.signal(signum, self.signal_handler)
 
         self.logger.info('Scheduler running')
 
