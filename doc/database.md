@@ -1,6 +1,6 @@
 # Database
 
-dsari stores its metadata in one of a number of supported databases, currently SQLite 3 (default) or PostgreSQL.
+dsari stores its metadata in one of a number of supported databases, currently SQLite 3 (default), PostgreSQL, MySQL or MongoDB.
 
 ## Configuration
 
