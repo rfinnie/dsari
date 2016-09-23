@@ -602,9 +602,14 @@ class MongoDBDatabase(BaseDatabase):
         self.config = config
         self.pymongo = pymongo
         if ('uri' in config.database) and config.database['uri']:
-            self.client = pymongo.MongoClient(config.database['uri'])
+            uri = config.database['uri']
         else:
-            self.client = pymongo.MongoClient()
+            uri = None
+        if ('connection' in config.database) and (type(config.database['connection']) == dict):
+            connection = config.database['connection']
+        else:
+            connection = {}
+        self.client = pymongo.MongoClient(uri, **connection)
         if ('database' in config.database) and config.database['database']:
             database = config.database['database']
         else:
