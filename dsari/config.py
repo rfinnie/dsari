@@ -231,4 +231,9 @@ class Config():
                 else:
                     concurrency_group = concurrency_groups_hash[concurrency_group_name]
                 job.concurrency_groups.append(concurrency_group)
+            if job.schedule is not None:
+                try:
+                    utils.get_next_schedule_time(job.schedule, job.name)
+                except Exception as e:
+                    raise ConfigError('Job %s: Invalid schedule (%s): %s: %s' % (job.name, job.schedule, type(e), str(e)))
             self.jobs.append(job)

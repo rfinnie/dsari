@@ -29,18 +29,11 @@ import argparse
 import copy
 import pwd
 import datetime
-import binascii
 
 import dsari
 import dsari.config
 import dsari.database
-from dsari.utils import seconds_to_td, td_to_seconds, epoch_to_dt, dt_to_epoch, validate_environment_dict
-
-try:
-    from . import croniter_hash
-    HAS_CRONITER = True
-except ImportError:
-    HAS_CRONITER = False
+from dsari.utils import seconds_to_td, td_to_seconds, epoch_to_dt, dt_to_epoch, validate_environment_dict, get_next_schedule_time
 
 try:
     import dateutil.rrule
@@ -55,31 +48,6 @@ except ImportError:
     from pipes import quote as shquote
 
 __version__ = dsari.__version__
-
-
-def get_next_schedule_time(schedule, job_name, start_time=None):
-    if start_time is None:
-        start_time = datetime.datetime.now()
-    crc = binascii.crc32(job_name.encode('utf-8')) & 0xffffffff
-    subsecond_offset = seconds_to_td(float(crc) / float(0xffffffff))
-    if schedule.upper().startswith('RRULE:'):
-        if not HAS_DATEUTIL:
-            raise ImportError('dateutil not available, manual triggers only')
-        hashed_epoch = start_time - seconds_to_td((dt_to_epoch(start_time) % (crc % 86400)))
-        t = dateutil.rrule.rrulestr(schedule, dtstart=hashed_epoch).after(start_time) + subsecond_offset
-        if t is None:
-            raise ValueError('rrulestr returned None')
-        return t
-    if not HAS_CRONITER:
-        raise ImportError('croniter not available, manual triggers only')
-    if len(schedule.split(' ')) == 5:
-        schedule = schedule + ' H'
-    t = croniter_hash.croniter_hash(
-        schedule,
-        start_time=start_time,
-        hash_id=job_name
-    ).get_next(datetime.datetime) + subsecond_offset
-    return t
 
 
 def wait_deadline(pid, options, deadline, interval=0.05):
@@ -287,12 +255,7 @@ class Scheduler():
             if not job.schedule:
                 self.logger.debug('[%s] No schedule defined, manual triggers only' % job.name)
                 continue
-            try:
-                t = get_next_schedule_time(job.schedule, job.name, start_time=now)
-            except Exception as e:
-                self.logger.warning('[%s] Invalid schedule (%s): %s: %s' % (job.name, job.schedule, type(e), str(e)))
-                job.schedule = None
-                continue
+            t = get_next_schedule_time(job.schedule, job.name, start_time=now)
             run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'

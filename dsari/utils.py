@@ -21,6 +21,20 @@
 import json
 import copy
 import datetime
+import binascii
+
+try:
+    from . import croniter_hash
+    HAS_CRONITER = True
+except ImportError:
+    HAS_CRONITER = False
+
+try:
+    import dateutil.rrule
+    import dateutil.parser
+    HAS_DATEUTIL = True
+except ImportError:
+    HAS_DATEUTIL = False
 
 
 try:
@@ -81,3 +95,28 @@ def validate_environment_dict(env_in):
         else:
             raise ValueError('Invalid environment value name: %s (%s)' % (repr(env_in[k]), repr(type(env_in[k]))))
     return env_out
+
+
+def get_next_schedule_time(schedule, job_name, start_time=None):
+    if start_time is None:
+        start_time = datetime.datetime.now()
+    crc = binascii.crc32(job_name.encode('utf-8')) & 0xffffffff
+    subsecond_offset = seconds_to_td(float(crc) / float(0xffffffff))
+    if schedule.upper().startswith('RRULE:'):
+        if not HAS_DATEUTIL:
+            raise ImportError('dateutil not available, manual triggers only')
+        hashed_epoch = start_time - seconds_to_td((dt_to_epoch(start_time) % (crc % 86400)))
+        t = dateutil.rrule.rrulestr(schedule, dtstart=hashed_epoch).after(start_time) + subsecond_offset
+        if t is None:
+            raise ValueError('rrulestr returned None')
+        return t
+    if not HAS_CRONITER:
+        raise ImportError('croniter not available, manual triggers only')
+    if len(schedule.split(' ')) == 5:
+        schedule = schedule + ' H'
+    t = croniter_hash.croniter_hash(
+        schedule,
+        start_time=start_time,
+        hash_id=job_name
+    ).get_next(datetime.datetime) + subsecond_offset
+    return t
