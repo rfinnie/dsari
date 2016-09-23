@@ -38,6 +38,8 @@ def get_database(config):
 
 
 class BaseDatabase():
+    type = None
+
     def __init__(self, config):
         self.config = config
         self.populate_schema()
@@ -66,6 +68,7 @@ class BaseDatabase():
 
 class BaseSQLDatabase(BaseDatabase):
     placeholder = '%s'
+    type = 'sql'
 
     def __init__(self, config):
         self.config = config
@@ -335,6 +338,8 @@ class BaseSQLDatabase(BaseDatabase):
 
 
 class PostgreSQLDatabase(BaseSQLDatabase):
+    type = 'postgresql'
+
     def __init__(self, config):
         import psycopg2
         import psycopg2.extras
@@ -413,6 +418,8 @@ class PostgreSQLDatabase(BaseSQLDatabase):
 
 
 class MySQLDatabase(BaseSQLDatabase):
+    type = 'mysql'
+
     def __init__(self, config):
         import MySQLdb
         import MySQLdb.cursors
@@ -493,6 +500,7 @@ class MySQLDatabase(BaseSQLDatabase):
 
 class SQLite3Database(BaseSQLDatabase):
     placeholder = '?'
+    type = 'sqlite3'
 
     def __init__(self, config):
         import sqlite3
@@ -596,6 +604,8 @@ class SQLite3Database(BaseSQLDatabase):
 
 
 class MongoDBDatabase(BaseDatabase):
+    type = 'mongodb'
+
     def __init__(self, config):
         import pymongo
 

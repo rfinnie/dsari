@@ -140,6 +140,7 @@ class Scheduler():
         self.next_wakeup = datetime.datetime.now() + seconds_to_td(60.0)
 
         self.db = dsari.database.get_database(self.config)
+        self.logger.debug('Database in use: %s' % self.db.type)
         self.db.clear_runs_running()
 
         self.reset_jobs()
