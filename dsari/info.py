@@ -214,6 +214,8 @@ class Info():
                         'job_name': run.job.name,
                         'schedule_time': run.schedule_time.isoformat(),
                         'start_time': run.start_time.isoformat(),
+                        'stop_time': None,
+                        'exit_code': None,
                         'trigger_type': run.trigger_type,
                         'trigger_data': run.trigger_data,
                         'run_data': run.run_data,
@@ -226,16 +228,19 @@ class Info():
                 elif self.args.format == 'yaml':
                     print(yaml.safe_dump(out, default_flow_style=False))
             else:
-                for run in sorted(runs, key=lambda run: run.stop_time):
-                    if runs_running:
-                        print('%s\t%s\t%s\t%s\t%s' % (
+                if runs_running:
+                    for run in sorted(runs, key=lambda run: run.start_time):
+                        print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
                             run.id,
                             run.job.name,
+                            '',
                             run.trigger_type,
                             run.schedule_time.isoformat(),
                             run.start_time.isoformat(),
+                            '',
                         ))
-                    else:
+                else:
+                    for run in sorted(runs, key=lambda run: run.stop_time):
                         print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
                             run.id,
                             run.job.name,
