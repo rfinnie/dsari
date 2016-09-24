@@ -283,7 +283,7 @@ class BaseSQLDatabase(BaseDatabase):
     def child_close_fd(self):
         pass
 
-    def get_runs(self, job_names=None, run_ids=None):
+    def get_runs(self, job_names=None, run_ids=None, runs_running=False):
         if run_ids is not None:
             where = 'run_id'
             where_in = run_ids
@@ -293,21 +293,17 @@ class BaseSQLDatabase(BaseDatabase):
         else:
             where = None
             where_in = []
+        if runs_running:
+            table_name = 'runs_running'
+        else:
+            table_name = 'runs'
 
         sql_statement = """
             SELECT
-                job_name,
-                run_id,
-                schedule_time,
-                start_time,
-                stop_time,
-                exit_code,
-                trigger_type,
-                trigger_data,
-                run_data
+                *
             FROM
-                runs
-        """
+                {}
+        """.format(table_name)
         if where is not None:
             sql_statement += """
                 WHERE
@@ -706,7 +702,7 @@ class MongoDBDatabase(BaseDatabase):
     def clear_runs_running(self):
         self.db.runs_running.delete_many({})
 
-    def get_runs(self, job_names=None, run_ids=None):
+    def get_runs(self, job_names=None, run_ids=None, runs_running=False):
         if run_ids is not None:
             where = {'run_id': {'$in': run_ids}}
         elif job_names is not None:
@@ -714,7 +710,11 @@ class MongoDBDatabase(BaseDatabase):
         else:
             where = {}
 
-        result = self.db.runs.find(where)
+        if runs_running:
+            collection_name = 'runs_running'
+        else:
+            collection_name = 'runs'
+        result = self.db[collection_name].find(where)
 
         runs = []
         jobs_hash = {job.name: job for job in self.config.jobs}

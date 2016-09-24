@@ -114,6 +114,11 @@ def parse_args():
         help='run ID to filter (can be given multiple times)',
     )
 
+    parser_list_runs.add_argument(
+        '--running', action='store_true',
+        help='list currently running runs',
+    )
+
     args = parser.parse_args()
     args.parser = parser
 
@@ -200,7 +205,8 @@ class Info():
         elif self.args.subcommand == 'list-runs':
             job_names = self.args.job
             run_ids = self.args.run
-            runs = self.db.get_runs(job_names=job_names, run_ids=run_ids)
+            runs_running = self.args.running
+            runs = self.db.get_runs(job_names=job_names, run_ids=run_ids, runs_running=runs_running)
             if self.args.format in ('json', 'yaml'):
                 out = {}
                 for run in runs:
@@ -208,27 +214,37 @@ class Info():
                         'job_name': run.job.name,
                         'schedule_time': run.schedule_time.isoformat(),
                         'start_time': run.start_time.isoformat(),
-                        'stop_time': run.stop_time.isoformat(),
-                        'exit_code': run.exit_code,
                         'trigger_type': run.trigger_type,
                         'trigger_data': run.trigger_data,
                         'run_data': run.run_data,
                     }
+                    if not runs_running:
+                        out[run.id]['stop_time'] = run.stop_time.isoformat()
+                        out[run.id]['exit_code'] = run.exit_code
                 if self.args.format == 'json':
                     print(json_pretty_print(out))
                 elif self.args.format == 'yaml':
                     print(yaml.safe_dump(out, default_flow_style=False))
             else:
                 for run in sorted(runs, key=lambda run: run.stop_time):
-                    print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
-                        run.id,
-                        run.job.name,
-                        run.exit_code,
-                        run.trigger_type,
-                        run.schedule_time.isoformat(),
-                        run.start_time.isoformat(),
-                        run.stop_time.isoformat(),
-                    ))
+                    if runs_running:
+                        print('%s\t%s\t%s\t%s\t%s' % (
+                            run.id,
+                            run.job.name,
+                            run.trigger_type,
+                            run.schedule_time.isoformat(),
+                            run.start_time.isoformat(),
+                        ))
+                    else:
+                        print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
+                            run.id,
+                            run.job.name,
+                            run.exit_code,
+                            run.trigger_type,
+                            run.schedule_time.isoformat(),
+                            run.start_time.isoformat(),
+                            run.stop_time.isoformat(),
+                        ))
 
         elif self.args.subcommand == 'get-run-output':
             run_id = self.args.run
