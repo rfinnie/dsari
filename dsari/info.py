@@ -28,12 +28,6 @@ try:
 except ImportError:
     from pipes import quote as shquote
 
-try:
-    import yaml
-    HAS_YAML = True
-except ImportError:
-    HAS_YAML = False
-
 import dsari
 import dsari.config
 import dsari.database
@@ -95,11 +89,8 @@ def parse_args():
             '--job', type=str, action='append',
             help='job name to filter (can be given multiple times)',
         )
-        choices = ['tabular', 'json']
-        if HAS_YAML:
-            choices.append('yaml')
         p.add_argument(
-            '--format', type=str, choices=choices,
+            '--format', type=str, choices=['tabular', 'json'],
             default='tabular',
             help='output format',
         )
@@ -191,8 +182,6 @@ class Info():
                 jobs = self.dump_jobs()
             if self.args.format == 'json':
                 print(json_pretty_print(jobs))
-            elif self.args.format == 'yaml':
-                print(yaml.safe_dump(jobs, default_flow_style=False))
             else:
                 for job_name in sorted(jobs):
                     job = jobs[job_name]
@@ -207,7 +196,7 @@ class Info():
             run_ids = self.args.run
             runs_running = self.args.running
             runs = self.db.get_runs(job_names=job_names, run_ids=run_ids, runs_running=runs_running)
-            if self.args.format in ('json', 'yaml'):
+            if self.args.format == 'json':
                 out = {}
                 for run in runs:
                     out[run.id] = {
@@ -223,10 +212,7 @@ class Info():
                     if not runs_running:
                         out[run.id]['stop_time'] = run.stop_time.isoformat()
                         out[run.id]['exit_code'] = run.exit_code
-                if self.args.format == 'json':
-                    print(json_pretty_print(out))
-                elif self.args.format == 'yaml':
-                    print(yaml.safe_dump(out, default_flow_style=False))
+                print(json_pretty_print(out))
             else:
                 if runs_running:
                     for run in sorted(runs, key=lambda run: run.start_time):

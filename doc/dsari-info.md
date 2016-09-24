@@ -52,7 +52,7 @@ list-runs
 
 --format=*format*
 :   Output format to present data in.
-    Valid values: *tabular* (default), *json*, *yaml*.
+    Valid values: *tabular* (default), *json*
 
 --epoch
 :   Output times in Unix epoch format (seconds since 1970-01-01), instead of ISO 8601.
