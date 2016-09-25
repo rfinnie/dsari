@@ -95,13 +95,13 @@ class BaseSQLDatabase(BaseDatabase):
     def _build_run_from_result(self, job, f):
         run = dsari.Run(job, id=f['run_id'])
         for k in ('schedule_time', 'start_time', 'stop_time'):
-            if k not in f:
+            if k not in f.keys():
                 continue
             if type(f[k]) in (int, float):
                 setattr(run, k, epoch_to_dt(f[k]))
             else:
                 setattr(run, k, f[k])
-        if 'exit_code' in f:
+        if 'exit_code' in f.keys():
             run.exit_code = f['exit_code']
         run.trigger_type = f['trigger_type']
         for k in ('trigger_data', 'run_data'):
