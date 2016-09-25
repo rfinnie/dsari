@@ -110,6 +110,11 @@ def parse_args():
         help='list currently running runs',
     )
 
+    subparsers.add_parser(
+        'shell',
+        help='interactive shell',
+    )
+
     args = parser.parse_args()
     args.parser = parser
 
@@ -247,6 +252,34 @@ class Info():
             with open(fn) as f:
                 for l in f:
                     print(l, end='')
+        elif self.args.subcommand == 'shell':
+            import readline
+            import code
+            import datetime
+
+            vars = {
+                '__name__': '__console__',
+                '__doc__': None,
+                'concurrency_groups': self.config.concurrency_groups,
+                'config': self.config,
+                'datetime': datetime,
+                'db': self.db,
+                'dsari': dsari,
+                'jobs': self.config.jobs,
+            }
+            print('Additional variables available:')
+            for k in sorted([k for k in vars.keys() if not k.startswith('__')]):
+                v = vars[k]
+                if type(v) == dict:
+                    r = 'Dictionary (%d items)' % len(v)
+                elif type(v) == list:
+                    r = 'List (%d items)' % len(v)
+                else:
+                    r = repr(v)
+                print('    %s: %s' % (k, r))
+            print()
+            shell = code.InteractiveConsole(vars)
+            shell.interact()
 
 
 def main():

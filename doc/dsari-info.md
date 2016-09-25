@@ -36,6 +36,9 @@ list-runs
 
     Options: *--job*, *--run*, *--format*, *--epoch*
 
+shell
+:   Enter a Python shell, with several dsari-specific variables pre-loaded (config, db, etc).
+
 # OPTIONS
 
 --config-dir=*directory*, -c *directory*
