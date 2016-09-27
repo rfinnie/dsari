@@ -253,8 +253,9 @@ class Info():
                 for l in f:
                     print(l, end='')
         elif self.args.subcommand == 'shell':
-            import readline
             import code
+            # readline is used transparrently by code.InteractiveConsole()
+            import readline  # noqa: F401
             import datetime
 
             vars = {
