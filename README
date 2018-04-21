@@ -119,6 +119,12 @@ To render HTML reports, run dsari-render occasionally. This will produce
 a series of HTML files in ~/.dsari/var/html/. You may then serve these
 files, rsync them to a remote server, etc.
 
+The dsari-info command may be used to retrieve information about jobs
+and runs.
+
+The dsari-prometheus-exporter command may be used to start a metrics
+daemon suitable for ingestion into Prometheus.
+
 
 License
 

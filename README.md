@@ -93,6 +93,10 @@ To render HTML reports, run `dsari-render` occasionally.
 This will produce a series of HTML files in `~/.dsari/var/html/`.
 You may then serve these files, rsync them to a remote server, etc.
 
+The `dsari-info` command may be used to retrieve information about jobs and runs.
+
+The `dsari-prometheus-exporter` command may be used to start a metrics daemon suitable for ingestion into [Prometheus](https://prometheus.io/).
+
 ## License
 
 dsari - Do Something and Record It
@@ -113,4 +117,3 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301, USA.
-

@@ -43,6 +43,7 @@ setup(
         'console_scripts': [
             'dsari-daemon = dsari.daemon:main',
             'dsari-info = dsari.info:main',
+            'dsari-prometheus-exporter = dsari.prometheus_exporter:main',
             'dsari-render = dsari.render:main',
         ],
     },
