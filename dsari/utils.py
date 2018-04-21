@@ -72,7 +72,7 @@ def epoch_to_dt(epoch):
 
 
 def dt_to_epoch(dt):
-    return (dt - datetime.datetime.utcfromtimestamp(0)).total_seconds()
+    return (dt - datetime.datetime.fromtimestamp(0)).total_seconds()
 
 
 def validate_environment_dict(env_in):
