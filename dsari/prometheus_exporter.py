@@ -184,17 +184,15 @@ class Prometheus():
                     run_duration_seconds.append((
                         {'job_name': job.name, 'quantile': str(quantile)},
                         percentile(
-                            sorted(runs, key=lambda run: (run.stop_time - run.start_time)),
+                            sorted([(run.stop_time - run.start_time).total_seconds() for run in runs]),
                             quantile,
-                            key=lambda run: (run.stop_time - run.start_time).total_seconds()
                         )
                     ))
                     run_latency_seconds.append((
                         {'job_name': job.name, 'quantile': str(quantile)},
                         percentile(
-                            sorted(runs, key=lambda run: (run.start_time - run.schedule_time)),
+                            sorted([(run.start_time - run.schedule_time).total_seconds()]),
                             quantile,
-                            key=lambda run: (run.start_time - run.schedule_time).total_seconds()
                         )
                     ))
                 run_duration_seconds_sum.append((
