@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # dsari - Do Something and Record It
 # Copyright (C) 2015-2016 Ryan Finnie
@@ -49,7 +49,7 @@ def guess_autoescape(template_name):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Do Something and Record It - report renderer (%s)' % __version__,
+        description='Do Something and Record It - report renderer ({})'.format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -76,11 +76,11 @@ def read_output(filename):
     if os.path.isfile(filename):
         with open(filename, 'rb') as f:
             return f.read().decode('utf-8')
-    elif os.path.isfile('%s.gz' % filename):
-        with gzip.open('%s.gz' % filename, 'rb') as f:
+    elif os.path.isfile('{}.gz'.format(filename)):
+        with gzip.open('{}.gz'.format(filename), 'rb') as f:
             return f.read().decode('utf-8')
-    elif HAS_LZMA and os.path.isfile('%s.xz' % filename):
-        with open('%s.xz' % filename, 'rb') as f:
+    elif HAS_LZMA and os.path.isfile('{}.xz'.format(filename)):
+        with open('{}.xz'.format(filename), 'rb') as f:
             return lzma.LZMADecompressor().decompress(f.read()).decode('utf-8')
     else:
         return None
@@ -157,14 +157,14 @@ class Renderer():
             job.last_successful_run = run
         run_html_filename = os.path.join(self.config.data_dir, 'html', job.name, run.id, 'index.html')
         if self.config.report_html_gz:
-            run_html_filename = '%s.gz' % run_html_filename
+            run_html_filename = '{}.gz'.format(run_html_filename)
         if os.path.isfile(run_html_filename):
             if not self.args.regenerate:
                 return
         if not os.path.exists(os.path.join(self.config.data_dir, 'html', job.name, run.id)):
             os.makedirs(os.path.join(self.config.data_dir, 'html', job.name, run.id))
         run.output = read_output(os.path.join(self.config.data_dir, 'runs', job.name, run.id, 'output.txt'))
-        self.logger.info('Writing %s' % run_html_filename)
+        self.logger.info('Writing {}'.format(run_html_filename))
         context = {
             'run': run,
         }
@@ -189,8 +189,8 @@ class Renderer():
             os.makedirs(os.path.join(self.config.data_dir, 'html', job.name))
         job_html_filename = os.path.join(self.config.data_dir, 'html', job.name, 'index.html')
         if self.config.report_html_gz:
-            job_html_filename = '%s.gz' % job_html_filename
-        self.logger.info('Writing %s' % job_html_filename)
+            job_html_filename = '{}.gz'.format(job_html_filename)
+        self.logger.info('Writing {}'.format(job_html_filename))
         write_html_file(job_html_filename, self.job_template.render(context))
 
     def render_index(self):
@@ -202,8 +202,8 @@ class Renderer():
             }
             index_html_filename = os.path.join(self.config.data_dir, 'html', 'index.html')
             if self.config.report_html_gz:
-                index_html_filename = '%s.gz' % index_html_filename
-            self.logger.info('Writing %s' % index_html_filename)
+                index_html_filename = '{}.gz'.format(index_html_filename)
+            self.logger.info('Writing {}'.format(index_html_filename))
             write_html_file(index_html_filename, self.index_template.render(context))
 
 

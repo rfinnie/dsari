@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # croniter_hash - Extend croniter with hash support
 # Copyright (C) 2015-2016 Ryan Finnie
@@ -18,7 +18,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-from __future__ import print_function
 import binascii
 import re
 import croniter
@@ -70,7 +69,7 @@ class croniter_hash(croniter.croniter):
         # Example: H(30-59)/10 -> 34-59/10 (i.e. 34,44,54)
         m = re.match('^H\((\d+)-(\d+)\)\/(\d+)$', item)
         if m:
-            return '%d-%d/%d' % (
+            return '{}-{}/{}'.format(
                 self._hash_do(
                     id, idx, int(m.group(3))
                 ) + int(m.group(1)),
@@ -90,7 +89,7 @@ class croniter_hash(croniter.croniter):
         # Example: H/15 -> 7-59/15 (i.e. 7,22,37,52)
         m = re.match('^H\/(\d+)$', item)
         if m:
-            return '%d-%d/%d' % (
+            return '{}-{}/{}'.format(
                 self._hash_do(
                     id, idx, int(m.group(1))
                 ),

@@ -1,13 +1,15 @@
+PYTHON:=python3
+
 all: build
 
 build:
-	python setup.py build
+	$(PYTHON) setup.py build
 
 install: build
-	python setup.py install
+	$(PYTHON) setup.py install
 
 clean:
-	python setup.py clean
+	$(PYTHON) setup.py clean
 	$(RM) -r build MANIFEST
 
 doc: README

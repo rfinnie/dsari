@@ -6,7 +6,7 @@ Job scheduling is handled via `dsari-daemon`, while `dsari-render` may be used t
 
 ## Requirements
 
-dsari requires Python 2.7 or later, and will run on Unix-based platforms.
+dsari requires Python 3.4 or later, and will run on Unix-based platforms.
 It uses the following non-core packages:
 
   - [`croniter`](https://pypi.python.org/pypi/croniter), for parsing cron-style schedule definitions
@@ -27,7 +27,7 @@ All non-core packages are optional, with the following limitations:
 
 dsari may be installed as any normal Python package:
 
-    $ sudo python setup.py install
+    $ sudo python3 setup.py install
 
 When this is done, dsari will expect its configuration file -- `dsari.json` -- in `/usr/local/etc/dsari/`, and will store its data in `/usr/local/lib/dsari/`.
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # dsari - Do Something and Record It
 # Copyright (C) 2015-2016 Ryan Finnie

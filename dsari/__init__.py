@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # dsari - Do Something and Record It
 # Copyright (C) 2015-2016 Ryan Finnie
@@ -36,7 +36,7 @@ class ConcurrencyGroup(object):
         return NotImplemented
 
     def __repr__(self):
-        return '<ConcurrencyGroup %s (%s)>' % (self.name, self.max)
+        return '<ConcurrencyGroup {} ({})>'.format(self.name, self.max)
 
 
 class Job(object):
@@ -61,9 +61,9 @@ class Job(object):
 
     def __repr__(self):
         if self.schedule:
-            return '<Job %s (%s)>' % (self.name, self.schedule)
+            return '<Job {} ({})>'.format(self.name, self.schedule)
         else:
-            return '<Job %s>' % self.name
+            return '<Job {}>'.format(self.name)
 
 
 class Run(object):
@@ -90,4 +90,4 @@ class Run(object):
         return NotImplemented
 
     def __repr__(self):
-        return '<Run %s (%s)>' % (self.id, self.job.name)
+        return '<Run {} ({})>'.format(self.id, self.job.name)

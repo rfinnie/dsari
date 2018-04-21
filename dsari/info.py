@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # dsari - Do Something and Record It
 # Copyright (C) 2015-2016 Ryan Finnie
@@ -18,7 +18,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-from __future__ import print_function
 import os
 import json
 import argparse
@@ -42,7 +41,7 @@ def json_pretty_print(v):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Do Something and Record It - job/run information (%s)' % __version__,
+        description='Do Something and Record It - job/run information ({})'.format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -191,7 +190,7 @@ class Info():
                 for job_name in sorted(jobs):
                     job = jobs[job_name]
                     schedule = job['schedule'] or ''
-                    print('%s\t%s\t%s' % (
+                    print('{}\t{}\t{}'.format(
                         job_name,
                         schedule,
                         ' '.join([shquote(x) for x in job['command']]),
@@ -221,7 +220,7 @@ class Info():
             else:
                 if runs_running:
                     for run in sorted(runs, key=lambda run: run.start_time):
-                        print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
+                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
                             run.id,
                             run.job.name,
                             '',
@@ -232,7 +231,7 @@ class Info():
                         ))
                 else:
                     for run in sorted(runs, key=lambda run: run.stop_time):
-                        print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
+                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
                             run.id,
                             run.job.name,
                             run.exit_code,
@@ -246,7 +245,7 @@ class Info():
             run_id = self.args.run
             runs = self.db.get_runs(run_ids=[run_id])
             if len(runs) == 0:
-                self.args.parser.error('Cannot find run ID %s' % run_id)
+                self.args.parser.error('Cannot find run ID {}'.format(run_id))
             run = runs[0]
             fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
             with open(fn) as f:
@@ -272,12 +271,12 @@ class Info():
             for k in sorted([k for k in vars.keys() if not k.startswith('__')]):
                 v = vars[k]
                 if type(v) == dict:
-                    r = 'Dictionary (%d items)' % len(v)
+                    r = 'Dictionary ({} items)'.format(len(v))
                 elif type(v) == list:
-                    r = 'List (%d items)' % len(v)
+                    r = 'List ({} items)'.format(len(v))
                 else:
                     r = repr(v)
-                print('    %s: %s' % (k, r))
+                print('    {}: {}'.format(k, r))
             print()
             shell = code.InteractiveConsole(vars)
             shell.interact()

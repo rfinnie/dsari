@@ -1,8 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
+import sys
 from setuptools import setup
 import dsari
+
+assert(sys.version_info > (3, 4))
 
 
 def read(filename):
@@ -29,7 +32,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Operating System :: POSIX',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2 :: Only',
+        'Programming Language :: Python :: 3 :: Only',
         'Topic :: Software Development :: Build Tools',
         'Topic :: Software Development :: Quality Assurance',
         'Topic :: Software Development :: Testing',

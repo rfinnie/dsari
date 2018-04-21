@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # dsari - Do Something and Record It
 # Copyright (C) 2015-2016 Ryan Finnie
@@ -18,7 +18,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-from __future__ import print_function
 import time
 import datetime
 import argparse
@@ -26,21 +25,19 @@ import sys
 import os
 import json
 import math
-try:
-    from urllib.parse import parse_qs
-except ImportError:
-    from urlparse import parse_qs
+from urllib.parse import parse_qs
 
 import dsari
 import dsari.config
 import dsari.database
+from dsari.utils import dt_to_epoch
 
 __version__ = dsari.__version__
 
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description='Do Something and Record It - Prometheus exporter (%s)' % __version__,
+        description='Do Something and Record It - Prometheus exporter ({})'.format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -129,7 +126,6 @@ class Prometheus():
         self.db = dsari.database.get_database(self.config)
         self.job_cache = None
         self.job_cache_time = None
-        self.epoch = datetime.datetime.utcfromtimestamp(0)
 
     def build_metrics_text(self, metrics):
         output = ''
@@ -137,20 +133,20 @@ class Prometheus():
             if len(metrics[k]['values']) == 0:
                 continue
             if metrics[k]['help']:
-                output += '# HELP %s %s\n' % (k, metrics[k]['help'])
+                output += '# HELP {} {}\n'.format(k, metrics[k]['help'])
             if metrics[k]['type']:
-                output += '# TYPE %s %s\n' % (k, metrics[k]['type'])
+                output += '# TYPE {} {}\n'.format(k, metrics[k]['type'])
             for a in metrics[k]['values']:
                 if a[0]:
-                    output += '%s{%s} %s\n' % (
+                    output += '{}{{{}}} {}\n'.format(
                         k,
                         ','.join(
-                            ['%s="%s"' % (x, a[0][x]) for x in sorted(a[0].keys())]
+                            ['{}="{}"'.format(x, a[0][x]) for x in sorted(a[0].keys())]
                         ),
                         a[1]
                     )
                 else:
-                    output += '%s %s\n' % (k, a[1])
+                    output += '{} {}\n'.format(k, a[1])
         return output
 
     def get_job_metrics(self):
@@ -204,9 +200,9 @@ class Prometheus():
                 ))
                 run_latency_seconds_count.append(({'job_name': job.name}, len_runs))
                 last_run_exit_code.append(({'job_name': job.name}, last_run.exit_code))
-                last_run_schedule_time.append(({'job_name': job.name}, (last_run.schedule_time - self.epoch).total_seconds()))
-                last_run_start_time.append(({'job_name': job.name}, (last_run.start_time - self.epoch).total_seconds()))
-                last_run_stop_time.append(({'job_name': job.name}, (last_run.stop_time - self.epoch).total_seconds()))
+                last_run_schedule_time.append(({'job_name': job.name}, dt_to_epoch(last_run.schedule_time)))
+                last_run_start_time.append(({'job_name': job.name}, dt_to_epoch(last_run.start_time)))
+                last_run_stop_time.append(({'job_name': job.name}, dt_to_epoch(last_run.stop_time)))
 
         metrics = {
             'dsari_run_count': entry(
@@ -269,10 +265,10 @@ class Prometheus():
             runs = self.db.get_runs(job_names=[job.name], runs_running=True)
             for run in runs:
                 running_run_schedule_time.append(
-                    ({'job_name': job.name, 'run_id': run.id}, (run.schedule_time - self.epoch).total_seconds())
+                    ({'job_name': job.name, 'run_id': run.id}, dt_to_epoch(run.schedule_time))
                 )
                 running_run_start_time.append(
-                    ({'job_name': job.name, 'run_id': run.id}, (run.start_time - self.epoch).total_seconds())
+                    ({'job_name': job.name, 'run_id': run.id}, dt_to_epoch(run.start_time))
                 )
 
         metrics = {

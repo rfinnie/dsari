@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # dsari - Do Something and Record It
 # Copyright (C) 2015-2016 Ryan Finnie
@@ -108,9 +108,9 @@ class Config():
 
     def load(self, config):
         valid_values = {
-            'data_dir': utils.STR_UNICODE,
-            'template_dir': utils.STR_UNICODE,
-            'report_html_gz': utils.STR_UNICODE,
+            'data_dir': (str,),
+            'template_dir': (str,),
+            'report_html_gz': (str,),
             'shutdown_kill_runs': (bool,),
             'shutdown_kill_grace': (int, float),
             'environment': (dict,),
@@ -118,14 +118,14 @@ class Config():
         }
         valid_values_job = {
             'command': (list,),
-            'schedule': (type(None),) + utils.STR_UNICODE,
+            'schedule': (type(None),) + (str,),
             'max_execution': (int, float),
             'max_execution_grace': (int, float),
             'environment': (dict,),
             'render_reports': (bool,),
             'command_append_run': (bool,),
             'jenkins_environment': (bool,),
-            'job_group': utils.STR_UNICODE,
+            'job_group': (str,),
             'concurrent_runs': (bool,),
         }
         valid_values_concurrency_group = {
@@ -135,7 +135,7 @@ class Config():
         for k in valid_values.keys():
             if k in config:
                 if type(config[k]) not in valid_values[k]:
-                    raise ConfigError('%s: Invalid value %s (expected %s)' % (
+                    raise ConfigError('{}: Invalid value {} (expected {})'.format(
                         k,
                         repr(type(config[k])),
                         repr(valid_values[k]))
@@ -146,7 +146,7 @@ class Config():
                     try:
                         config[k] = utils.validate_environment_dict(copy.deepcopy(config[k]))
                     except (KeyError, ValueError) as e:
-                        raise ConfigError('Invalid environment: %s' % str(e))
+                        raise ConfigError('Invalid environment: {}'.format(str(e)))
                         return
                 else:
                     setattr(self, k, config[k])
@@ -157,12 +157,12 @@ class Config():
 
         for concurrency_group_name in concurrency_groups.keys():
             if not self.is_valid_name(concurrency_group_name):
-                raise ConfigError('Concurrency group %s: Invalid name' % concurrency_group_name)
+                raise ConfigError('Concurrency group {}: Invalid name'.format(concurrency_group_name))
             concurrency_group = dsari.ConcurrencyGroup(concurrency_group_name)
             for k in valid_values_concurrency_group.keys():
                 if k in concurrency_groups[concurrency_group_name]:
                     if type(concurrency_groups[concurrency_group_name][k]) not in valid_values_concurrency_group[k]:
-                        raise ConfigError('Concurrency group %s: %s: Invalid value %s (expected %s)' % (
+                        raise ConfigError('Concurrency group {}: {}: Invalid value {} (expected {})'.format(
                             concurrency_group_name,
                             k,
                             repr(type(concurrency_groups[concurrency_group_name][k])),
@@ -180,10 +180,10 @@ class Config():
 
         for job_group_name in job_groups:
             if not self.is_valid_name(job_group_name):
-                raise ConfigError('Job group %s: Invalid name' % job_group_name)
+                raise ConfigError('Job group {}: Invalid name'.format(job_group_name))
             job_template = copy.deepcopy(job_groups[job_group_name])
             if 'job_names' not in job_template:
-                raise ConfigError('Job group %s: job_names required' % job_group_name)
+                raise ConfigError('Job group {}: job_names required'.format(job_group_name))
             for job_name in job_template['job_names']:
                 jobs[job_name] = copy.deepcopy(job_template)
                 jobs[job_name]['job_group'] = job_group_name
@@ -195,14 +195,14 @@ class Config():
         }
         for job_name in jobs.keys():
             if not self.is_valid_name(job_name):
-                raise ConfigError('Job %s: Invalid name' % job_name)
+                raise ConfigError('Job {}: Invalid name'.format(job_name))
             if 'command' not in jobs[job_name]:
-                raise ConfigError('Job %s: command required' % job_name)
+                raise ConfigError('Job {}: command required'.format(job_name))
             job = dsari.Job(job_name)
             for k in valid_values_job.keys():
                 if k in jobs[job_name]:
                     if type(jobs[job_name][k]) not in valid_values_job[k]:
-                        raise ConfigError('Job %s: %s: Invalid value %s (expected %s)' % (
+                        raise ConfigError('Job {}: {}: Invalid value {} (expected {})'.format(
                             job_name,
                             k,
                             repr(type(jobs[job_name][k])),
@@ -214,7 +214,7 @@ class Config():
                         try:
                             jobs[job_name][k] = utils.validate_environment_dict(copy.deepcopy(jobs[job_name][k]))
                         except (KeyError, ValueError) as e:
-                            raise ConfigError('Job %s: Invalid environment: %s' % (job_name, str(e)))
+                            raise ConfigError('Job {}: Invalid environment: {}'.format(job_name, str(e)))
                             return
                     else:
                         setattr(job, k, jobs[job_name][k])
@@ -223,7 +223,7 @@ class Config():
                 job_concurrency_group_names = jobs[job_name]['concurrency_groups']
             for concurrency_group_name in job_concurrency_group_names:
                 if not self.is_valid_name(concurrency_group_name):
-                    raise ConfigError('Concurrency group %s: Invalid name' % job_group_name)
+                    raise ConfigError('Concurrency group {}: Invalid name'.format(job_group_name))
                 if concurrency_group_name not in concurrency_groups_hash:
                     concurrency_group = dsari.ConcurrencyGroup(concurrency_group_name)
                     concurrency_groups_hash[concurrency_group_name] = concurrency_group
@@ -235,5 +235,5 @@ class Config():
                 try:
                     utils.get_next_schedule_time(job.schedule, job.name)
                 except Exception as e:
-                    raise ConfigError('Job %s: Invalid schedule (%s): %s: %s' % (job.name, job.schedule, type(e), str(e)))
+                    raise ConfigError('Job {}: Invalid schedule ({}): {}: {}'.format(job.name, job.schedule, type(e), str(e)))
             self.jobs.append(job)
