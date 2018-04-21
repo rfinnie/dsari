@@ -176,13 +176,13 @@ class Prometheus():
                 last_run = sorted(runs, key=lambda run: run.stop_time)[-1]
             else:
                 last_run = None
-            run_count.append(({'job': job.name}, len_runs))
-            run_success_count.append(({'job': job.name}, len([run for run in runs if run.exit_code == 0])))
-            run_failure_count.append(({'job': job.name}, len([run for run in runs if run.exit_code != 0])))
+            run_count.append(({'job_name': job.name}, len_runs))
+            run_success_count.append(({'job_name': job.name}, len([run for run in runs if run.exit_code == 0])))
+            run_failure_count.append(({'job_name': job.name}, len([run for run in runs if run.exit_code != 0])))
             if last_run:
                 for quantile in quantiles:
                     run_duration_seconds.append((
-                        {'job': job.name, 'quantile': str(quantile)},
+                        {'job_name': job.name, 'quantile': str(quantile)},
                         percentile(
                             sorted(runs, key=lambda run: (run.stop_time - run.start_time)),
                             quantile,
@@ -190,7 +190,7 @@ class Prometheus():
                         )
                     ))
                     run_latency_seconds.append((
-                        {'job': job.name, 'quantile': str(quantile)},
+                        {'job_name': job.name, 'quantile': str(quantile)},
                         percentile(
                             sorted(runs, key=lambda run: (run.start_time - run.schedule_time)),
                             quantile,
@@ -198,17 +198,17 @@ class Prometheus():
                         )
                     ))
                 run_duration_seconds_sum.append((
-                    {'job': job.name}, sum([(run.stop_time - run.start_time).total_seconds() for run in runs])
+                    {'job_name': job.name}, sum([(run.stop_time - run.start_time).total_seconds() for run in runs])
                 ))
-                run_duration_seconds_count.append(({'job': job.name}, len_runs))
+                run_duration_seconds_count.append(({'job_name': job.name}, len_runs))
                 run_latency_seconds_sum.append((
-                    {'job': job.name}, sum([(run.start_time - run.schedule_time).total_seconds() for run in runs])
+                    {'job_name': job.name}, sum([(run.start_time - run.schedule_time).total_seconds() for run in runs])
                 ))
-                run_latency_seconds_count.append(({'job': job.name}, len_runs))
-                last_run_exit_code.append(({'job': job.name}, last_run.exit_code))
-                last_run_schedule_time.append(({'job': job.name}, (last_run.schedule_time - self.epoch).total_seconds()))
-                last_run_start_time.append(({'job': job.name}, (last_run.start_time - self.epoch).total_seconds()))
-                last_run_stop_time.append(({'job': job.name}, (last_run.stop_time - self.epoch).total_seconds()))
+                run_latency_seconds_count.append(({'job_name': job.name}, len_runs))
+                last_run_exit_code.append(({'job_name': job.name}, last_run.exit_code))
+                last_run_schedule_time.append(({'job_name': job.name}, (last_run.schedule_time - self.epoch).total_seconds()))
+                last_run_start_time.append(({'job_name': job.name}, (last_run.start_time - self.epoch).total_seconds()))
+                last_run_stop_time.append(({'job_name': job.name}, (last_run.stop_time - self.epoch).total_seconds()))
 
         metrics = {
             'dsari_run_count': entry(
@@ -271,10 +271,10 @@ class Prometheus():
             runs = self.db.get_runs(job_names=[job.name], runs_running=True)
             for run in runs:
                 running_run_schedule_time.append(
-                    ({'job': job.name, 'run': run.id}, (run.schedule_time - self.epoch).total_seconds())
+                    ({'job_name': job.name, 'run_id': run.id}, (run.schedule_time - self.epoch).total_seconds())
                 )
                 running_run_start_time.append(
-                    ({'job': job.name, 'run': run.id}, (run.start_time - self.epoch).total_seconds())
+                    ({'job_name': job.name, 'run_id': run.id}, (run.start_time - self.epoch).total_seconds())
                 )
 
         metrics = {
