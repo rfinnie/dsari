@@ -31,7 +31,7 @@ dsari-prometheus-exporter [*options*]
 :   Port address to listen on in daemon mode (default `50575`).
 
 --job-cache-time=*seconds*
-:   Seconds to cache non-running run metrics (default 120).
+:   Seconds to cache non-running run metrics (default `120`).
 
 --quantiles=*quantiles*
 :   Comma-separated list of quantiles to use for summaries (default `0.01,0.1,0.5,0.9,0.99`).
