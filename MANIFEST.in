@@ -4,4 +4,5 @@ include *.md
 include doc/*
 include dsari-daemon
 include dsari-info
+include dsari-prometheus-exporter
 include dsari-render
