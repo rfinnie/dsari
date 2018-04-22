@@ -22,7 +22,7 @@ import uuid
 
 from . import utils
 
-__version__ = '1.2.0.1dev'
+__version__ = '2.0'
 
 
 class ConcurrencyGroup(object):
