@@ -144,7 +144,7 @@ class Renderer():
 
     def render_runs(self):
         self.run_template = self.templates.get_template('run.html')
-        runs = self.db.get_runs(job_names=[job.name for job in self.jobs])
+        runs = self.db.get_runs(job_names=[job.name for job in self.jobs if job.render_reports])
         for run in runs:
             self.render_run(run)
 
