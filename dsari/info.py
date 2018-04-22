@@ -70,6 +70,10 @@ def parse_args():
         'get-run-output',
         help='get run output',
     )
+    parser_tail_output = subparsers.add_parser(
+        'tail-run-output',
+        help='tail run output',
+    )
     subparsers.add_parser(
         'check-config',
         help='validate configuration'
@@ -95,6 +99,10 @@ def parse_args():
         )
 
     parser_get_output.add_argument(
+        'run', type=str, default=None,
+        help='run UUID',
+    )
+    parser_tail_output.add_argument(
         'run', type=str, default=None,
         help='run UUID',
     )
@@ -245,12 +253,24 @@ class Info():
             run_id = self.args.run
             runs = self.db.get_runs(run_ids=[run_id])
             if len(runs) == 0:
-                self.args.parser.error('Cannot find run ID {}'.format(run_id))
+                runs = self.db.get_runs(run_ids=[run_id], runs_running=True)
+                if len(runs) == 0:
+                    self.args.parser.error('Cannot find run ID {}'.format(run_id))
             run = runs[0]
             fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
             with open(fn) as f:
                 for l in f:
                     print(l, end='')
+        elif self.args.subcommand == 'tail-run-output':
+            run_id = self.args.run
+            runs = self.db.get_runs(run_ids=[run_id])
+            if len(runs) == 0:
+                runs = self.db.get_runs(run_ids=[run_id], runs_running=True)
+                if len(runs) == 0:
+                    self.args.parser.error('Cannot find run ID {}'.format(run_id))
+            run = runs[0]
+            fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
+            os.execvp('tail', ['tail', '-f', fn])
         elif self.args.subcommand == 'shell':
             import code
             # readline is used transparrently by code.InteractiveConsole()
