@@ -258,9 +258,12 @@ class Info():
                     self.args.parser.error('Cannot find run ID {}'.format(run_id))
             run = runs[0]
             fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
-            with open(fn) as f:
-                for l in f:
-                    print(l, end='')
+            try:
+                with open(fn) as f:
+                    for l in f:
+                        print(l, end='')
+            except BrokenPipeError:
+                pass
         elif self.args.subcommand == 'tail-run-output':
             run_id = self.args.run
             runs = self.db.get_runs(run_ids=[run_id])
