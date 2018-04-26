@@ -21,11 +21,9 @@
 import os
 import json
 import argparse
-
-try:
-    from shlex import quote as shquote
-except ImportError:
-    from pipes import quote as shquote
+import sys
+import subprocess
+import shlex
 
 import dsari
 import dsari.config
@@ -33,6 +31,66 @@ import dsari.database
 from dsari.utils import td_to_seconds
 
 __version__ = dsari.__version__
+
+
+class AutoPager:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def __init__(self):
+        self.closed = False
+        self.pager = None
+        if sys.stdout.isatty():
+            pager_cmd = ['pager']
+            if os.environ.get('PAGER'):
+                pager_cmd = shlex.split(os.environ.get('PAGER'))
+            env = os.environ.copy()
+            env.update({'LESS': 'FRX'})
+            try:
+                self.pager = subprocess.Popen(
+                    pager_cmd, stdin=subprocess.PIPE, stdout=sys.stdout,
+                    encoding='UTF-8', env=env
+                )
+            except FileNotFoundError:
+                pass
+
+    def write(self, l):
+        if self.closed:
+            return
+
+        if self.pager:
+            try:
+                self.pager.stdin.write(l)
+            except KeyboardInterrupt:
+                self.close()
+            except BrokenPipeError:
+                self.close()
+        else:
+            try:
+                sys.stdout.write(l)
+            except BrokenPipeError:
+                self.close()
+
+    def close(self):
+        if self.closed:
+            return
+
+        if self.pager:
+            try:
+                self.pager.stdin.close()
+            except BrokenPipeError:
+                pass
+            ret = None
+            while ret is None:
+                try:
+                    ret = self.pager.wait()
+                except KeyboardInterrupt:
+                    continue
+
+        self.closed = True
 
 
 def json_pretty_print(v):
@@ -184,25 +242,28 @@ class Info():
                     config['concurrency_groups'][concurrency_group.name] = {
                         'max': concurrency_group.max,
                     }
-            print(json_pretty_print(config))
+            with AutoPager() as pager:
+                print(json_pretty_print(config), file=pager)
         elif self.args.subcommand == 'check-config':
-            print('Config OK')
+                print('Config OK')
         elif self.args.subcommand == 'list-jobs':
             if self.args.job:
                 jobs = self.dump_jobs(self.args.job)
             else:
                 jobs = self.dump_jobs()
             if self.args.format == 'json':
-                print(json_pretty_print(jobs))
+                with AutoPager() as pager:
+                    print(json_pretty_print(jobs), file=pager)
             else:
-                for job_name in sorted(jobs):
-                    job = jobs[job_name]
-                    schedule = job['schedule'] or ''
-                    print('{}\t{}\t{}'.format(
-                        job_name,
-                        schedule,
-                        ' '.join([shquote(x) for x in job['command']]),
-                    ))
+                with AutoPager() as pager:
+                    for job_name in sorted(jobs):
+                        job = jobs[job_name]
+                        schedule = job['schedule'] or ''
+                        print('{}\t{}\t{}'.format(
+                            job_name,
+                            schedule,
+                            ' '.join([shlex.quote(x) for x in job['command']]),
+                        ), file=pager)
         elif self.args.subcommand == 'list-runs':
             job_names = self.args.job
             run_ids = self.args.run
@@ -224,30 +285,32 @@ class Info():
                     if not runs_running:
                         out[run.id]['stop_time'] = run.stop_time.isoformat()
                         out[run.id]['exit_code'] = run.exit_code
-                print(json_pretty_print(out))
+                with AutoPager() as pager:
+                    print(json_pretty_print(out), file=pager)
             else:
-                if runs_running:
-                    for run in sorted(runs, key=lambda run: run.start_time):
-                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
-                            run.id,
-                            run.job.name,
-                            '',
-                            run.trigger_type,
-                            run.schedule_time.isoformat(),
-                            run.start_time.isoformat(),
-                            '',
-                        ))
-                else:
-                    for run in sorted(runs, key=lambda run: run.stop_time):
-                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
-                            run.id,
-                            run.job.name,
-                            run.exit_code,
-                            run.trigger_type,
-                            run.schedule_time.isoformat(),
-                            run.start_time.isoformat(),
-                            run.stop_time.isoformat(),
-                        ))
+                with AutoPager() as pager:
+                    if runs_running:
+                        for run in sorted(runs, key=lambda run: run.start_time):
+                            print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
+                                run.id,
+                                run.job.name,
+                                '',
+                                run.trigger_type,
+                                run.schedule_time.isoformat(),
+                                run.start_time.isoformat(),
+                                '',
+                            ), file=pager)
+                    else:
+                        for run in sorted(runs, key=lambda run: run.stop_time):
+                            print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
+                                run.id,
+                                run.job.name,
+                                run.exit_code,
+                                run.trigger_type,
+                                run.schedule_time.isoformat(),
+                                run.start_time.isoformat(),
+                                run.stop_time.isoformat(),
+                            ), file=pager)
 
         elif self.args.subcommand == 'get-run-output':
             run_id = self.args.run
@@ -258,12 +321,10 @@ class Info():
                     self.args.parser.error('Cannot find run ID {}'.format(run_id))
             run = runs[0]
             fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
-            try:
+            with AutoPager() as pager:
                 with open(fn) as f:
                     for l in f:
-                        print(l, end='')
-            except BrokenPipeError:
-                pass
+                        pager.write(l)
         elif self.args.subcommand == 'tail-run-output':
             run_id = self.args.run
             runs = self.db.get_runs(run_ids=[run_id])
