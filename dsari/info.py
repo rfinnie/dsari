@@ -245,7 +245,7 @@ class Info():
             with AutoPager() as pager:
                 print(json_pretty_print(config), file=pager)
         elif self.args.subcommand == 'check-config':
-                print('Config OK')
+            print('Config OK')
         elif self.args.subcommand == 'list-jobs':
             if self.args.job:
                 jobs = self.dump_jobs(self.args.job)
@@ -373,5 +373,4 @@ def main():
 
 
 if __name__ == '__main__':
-    import sys
     sys.exit(main())
