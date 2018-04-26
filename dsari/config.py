@@ -21,6 +21,7 @@
 import os
 import copy
 import re
+import shlex
 
 import dsari
 from dsari import utils
@@ -117,7 +118,7 @@ class Config():
             'database': (dict,),
         }
         valid_values_job = {
-            'command': (list,),
+            'command': (list, str),
             'schedule': (type(None),) + (str,),
             'max_execution': (int, float),
             'max_execution_grace': (int, float),
@@ -198,6 +199,8 @@ class Config():
                 raise ConfigError('Job {}: Invalid name'.format(job_name))
             if 'command' not in jobs[job_name]:
                 raise ConfigError('Job {}: command required'.format(job_name))
+            if type(jobs[job_name]['command']) == str:
+                jobs[job_name]['command'] = shlex.split(jobs[job_name]['command'])
             job = dsari.Job(job_name)
             for k in valid_values_job.keys():
                 if k in jobs[job_name]:

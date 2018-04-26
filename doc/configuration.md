@@ -103,6 +103,9 @@ Default: null (but required)
 An array of the command arguments to be run.
 The command is searched against the PATH used to start `dsari-daemon`.
 
+This may instead be a string, in which case it will be split by `shlex.split()`.
+However, for the most accurate command interpretation, an array is recommended.
+
 ### command_append_run
 
     "command_append_run": true
