@@ -336,14 +336,11 @@ class Info():
             fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
             os.execvp('tail', ['tail', '-f', fn])
         elif self.args.subcommand == 'shell':
-            import code
-            # readline is used transparrently by code.InteractiveConsole()
+            # readline is used transparently by code.InteractiveConsole()
             import readline  # noqa: F401
             import datetime
 
             vars = {
-                '__name__': '__console__',
-                '__doc__': None,
                 'concurrency_groups': self.config.concurrency_groups,
                 'config': self.config,
                 'datetime': datetime,
@@ -351,8 +348,8 @@ class Info():
                 'dsari': dsari,
                 'jobs': self.config.jobs,
             }
-            print('Additional variables available:')
-            for k in sorted([k for k in vars.keys() if not k.startswith('__')]):
+            banner = 'Additional variables available:\n'
+            for (k, v) in vars.items():
                 v = vars[k]
                 if type(v) == dict:
                     r = 'Dictionary ({} items)'.format(len(v))
@@ -360,10 +357,31 @@ class Info():
                     r = 'List ({} items)'.format(len(v))
                 else:
                     r = repr(v)
-                print('    {}: {}'.format(k, r))
-            print()
-            shell = code.InteractiveConsole(vars)
-            shell.interact()
+                banner += '    {}: {}\n'.format(k, r)
+            banner += '\n'
+
+            sh = None
+            try:
+                from IPython.terminal.embed import InteractiveShellEmbed
+                sh = InteractiveShellEmbed(user_ns=vars, banner2=banner)
+                sh.excepthook = sys.__excepthook__
+            except ImportError:
+                print('ipython not available. Using normal python shell.')
+
+            if sh:
+                sh()
+            else:
+                import code
+
+                class DsariConsole(code.InteractiveConsole):
+                    pass
+
+                console_vars = vars.copy().update({
+                    '__name__': '__console__',
+                    '__doc__': None,
+                })
+                print(banner, end='')
+                DsariConsole(locals=console_vars).interact()
 
 
 def main():
