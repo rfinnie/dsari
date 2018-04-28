@@ -75,9 +75,11 @@ Tables are created automatically when a database is successfully connected.
     For "schedule" triggers, this is an empty array (`{}`).
     For "file" triggers, this is the data set in the trigger file.
     For more about trigger data, please see [Triggers](triggers.md).
+    If using PostgreSQL 9.4 or later, it is recommended you change this column to `jsonb` type to take advantage of native SQL searching of this column.
 *   `run_data` (text, json) - A JSON associative array containing extra run data.
-    Presently, the dsari scheduler inserts an empty array (`{}`) and otherwise does not use this field.
-    It is included for third party use, and for future-proofing (additional functionality without requiring an SQL migration).
+    If a run writes a file called `return_data.json`, the JSON contents of this file are added as the "return_data" key.
+    Additionally, this column may be utilized for third party use, and for future-proofing (additional functionality without requiring an SQL migration).
+    If using PostgreSQL 9.4 or later, it is recommended you change this column to `jsonb` type to take advantage of native SQL searching of this column.
 
 ### runs_running
 

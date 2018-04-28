@@ -461,6 +461,13 @@ class Scheduler():
             child_exit,
             (run.stop_time - run.start_time),
         ))
+        return_data_fn = os.path.join(self.config.data_dir, 'runs', job.name, run.id, 'return_data.json')
+        if os.path.exists(return_data_fn):
+            try:
+                with open(return_data_fn) as f:
+                    run.run_data['return_data'] = json.load(f)
+            except:
+                pass
         self.db.insert_run(run)
         self.running_runs.remove(run)
         if run.concurrency_group and run in self.running_groups[run.concurrency_group]:

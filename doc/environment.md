@@ -56,6 +56,9 @@ The directory used by the run for storing the execution output (output.txt).
 By default, this will be the same as PWD at command execution time, but shells will usually update PWD when the cwd is changed during the script (see above).
 PWD may also be defined by the job and/or trigger and hence may be different at command execution time, so RUN_DIR may be easily referred to for knowing where output.txt is stored.
 
+A run may also write a file named `return_data.json` in this directory.
+If it exists when the run is completed, it is read and, if valid JSON, added as the "return_data" key of the run_data column.
+
 ### SCHEDULE_TIME
 
 Unix epoch time when the run was scheduled or triggered.
