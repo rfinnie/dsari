@@ -215,173 +215,189 @@ class Info():
                     jobs[job.name][k] = td_to_seconds(jobs[job.name][k])
         return jobs
 
-    def main(self):
-        if self.args.subcommand == 'dump-config':
-            if self.args.raw:
-                config = self.config.raw_config
-            else:
-                config = {
-                    'jobs': self.dump_jobs(),
-                    'concurrency_groups': {},
-                }
-                for attr in (
-                    'config_d',
-                    'data_dir',
-                    'template_dir',
-                    'report_html_gz',
-                    'shutdown_kill_runs',
-                    'shutdown_kill_grace',
-                    'environment',
-                    'database',
-                ):
-                    config[attr] = getattr(self.config, attr)
-                for attr in ('shutdown_kill_grace',):
-                    if config[attr] is not None:
-                        config[attr] = td_to_seconds(config[attr])
-                for concurrency_group in self.config.concurrency_groups:
-                    config['concurrency_groups'][concurrency_group.name] = {
-                        'max': concurrency_group.max,
-                    }
-            with AutoPager() as pager:
-                print(json_pretty_print(config), file=pager)
-        elif self.args.subcommand == 'check-config':
-            print('Config OK')
-        elif self.args.subcommand == 'list-jobs':
-            if self.args.job:
-                jobs = self.dump_jobs(self.args.job)
-            else:
-                jobs = self.dump_jobs()
-            if self.args.format == 'json':
-                with AutoPager() as pager:
-                    print(json_pretty_print(jobs), file=pager)
-            else:
-                with AutoPager() as pager:
-                    for job_name in sorted(jobs):
-                        job = jobs[job_name]
-                        schedule = job['schedule'] or ''
-                        print('{}\t{}\t{}'.format(
-                            job_name,
-                            schedule,
-                            ' '.join([shlex.quote(x) for x in job['command']]),
-                        ), file=pager)
-        elif self.args.subcommand == 'list-runs':
-            job_names = self.args.job
-            run_ids = self.args.run
-            runs_running = self.args.running
-            runs = self.db.get_runs(job_names=job_names, run_ids=run_ids, runs_running=runs_running)
-            if self.args.format == 'json':
-                out = {}
-                for run in runs:
-                    out[run.id] = {
-                        'job_name': run.job.name,
-                        'schedule_time': run.schedule_time.isoformat(),
-                        'start_time': run.start_time.isoformat(),
-                        'stop_time': None,
-                        'exit_code': None,
-                        'trigger_type': run.trigger_type,
-                        'trigger_data': run.trigger_data,
-                        'run_data': run.run_data,
-                    }
-                    if not runs_running:
-                        out[run.id]['stop_time'] = run.stop_time.isoformat()
-                        out[run.id]['exit_code'] = run.exit_code
-                with AutoPager() as pager:
-                    print(json_pretty_print(out), file=pager)
-            else:
-                with AutoPager() as pager:
-                    if runs_running:
-                        for run in sorted(runs, key=lambda run: run.start_time):
-                            print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
-                                run.id,
-                                run.job.name,
-                                '',
-                                run.trigger_type,
-                                run.schedule_time.isoformat(),
-                                run.start_time.isoformat(),
-                                '',
-                            ), file=pager)
-                    else:
-                        for run in sorted(runs, key=lambda run: run.stop_time):
-                            print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
-                                run.id,
-                                run.job.name,
-                                run.exit_code,
-                                run.trigger_type,
-                                run.schedule_time.isoformat(),
-                                run.start_time.isoformat(),
-                                run.stop_time.isoformat(),
-                            ), file=pager)
-
-        elif self.args.subcommand == 'get-run-output':
-            run_id = self.args.run
-            runs = self.db.get_runs(run_ids=[run_id])
-            if len(runs) == 0:
-                runs = self.db.get_runs(run_ids=[run_id], runs_running=True)
-                if len(runs) == 0:
-                    self.args.parser.error('Cannot find run ID {}'.format(run_id))
-            run = runs[0]
-            fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
-            with AutoPager() as pager:
-                with open(fn) as f:
-                    for l in f:
-                        pager.write(l)
-        elif self.args.subcommand == 'tail-run-output':
-            run_id = self.args.run
-            runs = self.db.get_runs(run_ids=[run_id])
-            if len(runs) == 0:
-                runs = self.db.get_runs(run_ids=[run_id], runs_running=True)
-                if len(runs) == 0:
-                    self.args.parser.error('Cannot find run ID {}'.format(run_id))
-            run = runs[0]
-            fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
-            os.execvp('tail', ['tail', '-f', fn])
-        elif self.args.subcommand == 'shell':
-            # readline is used transparently by code.InteractiveConsole()
-            import readline  # noqa: F401
-            import datetime
-
-            vars = {
-                'concurrency_groups': self.config.concurrency_groups,
-                'config': self.config,
-                'datetime': datetime,
-                'db': self.db,
-                'dsari': dsari,
-                'jobs': self.config.jobs,
+    def cmd_dump_config(self):
+        if self.args.raw:
+            config = self.config.raw_config
+        else:
+            config = {
+                'jobs': self.dump_jobs(),
+                'concurrency_groups': {},
             }
-            banner = 'Additional variables available:\n'
-            for (k, v) in vars.items():
-                v = vars[k]
-                if type(v) == dict:
-                    r = 'Dictionary ({} items)'.format(len(v))
-                elif type(v) == list:
-                    r = 'List ({} items)'.format(len(v))
+            for attr in (
+                'config_d',
+                'data_dir',
+                'template_dir',
+                'report_html_gz',
+                'shutdown_kill_runs',
+                'shutdown_kill_grace',
+                'environment',
+                'database',
+            ):
+                config[attr] = getattr(self.config, attr)
+            for attr in ('shutdown_kill_grace',):
+                if config[attr] is not None:
+                    config[attr] = td_to_seconds(config[attr])
+            for concurrency_group in self.config.concurrency_groups:
+                config['concurrency_groups'][concurrency_group.name] = {
+                    'max': concurrency_group.max,
+                }
+        with AutoPager() as pager:
+            print(json_pretty_print(config), file=pager)
+
+    def cmd_check_config(self):
+        print('Config OK')
+
+    def cmd_list_jobs(self):
+        if self.args.job:
+            jobs = self.dump_jobs(self.args.job)
+        else:
+            jobs = self.dump_jobs()
+        if self.args.format == 'json':
+            with AutoPager() as pager:
+                print(json_pretty_print(jobs), file=pager)
+        else:
+            with AutoPager() as pager:
+                for job_name in sorted(jobs):
+                    job = jobs[job_name]
+                    schedule = job['schedule'] or ''
+                    print('{}\t{}\t{}'.format(
+                        job_name,
+                        schedule,
+                        ' '.join([shlex.quote(x) for x in job['command']]),
+                    ), file=pager)
+
+    def cmd_list_runs(self):
+        job_names = self.args.job
+        run_ids = self.args.run
+        runs_running = self.args.running
+        runs = self.db.get_runs(job_names=job_names, run_ids=run_ids, runs_running=runs_running)
+        if self.args.format == 'json':
+            out = {}
+            for run in runs:
+                out[run.id] = {
+                    'job_name': run.job.name,
+                    'schedule_time': run.schedule_time.isoformat(),
+                    'start_time': run.start_time.isoformat(),
+                    'stop_time': None,
+                    'exit_code': None,
+                    'trigger_type': run.trigger_type,
+                    'trigger_data': run.trigger_data,
+                    'run_data': run.run_data,
+                }
+                if not runs_running:
+                    out[run.id]['stop_time'] = run.stop_time.isoformat()
+                    out[run.id]['exit_code'] = run.exit_code
+            with AutoPager() as pager:
+                print(json_pretty_print(out), file=pager)
+        else:
+            with AutoPager() as pager:
+                if runs_running:
+                    for run in sorted(runs, key=lambda run: run.start_time):
+                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
+                            run.id,
+                            run.job.name,
+                            '',
+                            run.trigger_type,
+                            run.schedule_time.isoformat(),
+                            run.start_time.isoformat(),
+                            '',
+                        ), file=pager)
                 else:
-                    r = repr(v)
-                banner += '    {}: {}\n'.format(k, r)
-            banner += '\n'
+                    for run in sorted(runs, key=lambda run: run.stop_time):
+                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
+                            run.id,
+                            run.job.name,
+                            run.exit_code,
+                            run.trigger_type,
+                            run.schedule_time.isoformat(),
+                            run.start_time.isoformat(),
+                            run.stop_time.isoformat(),
+                        ), file=pager)
 
-            sh = None
-            try:
-                from IPython.terminal.embed import InteractiveShellEmbed
-                sh = InteractiveShellEmbed(user_ns=vars, banner2=banner)
-                sh.excepthook = sys.__excepthook__
-            except ImportError:
-                print('ipython not available. Using normal python shell.')
+    def cmd_get_run_output(self):
+        run_id = self.args.run
+        runs = self.db.get_runs(run_ids=[run_id])
+        if len(runs) == 0:
+            runs = self.db.get_runs(run_ids=[run_id], runs_running=True)
+            if len(runs) == 0:
+                self.args.parser.error('Cannot find run ID {}'.format(run_id))
+        run = runs[0]
+        fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
+        with AutoPager() as pager:
+            with open(fn) as f:
+                for l in f:
+                    pager.write(l)
 
-            if sh:
-                sh()
+    def cmd_tail_run_output(self):
+        run_id = self.args.run
+        runs = self.db.get_runs(run_ids=[run_id])
+        if len(runs) == 0:
+            runs = self.db.get_runs(run_ids=[run_id], runs_running=True)
+            if len(runs) == 0:
+                self.args.parser.error('Cannot find run ID {}'.format(run_id))
+        run = runs[0]
+        fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
+        os.execvp('tail', ['tail', '-f', fn])
+
+    def cmd_shell(self):
+        # readline is used transparently by code.InteractiveConsole()
+        import readline  # noqa: F401
+        import datetime
+
+        vars = {
+            'concurrency_groups': self.config.concurrency_groups,
+            'config': self.config,
+            'datetime': datetime,
+            'db': self.db,
+            'dsari': dsari,
+            'jobs': self.config.jobs,
+        }
+        banner = 'Additional variables available:\n'
+        for (k, v) in vars.items():
+            v = vars[k]
+            if type(v) == dict:
+                r = 'Dictionary ({} items)'.format(len(v))
+            elif type(v) == list:
+                r = 'List ({} items)'.format(len(v))
             else:
-                import code
+                r = repr(v)
+            banner += '    {}: {}\n'.format(k, r)
+        banner += '\n'
 
-                class DsariConsole(code.InteractiveConsole):
-                    pass
+        sh = None
+        try:
+            from IPython.terminal.embed import InteractiveShellEmbed
+            sh = InteractiveShellEmbed(user_ns=vars, banner2=banner)
+            sh.excepthook = sys.__excepthook__
+        except ImportError:
+            print('ipython not available. Using normal python shell.')
 
-                console_vars = vars.copy().update({
-                    '__name__': '__console__',
-                    '__doc__': None,
-                })
-                print(banner, end='')
-                DsariConsole(locals=console_vars).interact()
+        if sh:
+            sh()
+        else:
+            import code
+
+            class DsariConsole(code.InteractiveConsole):
+                pass
+
+            console_vars = vars.copy().update({
+                '__name__': '__console__',
+                '__doc__': None,
+            })
+            print(banner, end='')
+            DsariConsole(locals=console_vars).interact()
+
+    def main(self):
+        cmd_map = {
+            'dump-config': self.cmd_dump_config,
+            'check-config': self.cmd_check_config,
+            'list-jobs': self.cmd_list_jobs,
+            'list-runs': self.cmd_list_runs,
+            'get-run-output': self.cmd_get_run_output,
+            'tail-run-output': self.cmd_tail_run_output,
+            'shell': self.cmd_shell,
+        }
+        cmd_map[self.args.subcommand]()
 
 
 def main():
