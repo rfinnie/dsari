@@ -7,11 +7,12 @@ Job scheduling is handled via `dsari-daemon`, while `dsari-render` may be used t
 ## Requirements
 
 dsari requires Python 3.4 or later, and will run on Unix-based platforms.
-It uses the following non-core packages:
+It may use the following non-core packages:
 
   - [`croniter`](https://pypi.python.org/pypi/croniter), for parsing cron-style schedule definitions
   - [`python-dateutil`](https://pypi.python.org/pypi/python-dateutil), for parsing iCalendar RRULE-style schedule definitions
   - [`Jinja2`](https://pypi.python.org/pypi/Jinja2), for rendering HTML reports
+  - [`IPython`](https://pypi.python.org/pypi/ipython), for better `dsari-info shell` interaction
   - [`psycopg2`](https://pypi.python.org/pypi/psycopg2), for PostgreSQL database support
   - [`mysqlclient`](https://pypi.python.org/pypi/mysqlclient) (mysqldb), for MySQL database support
   - [`pymongo`](https://pypi.python.org/pypi/pymongo), for MongoDB database support
