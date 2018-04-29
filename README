@@ -19,6 +19,7 @@ platforms. It may use the following non-core packages:
     definitions
 -   Jinja2, for rendering HTML reports
 -   IPython, for better dsari-info shell interaction
+-   termcolor, for colorized dsari-info TTY output
 -   psycopg2, for PostgreSQL database support
 -   mysqlclient (mysqldb), for MySQL database support
 -   pymongo, for MongoDB database support

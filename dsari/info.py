@@ -24,6 +24,8 @@ import argparse
 import sys
 import subprocess
 import shlex
+import binascii
+import datetime
 
 import dsari
 import dsari.config
@@ -31,6 +33,70 @@ import dsari.database
 from dsari.utils import td_to_seconds
 
 __version__ = dsari.__version__
+
+
+class Color:
+    def __init__(self, do_color=True):
+        self.isatty = sys.stdout.isatty()
+        self.hash_colors = []
+        self.do_color = do_color
+        if not self.do_color:
+            return
+        if not self.isatty:
+            self.do_color = False
+            return
+        try:
+            import termcolor
+            self.termcolor = termcolor
+        except ImportError:
+            self.do_color = False
+            return
+        for c in self.termcolor.COLORS.keys():
+            if c in ('red', 'grey'):
+                continue
+            self.hash_colors.append((c, ['bold']))
+            self.hash_colors.append((c, []))
+
+    def hash_colored(self, st):
+        if not self.do_color:
+            return st
+        crc = binascii.crc32(st.encode('utf-8')) & 0xffffffff
+        hashed_color = self.hash_colors[crc % len(self.hash_colors)]
+        return self.termcolor.colored(st, hashed_color[0], attrs=hashed_color[1])
+
+    def colored(self, st, *args, **kwargs):
+        if not self.do_color:
+            return st
+        return self.termcolor.colored(st, *args, **kwargs)
+
+    def format(self, st, *args, **kwargs):
+        if not self.do_color:
+            return st.format(
+                *(i[0] for i in args),
+                **{k: v[0] for k, v in kwargs.items()}
+            )
+        cargs = []
+        for arg in args:
+            if len(arg) > 1:
+                cargs.append(self.termcolor.colored(
+                    arg[0],
+                    arg[1],
+                    attrs=(arg[2] if len(arg) > 2 else [])
+                ))
+            else:
+                cargs.append(arg[0])
+        ckwargs = {}
+        for k in kwargs:
+            if len(kwargs[k]) > 1:
+                ckwargs[k] = self.termcolor.colored(
+                    kwargs[k][0],
+                    kwargs[k][1],
+                    attrs=(kwargs[k][2] if len(kwargs[k]) > 2 else [])
+                )
+            else:
+                ckwargs[k] = kwargs[k][0]
+
+        return st.format(*cargs, **ckwargs)
 
 
 class AutoPager:
@@ -192,6 +258,29 @@ class Info():
         self.config = dsari.config.get_config(self.args.config_dir)
         self.db = dsari.database.get_database(self.config)
 
+    def print_output_data(self, output_data, column_headers, file=sys.stdout):
+        if sys.stdout.isatty():
+            largest_columns = {i: len(column_headers[i]) for i in range(len(column_headers))}
+            for l in output_data:
+                for i in range(len(l)):
+                    if l[i][1] > largest_columns[i]:
+                        largest_columns[i] = l[i][1]
+            line_data = ['{{:^{}}}'.format(largest_columns[i]).format(column_headers[i]) for i in range(len(column_headers))]
+            print('   '.join(line_data), file=file)
+            line_data = ['-' * largest_columns[x] for x in sorted(largest_columns)]
+            print('   '.join(line_data), file=file)
+            for l in output_data:
+                line_data = []
+                for i in range(len(l)):
+                    if (i + 1) == len(l):
+                        line_data.append(l[i][0])
+                    else:
+                        line_data.append(l[i][0] + (' ' * (largest_columns[i] - l[i][1])))
+                print('   '.join(line_data), file=file)
+        else:
+            for l in output_data:
+                print('\t'.join([x[0] for x in l]), file=file)
+
     def dump_jobs(self, filter=None):
         jobs = {}
         for job in self.config.jobs:
@@ -256,15 +345,21 @@ class Info():
             with AutoPager() as pager:
                 print(json_pretty_print(jobs), file=pager)
         else:
+            color = Color()
+            column_headers = ('Job Name', 'Schedule', 'Command')
+            output_data = []
+
+            for job_name in sorted(jobs):
+                job = jobs[job_name]
+                schedule = job['schedule'] or ''
+                command = ' '.join([shlex.quote(x) for x in job['command']])
+                output_data.append((
+                    (color.hash_colored(job_name), len(job_name)),
+                    (schedule, len(schedule)),
+                    (command, len(command)),
+                ))
             with AutoPager() as pager:
-                for job_name in sorted(jobs):
-                    job = jobs[job_name]
-                    schedule = job['schedule'] or ''
-                    print('{}\t{}\t{}'.format(
-                        job_name,
-                        schedule,
-                        ' '.join([shlex.quote(x) for x in job['command']]),
-                    ), file=pager)
+                self.print_output_data(output_data, column_headers, pager)
 
     def cmd_list_runs(self):
         job_names = self.args.job
@@ -290,29 +385,67 @@ class Info():
             with AutoPager() as pager:
                 print(json_pretty_print(out), file=pager)
         else:
-            with AutoPager() as pager:
-                if runs_running:
-                    for run in sorted(runs, key=lambda run: run.start_time):
-                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
-                            run.id,
-                            run.job.name,
-                            '',
-                            run.trigger_type,
-                            run.schedule_time.isoformat(),
-                            run.start_time.isoformat(),
-                            '',
-                        ), file=pager)
+            color = Color()
+
+            def time_color(t):
+                now = datetime.datetime.now()
+                if (now - t) <= datetime.timedelta(hours=1):
+                    return 'green'
+                elif (now - t) <= datetime.timedelta(days=1):
+                    return 'blue'
                 else:
-                    for run in sorted(runs, key=lambda run: run.stop_time):
-                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
-                            run.id,
-                            run.job.name,
-                            run.exit_code,
-                            run.trigger_type,
-                            run.schedule_time.isoformat(),
-                            run.start_time.isoformat(),
-                            run.stop_time.isoformat(),
-                        ), file=pager)
+                    return None
+
+            output_data = []
+            if runs_running:
+                column_headers = ('Run ID', 'Job', 'Type', 'Schedule Delay', 'Start Time')
+                for run in sorted(runs, key=lambda run: run.start_time):
+                    output_data.append((
+                        (run.id, len(run.id)),
+                        (color.hash_colored(run.job.name), len(run.job.name)),
+                        (
+                            color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
+                            len(run.trigger_type)
+                        ),
+                        (
+                            color.colored(str(run.start_time - run.schedule_time), time_color(run.schedule_time)),
+                            len(str(run.start_time - run.schedule_time))
+                        ),
+                        (
+                            color.colored(run.start_time.isoformat(), time_color(run.start_time)),
+                            len(run.start_time.isoformat())
+                        ),
+                    ))
+            else:
+                column_headers = ('Run ID', 'Job', 'Exit', 'Type', 'Schedule Delay', 'Start Time', 'Duration')
+                for run in sorted(runs, key=lambda run: run.stop_time):
+                    output_data.append((
+                        (run.id, len(run.id)),
+                        (color.hash_colored(run.job.name), len(run.job.name)),
+                        (
+                            color.colored(str(run.exit_code), ('red' if run.exit_code > 0 else None)),
+                            len(str(run.exit_code))
+                        ),
+                        (
+                            color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
+                            len(run.trigger_type)
+                        ),
+                        (
+                            color.colored(str(run.start_time - run.schedule_time), time_color(run.schedule_time)),
+                            len(str(run.start_time - run.schedule_time))
+                        ),
+                        (
+                            color.colored(run.start_time.isoformat(), time_color(run.start_time)),
+                            len(run.start_time.isoformat())
+                        ),
+                        (
+                            color.colored(str(run.stop_time - run.start_time), time_color(run.stop_time)),
+                            len(str(run.stop_time - run.start_time))
+                        ),
+                    ))
+
+            with AutoPager() as pager:
+                self.print_output_data(output_data, column_headers, pager)
 
     def cmd_get_run_output(self):
         run_id = self.args.run
@@ -342,7 +475,6 @@ class Info():
     def cmd_shell(self):
         # readline is used transparently by code.InteractiveConsole()
         import readline  # noqa: F401
-        import datetime
 
         vars = {
             'concurrency_groups': self.config.concurrency_groups,
