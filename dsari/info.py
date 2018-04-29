@@ -406,8 +406,8 @@ class Info():
             with AutoPager() as pager:
                 print(json_pretty_print(out), file=pager)
         elif self.args.format == 'tabular':
-            for run in sorted(runs, key=lambda run: (run.start_time if runs_running else run.stop_time)):
-                with AutoPager() as pager:
+            with AutoPager() as pager:
+                for run in sorted(runs, key=lambda run: (run.start_time if runs_running else run.stop_time)):
                     print('\t'.join([
                         run.id,
                         run.job.name,
