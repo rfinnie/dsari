@@ -217,8 +217,8 @@ def parse_args():
             help='job name to filter (can be given multiple times)',
         )
         p.add_argument(
-            '--format', type=str, choices=['tabular', 'json'],
-            default='tabular',
+            '--format', type=str, choices=['pretty', 'tabular', 'json'],
+            default='pretty',
             help='output format',
         )
 
@@ -258,28 +258,41 @@ class Info():
         self.config = dsari.config.get_config(self.args.config_dir)
         self.db = dsari.database.get_database(self.config)
 
-    def print_output_data(self, output_data, column_headers, file=sys.stdout):
+    def pretty_print_table(self, output_data, column_headers, file=sys.stdout):
+        largest_columns = {i: len(column_headers[i]) for i in range(len(column_headers))}
+        for l in output_data:
+            for i in range(len(l)):
+                if l[i][1] > largest_columns[i]:
+                    largest_columns[i] = l[i][1]
+
+        printable_column_lengths = list(largest_columns.values())
+        columns = 1000
         if sys.stdout.isatty():
-            largest_columns = {i: len(column_headers[i]) for i in range(len(column_headers))}
-            for l in output_data:
-                for i in range(len(l)):
-                    if l[i][1] > largest_columns[i]:
-                        largest_columns[i] = l[i][1]
-            line_data = ['{{:^{}}}'.format(largest_columns[i]).format(column_headers[i]) for i in range(len(column_headers))]
+            try:
+                columns = int(subprocess.check_output(['stty', 'size']).decode().split()[1])
+            except Exception:
+                pass
+        try:
+            columns = int(os.environ.get('COLUMNS'))
+        except Exception:
+            pass
+        while len(printable_column_lengths) >= 1:
+            if sum(printable_column_lengths) + (3 * (len(printable_column_lengths) - 1)) <= columns:
+                break
+            printable_column_lengths.pop()
+
+        line_data = ['{{:^{}}}'.format(largest_columns[i]).format(column_headers[i]) for i in range(len(printable_column_lengths))]
+        print('   '.join(line_data), file=file)
+        line_data = ['-' * largest_columns[i] for i in range(len(printable_column_lengths))]
+        print('   '.join(line_data), file=file)
+        for l in output_data:
+            line_data = []
+            for i in range(len(printable_column_lengths)):
+                if (i + 1) == len(l):
+                    line_data.append(l[i][0])
+                else:
+                    line_data.append(l[i][0] + (' ' * (largest_columns[i] - l[i][1])))
             print('   '.join(line_data), file=file)
-            line_data = ['-' * largest_columns[x] for x in sorted(largest_columns)]
-            print('   '.join(line_data), file=file)
-            for l in output_data:
-                line_data = []
-                for i in range(len(l)):
-                    if (i + 1) == len(l):
-                        line_data.append(l[i][0])
-                    else:
-                        line_data.append(l[i][0] + (' ' * (largest_columns[i] - l[i][1])))
-                print('   '.join(line_data), file=file)
-        else:
-            for l in output_data:
-                print('\t'.join([x[0] for x in l]), file=file)
 
     def dump_jobs(self, filter=None):
         jobs = {}
@@ -344,6 +357,17 @@ class Info():
         if self.args.format == 'json':
             with AutoPager() as pager:
                 print(json_pretty_print(jobs), file=pager)
+        elif self.args.format == 'tabular':
+            with AutoPager() as pager:
+                for job_name in sorted(jobs):
+                    job = jobs[job_name]
+                    schedule = job['schedule'] or ''
+                    command = ' '.join([shlex.quote(x) for x in job['command']])
+                    print('\t'.join([
+                        job_name,
+                        schedule,
+                        command
+                    ]), file=pager)
         else:
             color = Color()
             column_headers = ('Job Name', 'Schedule', 'Command')
@@ -359,7 +383,7 @@ class Info():
                     (command, len(command)),
                 ))
             with AutoPager() as pager:
-                self.print_output_data(output_data, column_headers, pager)
+                self.pretty_print_table(output_data, column_headers, pager)
 
     def cmd_list_runs(self):
         job_names = self.args.job
@@ -373,17 +397,26 @@ class Info():
                     'job_name': run.job.name,
                     'schedule_time': run.schedule_time.isoformat(),
                     'start_time': run.start_time.isoformat(),
-                    'stop_time': None,
-                    'exit_code': None,
+                    'stop_time': (None if runs_running else run.stop_time.isoformat()),
+                    'exit_code': (None if runs_running else run.exit_code),
                     'trigger_type': run.trigger_type,
                     'trigger_data': run.trigger_data,
                     'run_data': run.run_data,
                 }
-                if not runs_running:
-                    out[run.id]['stop_time'] = run.stop_time.isoformat()
-                    out[run.id]['exit_code'] = run.exit_code
             with AutoPager() as pager:
                 print(json_pretty_print(out), file=pager)
+        elif self.args.format == 'tabular':
+            for run in sorted(runs, key=lambda run: (run.start_time if runs_running else run.stop_time)):
+                with AutoPager() as pager:
+                    print('\t'.join([
+                        run.id,
+                        run.job.name,
+                        ('' if runs_running else str(run.exit_code)),
+                        run.trigger_type,
+                        run.schedule_time.isoformat(),
+                        run.start_time.isoformat(),
+                        ('' if runs_running else run.stop_time.isoformat()),
+                    ]), file=pager)
         else:
             color = Color()
 
@@ -398,54 +431,45 @@ class Info():
 
             output_data = []
             if runs_running:
-                column_headers = ('Run ID', 'Job', 'Type', 'Schedule Delay', 'Start Time')
-                for run in sorted(runs, key=lambda run: run.start_time):
+                column_headers = ('Run ID', 'Job', 'Start Time', 'Type', 'Schedule Delay')
+                for run in sorted(runs, key=lambda run: run.start_time, reverse=True):
                     output_data.append((
                         (run.id, len(run.id)),
                         (color.hash_colored(run.job.name), len(run.job.name)),
-                        (
-                            color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
-                            len(run.trigger_type)
-                        ),
-                        (
-                            color.colored(str(run.start_time - run.schedule_time), time_color(run.schedule_time)),
-                            len(str(run.start_time - run.schedule_time))
-                        ),
                         (
                             color.colored(run.start_time.isoformat(), time_color(run.start_time)),
                             len(run.start_time.isoformat())
                         ),
+                        (
+                            color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
+                            len(run.trigger_type)
+                        ),
+                        (str(run.start_time - run.schedule_time), len(str(run.start_time - run.schedule_time))),
                     ))
             else:
-                column_headers = ('Run ID', 'Job', 'Exit', 'Type', 'Schedule Delay', 'Start Time', 'Duration')
-                for run in sorted(runs, key=lambda run: run.stop_time):
+                column_headers = ('Run ID', 'Exit', 'Job', 'Duration', 'Start Time', 'Type', 'Schedule Delay')
+                for run in sorted(runs, key=lambda run: run.stop_time, reverse=True):
                     output_data.append((
                         (run.id, len(run.id)),
-                        (color.hash_colored(run.job.name), len(run.job.name)),
                         (
                             color.colored(str(run.exit_code), ('red' if run.exit_code > 0 else None)),
                             len(str(run.exit_code))
                         ),
-                        (
-                            color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
-                            len(run.trigger_type)
-                        ),
-                        (
-                            color.colored(str(run.start_time - run.schedule_time), time_color(run.schedule_time)),
-                            len(str(run.start_time - run.schedule_time))
-                        ),
+                        (color.hash_colored(run.job.name), len(run.job.name)),
+                        (str(run.stop_time - run.start_time), len(str(run.stop_time - run.start_time))),
                         (
                             color.colored(run.start_time.isoformat(), time_color(run.start_time)),
                             len(run.start_time.isoformat())
                         ),
                         (
-                            color.colored(str(run.stop_time - run.start_time), time_color(run.stop_time)),
-                            len(str(run.stop_time - run.start_time))
+                            color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
+                            len(run.trigger_type)
                         ),
+                        (str(run.start_time - run.schedule_time), len(str(run.start_time - run.schedule_time))),
                     ))
 
             with AutoPager() as pager:
-                self.print_output_data(output_data, column_headers, pager)
+                self.pretty_print_table(output_data, column_headers, file=pager)
 
     def cmd_get_run_output(self):
         run_id = self.args.run
