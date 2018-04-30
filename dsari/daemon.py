@@ -461,7 +461,7 @@ class Scheduler():
             try:
                 with open(return_data_fn) as f:
                     run.run_data['return_data'] = json.load(f)
-            except:
+            except Exception:
                 pass
         self.db.insert_run(run)
         self.running_runs.remove(run)
