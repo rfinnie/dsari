@@ -247,7 +247,7 @@ class ConfigLoader():
             job.concurrency_groups.append(concurrency_group)
 
     def load(self, config):
-        self.raw_config = copy.deepcopy(config)
+        self.config.raw_config = copy.deepcopy(config)
         self.build_base(config)
         self.build_concurrency_groups(config)
         self.build_jobs(config)
