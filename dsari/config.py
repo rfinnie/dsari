@@ -111,7 +111,7 @@ class Config():
         valid_values = {
             'data_dir': (str,),
             'template_dir': (str,),
-            'report_html_gz': (str,),
+            'report_html_gz': (bool,),
             'shutdown_kill_runs': (bool,),
             'shutdown_kill_grace': (int, float),
             'environment': (dict,),
