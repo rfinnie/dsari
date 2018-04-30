@@ -313,13 +313,12 @@ class BaseSQLDatabase(BaseDatabase):
         cur = self.db_conn.cursor()
         cur.execute(sql_statement, where_in)
         runs = []
-        jobs_hash = {job.name: job for job in self.config.jobs}
         # Fake up a stub job object if the job has disappeared from
         # the config.
         fake_jobs = {}
         for db_result in cur:
-            if db_result['job_name'] in jobs_hash:
-                job = jobs_hash[db_result['job_name']]
+            if db_result['job_name'] in self.config.jobs:
+                job = self.config.jobs[db_result['job_name']]
             elif db_result['job_name'] in fake_jobs:
                 job = fake_jobs[db_result['job_name']]
             else:
@@ -707,13 +706,12 @@ class MongoDBDatabase(BaseDatabase):
         result = self.db[collection_name].find(where)
 
         runs = []
-        jobs_hash = {job.name: job for job in self.config.jobs}
         # Fake up a stub job object if the job has disappeared from
         # the config.
         fake_jobs = {}
         for db_result in result:
-            if db_result['job_name'] in jobs_hash:
-                job = jobs_hash[db_result['job_name']]
+            if db_result['job_name'] in self.config.jobs:
+                job = self.config.jobs[db_result['job_name']]
             elif db_result['job_name'] in fake_jobs:
                 job = fake_jobs[db_result['job_name']]
             else:

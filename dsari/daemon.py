@@ -254,7 +254,7 @@ class Scheduler():
         for run in self.running_runs:
             run.respawn = False
         now = datetime.datetime.now()
-        for job in sorted(self.config.jobs):
+        for job in sorted(self.config.jobs.values()):
             self.jobs.append(job)
             if not job.schedule:
                 self.logger.debug('[{}] No schedule defined, manual triggers only'.format(job.name))
@@ -274,22 +274,17 @@ class Scheduler():
             run.schedule_time = t
             self.scheduled_runs.append(run)
 
-        jobs_hash = {job.name: job for job in self.config.jobs}
-        concurrency_groups_hash = {
-            concurrency_group.name: concurrency_group
-            for concurrency_group in self.config.concurrency_groups
-        }
         # Regenerate running runs' jobs and concurrency groups
         self.running_groups = {}
         for run in self.running_runs:
-            if run.job.name in jobs_hash:
-                run.job = jobs_hash[run.job.name]
+            if run.job.name in self.config.jobs:
+                run.job = self.config.jobs[run.job.name]
             else:
                 # Job disappeared from config during SIGHUP
                 run.respawn = False
             if run.concurrency_group:
-                if run.concurrency_group.name in concurrency_groups_hash:
-                    concurrency_group = concurrency_groups_hash[run.concurrency_group.name]
+                if run.concurrency_group.name in self.config.concurrency_groups:
+                    concurrency_group = self.config.concurrency_groups[run.concurrency_group.name]
                     run.concurrency_group = concurrency_group
                     if concurrency_group not in self.running_groups:
                         self.running_groups[concurrency_group] = []

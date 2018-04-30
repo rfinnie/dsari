@@ -170,7 +170,7 @@ class Prometheus():
         last_run_start_time = []
         last_run_stop_time = []
 
-        for job in sorted(self.config.jobs):
+        for job in sorted(self.config.jobs.values()):
             runs = self.db.get_runs(job_names=[job.name])
             len_runs = len(runs)
             if len_runs > 0:
@@ -266,7 +266,7 @@ class Prometheus():
         running_run_schedule_time = []
         running_run_start_time = []
 
-        for job in sorted(self.config.jobs):
+        for job in sorted(self.config.jobs.values()):
             runs = self.db.get_runs(job_names=[job.name], runs_running=True)
             for run in runs:
                 running_run_schedule_time.append(

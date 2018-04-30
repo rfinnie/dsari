@@ -55,8 +55,8 @@ class Config():
     def __init__(self):
         self.raw_config = {}
 
-        self.jobs = []
-        self.concurrency_groups = []
+        self.jobs = {}
+        self.concurrency_groups = {}
         self.config_d = None
         self.data_dir = DEFAULT_DATA_DIR
         self.template_dir = None
@@ -171,7 +171,7 @@ class ConfigLoader():
                 valid_values,
                 value_transforms,
             )
-            self.config.concurrency_groups.append(concurrency_group)
+            self.config.concurrency_groups[concurrency_group.name] = concurrency_group
 
     def build_jobs(self, config):
         jobs = {}
@@ -231,22 +231,19 @@ class ConfigLoader():
             except Exception as e:
                 raise ConfigError('Job {}: Invalid schedule ({}): {}: {}'.format(job.name, job.schedule, type(e), str(e)))
         self.build_job_concurrency_groups(job, job_dict)
-        self.config.jobs.append(job)
+        self.config.jobs[job.name] = job
 
     def build_job_concurrency_groups(self, job, job_dict):
         if 'concurrency_groups' not in job_dict:
             return
         for concurrency_group_name in job_dict['concurrency_groups']:
-            concurrency_group = None
-            for i in self.config.concurrency_groups:
-                if i.name == concurrency_group_name:
-                    concurrency_group = i
-                    break
-            if concurrency_group is None:
+            if concurrency_group_name in self.config.concurrency_groups:
+                concurrency_group = self.config.concurrency_groups[concurrency_group_name]
+            else:
                 if not self.is_valid_name(concurrency_group_name):
                     raise ConfigError('Concurrency group {}: Invalid name'.format(concurrency_group_name))
                 concurrency_group = dsari.ConcurrencyGroup(concurrency_group_name)
-                self.config.concurrency_groups.append(concurrency_group)
+                self.config.concurrency_groups[concurrency_group.name] = concurrency_group
             job.concurrency_groups.append(concurrency_group)
 
     def load(self, config):

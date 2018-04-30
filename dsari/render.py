@@ -129,7 +129,7 @@ class Renderer():
         self.db = dsari.database.get_database(self.config)
 
     def render(self):
-        self.jobs = sorted(self.config.jobs)
+        self.jobs = sorted(self.config.jobs.values())
         self.job_runs = {}
         for job in self.jobs:
             job.last_run = None

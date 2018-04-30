@@ -296,7 +296,7 @@ class Info():
 
     def dump_jobs(self, filter=None):
         jobs = {}
-        for job in self.config.jobs:
+        for job in self.config.jobs.values():
             if filter is not None and job.name not in filter:
                 continue
             jobs[job.name] = {
@@ -339,7 +339,7 @@ class Info():
             for attr in ('shutdown_kill_grace',):
                 if config[attr] is not None:
                     config[attr] = td_to_seconds(config[attr])
-            for concurrency_group in self.config.concurrency_groups:
+            for concurrency_group in self.config.concurrency_groups.values():
                 config['concurrency_groups'][concurrency_group.name] = {
                     'max': concurrency_group.max,
                 }
