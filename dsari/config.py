@@ -42,9 +42,9 @@ else:
 
 
 def get_config(config_dir=DEFAULT_CONFIG_DIR):
-    config = Config()
-    config.load_dir(config_dir)
-    return config
+    loader = ConfigLoader(Config())
+    loader.load_dir(config_dir)
+    return loader.config
 
 
 class ConfigError(RuntimeError):
@@ -69,6 +69,11 @@ class Config():
             'file': None,
         }
 
+
+class ConfigLoader():
+    def __init__(self, config):
+        self.config = config
+
     def is_valid_name(self, job_name):
         if '/' in job_name:
             return False
@@ -87,11 +92,11 @@ class Config():
                 config = utils.json_load_file(os.path.join(config_dir, 'dsari.json'))
             except ValueError as e:
                 raise ConfigError(e)
-        self.config_d = os.path.join(config_dir, 'config.d')
+        self.config.config_d = os.path.join(config_dir, 'config.d')
         if 'config_d' in config:
-            self.config_d = config['config_d']
-        if self.config_d and os.path.isdir(self.config_d):
-            config_d = self.config_d
+            self.config.config_d = config['config_d']
+        if self.config.config_d and os.path.isdir(self.config.config_d):
+            config_d = self.config.config_d
             config_files = [
                 os.path.join(config_d, fn)
                 for fn in os.listdir(config_d)
@@ -107,7 +112,30 @@ class Config():
                     raise ConfigError(e)
         self.load(config)
 
-    def load(self, config):
+    def populate_object(self, obj, level, source, valid_values, value_transforms):
+        for k, v in source.items():
+            if k not in valid_values:
+                continue
+            if type(v) not in valid_values[k]:
+                raise ConfigError('{}: {}: Invalid value {} (expected {})'.format(
+                    level,
+                    k,
+                    repr(type(v)),
+                    repr(valid_values[k]))
+                )
+            if k in value_transforms:
+                try:
+                    v = value_transforms[k](v)
+                except Exception as e:
+                    raise ConfigError('{}: {}: Invalid value during transformation: {}'.format(
+                        level,
+                        k,
+                        str(e),
+                    ))
+                    return
+            setattr(obj, k, v)
+
+    def build_base(self, config):
         valid_values = {
             'data_dir': (str,),
             'template_dir': (str,),
@@ -117,7 +145,58 @@ class Config():
             'environment': (dict,),
             'database': (dict,),
         }
-        valid_values_job = {
+        value_transforms = {
+            'shutdown_kill_grace': lambda x: utils.seconds_to_td(x),
+            'environment': lambda x: utils.validate_environment_dict(copy.deepcopy(x)),
+        }
+        self.populate_object(self.config, 'Config', config, valid_values, value_transforms)
+
+    def build_concurrency_groups(self, config):
+        if 'concurrency_groups' not in config:
+            return
+
+        valid_values = {
+            'max': (int,),
+        }
+        value_transforms = {}
+
+        for concurrency_group_name, concurrency_group_dict in config['concurrency_groups'].items():
+            if not self.is_valid_name(concurrency_group_name):
+                raise ConfigError('Concurrency group {}: Invalid name'.format(concurrency_group_name))
+            concurrency_group = dsari.ConcurrencyGroup(concurrency_group_name)
+            self.populate_object(
+                concurrency_group,
+                'Concurrency group {}'.format(concurrency_group_name),
+                concurrency_group_dict,
+                valid_values,
+                value_transforms,
+            )
+            self.config.concurrency_groups.append(concurrency_group)
+
+    def build_jobs(self, config):
+        jobs = {}
+        if 'jobs' in config:
+            jobs = config['jobs']
+        job_groups = {}
+        if 'job_groups' in config:
+            job_groups = config['job_groups']
+
+        for job_group_name, job_group_dict in job_groups.items():
+            if not self.is_valid_name(job_group_name):
+                raise ConfigError('Job group {}: Invalid name'.format(job_group_name))
+            job_template = copy.deepcopy(job_group_dict)
+            if 'job_names' not in job_template:
+                raise ConfigError('Job group {}: job_names required'.format(job_group_name))
+            for job_name in job_template['job_names']:
+                jobs[job_name] = copy.deepcopy(job_template)
+                jobs[job_name]['job_group'] = job_group_name
+                del(jobs[job_name]['job_names'])
+
+        for job_name in jobs.keys():
+            self.build_job(job_name, jobs[job_name])
+
+    def build_job(self, job_name, job_dict):
+        valid_values = {
             'command': (list, str),
             'schedule': (type(None),) + (str,),
             'max_execution': (int, float),
@@ -129,114 +208,49 @@ class Config():
             'job_group': (str,),
             'concurrent_runs': (bool,),
         }
-        valid_values_concurrency_group = {
-            'max': (int,),
+        value_transforms = {
+            'max_execution': lambda x: utils.seconds_to_td(x),
+            'max_execution_grace': lambda x: utils.seconds_to_td(x),
+            'environment': lambda x: utils.validate_environment_dict(copy.deepcopy(x)),
         }
-        self.raw_config = copy.deepcopy(config)
-        for k in valid_values.keys():
-            if k in config:
-                if type(config[k]) not in valid_values[k]:
-                    raise ConfigError('{}: Invalid value {} (expected {})'.format(
-                        k,
-                        repr(type(config[k])),
-                        repr(valid_values[k]))
-                    )
-                if k in ('shutdown_kill_grace',):
-                    setattr(self, k, utils.seconds_to_td(config[k]))
-                elif k == 'environment':
-                    try:
-                        config[k] = utils.validate_environment_dict(copy.deepcopy(config[k]))
-                    except (KeyError, ValueError) as e:
-                        raise ConfigError('Invalid environment: {}'.format(str(e)))
-                        return
-                else:
-                    setattr(self, k, config[k])
 
-        concurrency_groups = {}
-        if 'concurrency_groups' in config:
-            concurrency_groups = config['concurrency_groups']
+        if not self.is_valid_name(job_name):
+            raise ConfigError('Job {}: Invalid name'.format(job_name))
+        if 'command' not in job_dict:
+            raise ConfigError('Job {}: command required'.format(job_name))
+        if type(job_dict['command']) == str:
+            job_dict['command'] = shlex.split(job_dict['command'])
+        job = dsari.Job(job_name)
+        self.populate_object(
+            job, 'Job {}'.format(job_name), job_dict,
+            valid_values, value_transforms,
+        )
+        if job.schedule is not None:
+            try:
+                utils.get_next_schedule_time(job.schedule, job.name)
+            except Exception as e:
+                raise ConfigError('Job {}: Invalid schedule ({}): {}: {}'.format(job.name, job.schedule, type(e), str(e)))
+        self.build_job_concurrency_groups(job, job_dict)
+        self.config.jobs.append(job)
 
-        for concurrency_group_name in concurrency_groups.keys():
-            if not self.is_valid_name(concurrency_group_name):
-                raise ConfigError('Concurrency group {}: Invalid name'.format(concurrency_group_name))
-            concurrency_group = dsari.ConcurrencyGroup(concurrency_group_name)
-            for k in valid_values_concurrency_group.keys():
-                if k in concurrency_groups[concurrency_group_name]:
-                    if type(concurrency_groups[concurrency_group_name][k]) not in valid_values_concurrency_group[k]:
-                        raise ConfigError('Concurrency group {}: {}: Invalid value {} (expected {})'.format(
-                            concurrency_group_name,
-                            k,
-                            repr(type(concurrency_groups[concurrency_group_name][k])),
-                            repr(valid_values_concurrency_group[k]))
-                        )
-                    setattr(concurrency_group, k, concurrency_groups[concurrency_group_name][k])
-            self.concurrency_groups.append(concurrency_group)
-
-        jobs = {}
-        if 'jobs' in config:
-            jobs = config['jobs']
-        job_groups = {}
-        if 'job_groups' in config:
-            job_groups = config['job_groups']
-
-        for job_group_name in job_groups:
-            if not self.is_valid_name(job_group_name):
-                raise ConfigError('Job group {}: Invalid name'.format(job_group_name))
-            job_template = copy.deepcopy(job_groups[job_group_name])
-            if 'job_names' not in job_template:
-                raise ConfigError('Job group {}: job_names required'.format(job_group_name))
-            for job_name in job_template['job_names']:
-                jobs[job_name] = copy.deepcopy(job_template)
-                jobs[job_name]['job_group'] = job_group_name
-                del(jobs[job_name]['job_names'])
-
-        concurrency_groups_hash = {
-            concurrency_group.name: concurrency_group
-            for concurrency_group in self.concurrency_groups
-        }
-        for job_name in jobs.keys():
-            if not self.is_valid_name(job_name):
-                raise ConfigError('Job {}: Invalid name'.format(job_name))
-            if 'command' not in jobs[job_name]:
-                raise ConfigError('Job {}: command required'.format(job_name))
-            if type(jobs[job_name]['command']) == str:
-                jobs[job_name]['command'] = shlex.split(jobs[job_name]['command'])
-            job = dsari.Job(job_name)
-            for k in valid_values_job.keys():
-                if k in jobs[job_name]:
-                    if type(jobs[job_name][k]) not in valid_values_job[k]:
-                        raise ConfigError('Job {}: {}: Invalid value {} (expected {})'.format(
-                            job_name,
-                            k,
-                            repr(type(jobs[job_name][k])),
-                            repr(valid_values_job[k]))
-                        )
-                    if k in ('max_execution', 'max_execution_grace'):
-                        setattr(job, k, utils.seconds_to_td(jobs[job_name][k]))
-                    elif k == 'environment':
-                        try:
-                            jobs[job_name][k] = utils.validate_environment_dict(copy.deepcopy(jobs[job_name][k]))
-                        except (KeyError, ValueError) as e:
-                            raise ConfigError('Job {}: Invalid environment: {}'.format(job_name, str(e)))
-                            return
-                    else:
-                        setattr(job, k, jobs[job_name][k])
-            job_concurrency_group_names = []
-            if 'concurrency_groups' in jobs[job_name]:
-                job_concurrency_group_names = jobs[job_name]['concurrency_groups']
-            for concurrency_group_name in job_concurrency_group_names:
+    def build_job_concurrency_groups(self, job, job_dict):
+        if 'concurrency_groups' not in job_dict:
+            return
+        for concurrency_group_name in job_dict['concurrency_groups']:
+            concurrency_group = None
+            for i in self.config.concurrency_groups:
+                if i.name == concurrency_group_name:
+                    concurrency_group = i
+                    break
+            if concurrency_group is None:
                 if not self.is_valid_name(concurrency_group_name):
-                    raise ConfigError('Concurrency group {}: Invalid name'.format(job_group_name))
-                if concurrency_group_name not in concurrency_groups_hash:
-                    concurrency_group = dsari.ConcurrencyGroup(concurrency_group_name)
-                    concurrency_groups_hash[concurrency_group_name] = concurrency_group
-                    self.concurrency_groups.append(concurrency_group)
-                else:
-                    concurrency_group = concurrency_groups_hash[concurrency_group_name]
-                job.concurrency_groups.append(concurrency_group)
-            if job.schedule is not None:
-                try:
-                    utils.get_next_schedule_time(job.schedule, job.name)
-                except Exception as e:
-                    raise ConfigError('Job {}: Invalid schedule ({}): {}: {}'.format(job.name, job.schedule, type(e), str(e)))
-            self.jobs.append(job)
+                    raise ConfigError('Concurrency group {}: Invalid name'.format(concurrency_group_name))
+                concurrency_group = dsari.ConcurrencyGroup(concurrency_group_name)
+                self.config.concurrency_groups.append(concurrency_group)
+            job.concurrency_groups.append(concurrency_group)
+
+    def load(self, config):
+        self.raw_config = copy.deepcopy(config)
+        self.build_base(config)
+        self.build_concurrency_groups(config)
+        self.build_jobs(config)
