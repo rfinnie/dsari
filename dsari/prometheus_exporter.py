@@ -25,6 +25,8 @@ import sys
 import os
 import json
 import math
+import signal
+import logging
 from urllib.parse import parse_qs
 
 import dsari
@@ -122,8 +124,11 @@ def entry(values, type='gauge', help=None):
 class Prometheus():
     def __init__(self, args):
         self.args = args
-        self.config = dsari.config.get_config(self.args.config_dir)
+        self.load_config()
         self.db = dsari.database.get_database(self.config)
+
+    def load_config(self):
+        self.config = dsari.config.get_config(self.args.config_dir)
         self.job_cache = None
         self.job_cache_time = None
 
@@ -320,6 +325,24 @@ class Prometheus():
 class PrometheusHandler():
     def __init__(self, prom):
         self.prom = prom
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.DEBUG)
+        lh_console = logging.StreamHandler()
+        lh_console_formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+        lh_console.setFormatter(lh_console_formatter)
+        if self.prom.args.debug:
+            lh_console.setLevel(logging.DEBUG)
+        else:
+            lh_console.setLevel(logging.INFO)
+        self.logger.addHandler(lh_console)
+
+        for signum in (signal.SIGHUP,):
+            signal.signal(signum, self.signal_handler)
+
+    def signal_handler(self, signum, frame):
+        if signum == signal.SIGHUP:
+            self.logger.info('SIGHUP received, reloading')
+            self.prom.load_config()
 
     def __call__(self, environ, start_response):
         self.environ = environ
