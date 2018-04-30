@@ -118,7 +118,7 @@ class AutoPager:
             try:
                 self.pager = subprocess.Popen(
                     pager_cmd, stdin=subprocess.PIPE, stdout=sys.stdout,
-                    encoding='UTF-8', env=env
+                    env=env
                 )
             except FileNotFoundError:
                 pass
@@ -129,7 +129,7 @@ class AutoPager:
 
         if self.pager:
             try:
-                self.pager.stdin.write(l)
+                self.pager.stdin.write(l.encode('utf-8'))
             except KeyboardInterrupt:
                 self.close()
             except BrokenPipeError:
