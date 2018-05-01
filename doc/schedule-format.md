@@ -81,9 +81,11 @@ Here are a few examples:
     RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1
     # The last weekday of the month
 
+    RRULE:FREQ=HOURLY;UNTIL=20181225T080000
+    # Run hourly, but do not schedule runs after Christmas morning 2018
+
 When a position is not supplied, it is hashed according to the job name.
 For example, "RRULE:FREQ=DAILY" is the same as "H H * * *", and the job will run at the same hour/minute/second each day.
 For more information about job name hashing, see above.
 
-dsari's scheduler supports nearly all RRULE properties defined by RFC 5545 (or more accurately, supported by `python-dateutil`).
-Notable properties not supported by dsari are COUNT and UNTIL; do not attempt to set these in the schedule.
+dsari's scheduler supports nearly all RRULE properties defined by RFC 5545 (or more accurately, supported by `python-dateutil`), with the exception of COUNT.

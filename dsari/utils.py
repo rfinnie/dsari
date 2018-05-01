@@ -98,9 +98,9 @@ def get_next_schedule_time(schedule, job_name, start_time=None):
         if not HAS_DATEUTIL:
             raise ImportError('dateutil not available, manual triggers only')
         hashed_epoch = start_time - seconds_to_td((dt_to_epoch(start_time) % (crc % 86400)))
-        t = dateutil.rrule.rrulestr(schedule, dtstart=hashed_epoch).after(start_time) + subsecond_offset
-        if t is None:
-            raise ValueError('rrulestr returned None')
+        t = dateutil.rrule.rrulestr(schedule, dtstart=hashed_epoch).after(start_time)
+        if t is not None:
+            t = t + subsecond_offset
         return t
     if not HAS_CRONITER:
         raise ImportError('croniter not available, manual triggers only')

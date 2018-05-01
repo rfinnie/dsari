@@ -260,6 +260,11 @@ class Scheduler():
                 self.logger.debug('[{}] No schedule defined, manual triggers only'.format(job.name))
                 continue
             t = get_next_schedule_time(job.schedule, job.name, start_time=now)
+            if t is None:
+                self.logger.debug('[{}] Schedule {} does not produce a future run, skipping'.format(
+                    job.name, job.schedule
+                ))
+                continue
             run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'
@@ -609,10 +614,15 @@ class Scheduler():
         if run.concurrency_group:
             self.running_groups[run.concurrency_group].append(run)
         if run.respawn and job.schedule:
+            t = get_next_schedule_time(job.schedule, job.name, start_time=now)
+            if t is None:
+                self.logger.debug('[{}] Schedule {} does not produce a future run, skipping'.format(
+                    job.name, job.schedule
+                ))
+                return
             run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'
-            t = get_next_schedule_time(job.schedule, job.name, start_time=now)
             run.schedule_time = t
             self.scheduled_runs.append(run)
             self.logger.debug(
