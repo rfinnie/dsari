@@ -30,7 +30,7 @@ import datetime
 import dsari
 import dsari.config
 import dsari.database
-from dsari.utils import td_to_seconds
+from dsari.utils import td_to_seconds, get_next_schedule_time
 
 __version__ = dsari.__version__
 
@@ -303,6 +303,7 @@ class Info():
                 'command': job.command,
                 'command_append_run': job.command_append_run,
                 'schedule': job.schedule,
+                'next_scheduled_run': (get_next_schedule_time(job.schedule, job.name) if job.schedule else None),
                 'environment': job.environment,
                 'max_execution': job.max_execution,
                 'max_execution_grace': job.max_execution_grace,
@@ -312,6 +313,8 @@ class Info():
                 'job_group': job.job_group,
                 'concurrent_runs': job.concurrent_runs,
             }
+            if jobs[job.name]['next_scheduled_run'] is not None:
+                jobs[job.name]['next_scheduled_run'] = jobs[job.name]['next_scheduled_run'].isoformat()
             for k in ('max_execution', 'max_execution_grace'):
                 if jobs[job.name][k] is not None:
                     jobs[job.name][k] = td_to_seconds(jobs[job.name][k])
@@ -363,23 +366,27 @@ class Info():
                     job = jobs[job_name]
                     schedule = job['schedule'] or ''
                     command = ' '.join([shlex.quote(x) for x in job['command']])
+                    next_scheduled_run = job['next_scheduled_run'] or ''
                     print('\t'.join([
                         job_name,
                         schedule,
-                        command
+                        command,
+                        next_scheduled_run,
                     ]), file=pager)
         else:
             color = Color()
-            column_headers = ('Job Name', 'Schedule', 'Command')
+            column_headers = ('Job Name', 'Schedule', 'Next Scheduled Run', 'Command')
             output_data = []
 
             for job_name in sorted(jobs):
                 job = jobs[job_name]
                 schedule = job['schedule'] or ''
                 command = ' '.join([shlex.quote(x) for x in job['command']])
+                next_scheduled_run = job['next_scheduled_run'] or ''
                 output_data.append((
                     (color.hash_colored(job_name), len(job_name)),
                     (schedule, len(schedule)),
+                    (next_scheduled_run, len(next_scheduled_run)),
                     (command, len(command)),
                 ))
             with AutoPager() as pager:
