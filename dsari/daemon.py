@@ -145,7 +145,7 @@ class Scheduler():
 
         self.reset_jobs()
 
-        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM, signal.SIGQUIT):
+        for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM, signal.SIGQUIT, signal.SIGUSR1):
             signal.signal(signum, self.signal_handler)
 
         self.logger.info('Scheduler running')
@@ -198,6 +198,9 @@ class Scheduler():
             self.reset_jobs()
         elif signum == signal.SIGQUIT:
             self.sigquit_status()
+        elif signum == signal.SIGUSR1:
+            self.logger.debug('SIGUSR1 received')
+            self.next_wakeup = datetime.datetime.now()
 
     def sigquit_status(self):
         now = datetime.datetime.now()

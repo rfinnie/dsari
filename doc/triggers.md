@@ -8,6 +8,7 @@ It can be as simple as the following:
     $ echo '{}' >~/.dsari/var/trigger/sample-job/trigger.json
 
 The daemon will notice this trigger within 60 seconds, set up a new one-off run, and delete the trigger JSON file.
+If you want the trigger to be noticed sooner, send dsari-daemon a USR1 signal.
 
 The contents of the JSON file can be as simple as the empty dict above, but it can also be more complex.
 For example, you could write a script which periodically checks a git repository and triggers a run when a new commit is detected.
