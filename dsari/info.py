@@ -26,6 +26,7 @@ import subprocess
 import shlex
 import binascii
 import datetime
+import locale
 
 import dsari
 import dsari.config
@@ -281,9 +282,13 @@ class Info():
                 break
             printable_column_lengths.pop()
 
+        if locale.getlocale()[1] == 'UTF-8':
+            dashchar = '\u2500'
+        else:
+            dashchar = '-'
         line_data = ['{{:^{}}}'.format(largest_columns[i]).format(column_headers[i]) for i in range(len(printable_column_lengths))]
         print('   '.join(line_data), file=file)
-        line_data = ['─' * largest_columns[i] for i in range(len(printable_column_lengths))]
+        line_data = [dashchar * largest_columns[i] for i in range(len(printable_column_lengths))]
         print('   '.join(line_data), file=file)
         for l in output_data:
             line_data = []
