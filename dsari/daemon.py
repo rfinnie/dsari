@@ -153,7 +153,6 @@ class Scheduler():
     def begin_shutdown(self):
         self.shutdown = True
         self.shutdown_begin = datetime.datetime.now()
-        self.next_wakeup = self.shutdown_begin
         self.scheduled_runs = []
         for run in self.running_runs:
             run.respawn = False
@@ -186,6 +185,7 @@ class Scheduler():
             run.kill_sent = True
 
     def signal_handler(self, signum, frame):
+        self.next_wakeup = datetime.datetime.now()
         if signum in (signal.SIGINT, signal.SIGTERM):
             if signum == signal.SIGINT:
                 self.logger.info('SIGINT received, beginning shutdown')
@@ -200,7 +200,6 @@ class Scheduler():
             self.sigquit_status()
         elif signum == signal.SIGUSR1:
             self.logger.debug('SIGUSR1 received')
-            self.next_wakeup = datetime.datetime.now()
 
     def sigquit_status(self):
         now = datetime.datetime.now()
