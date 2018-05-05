@@ -153,6 +153,7 @@ class Scheduler():
     def begin_shutdown(self):
         self.shutdown = True
         self.shutdown_begin = datetime.datetime.now()
+        self.next_wakeup = self.shutdown_begin
         self.scheduled_runs = []
         for run in self.running_runs:
             run.respawn = False
@@ -667,10 +668,15 @@ class Scheduler():
                     self.logger.info('Shutdown complete')
                     return
 
-                to_sleep = self.next_wakeup - datetime.datetime.now()
-                if to_sleep > seconds_to_td(0):
-                    self.logger.debug('No running jobs, waiting {}'.format(to_sleep))
-                    time.sleep(td_to_seconds(to_sleep))
+                self.logger.debug('No running jobs, waiting until {}'.format(self.next_wakeup))
+                while True:
+                    now = datetime.datetime.now()
+                    if self.next_wakeup <= now:
+                        break
+                    elif (self.next_wakeup - now) < seconds_to_td(1):
+                        time.sleep(td_to_seconds(self.next_wakeup - now))
+                    else:
+                        time.sleep(1)
 
 
 def main():
