@@ -496,6 +496,9 @@ class SQLite3Database(BaseSQLDatabase):
             config.database['file'] = None
         if config.database['file'] is None:
             config.database['file'] = os.path.join(config.data_dir, 'dsari.sqlite3')
+        db_dir = os.path.dirname(config.database['file'])
+        if not os.path.exists(db_dir):
+            os.makedirs(db_dir)
         self.config = config
         self.db_conn = sqlite3.connect(config.database['file'])
         self.db_conn.row_factory = sqlite3.Row

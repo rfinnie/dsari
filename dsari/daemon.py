@@ -128,9 +128,6 @@ class Scheduler():
             lh_console.setLevel(logging.INFO)
         self.logger.addHandler(lh_console)
 
-        if not os.path.exists(self.config.data_dir):
-            os.makedirs(self.config.data_dir)
-
         self.jobs = []
         self.scheduled_runs = []
         self.running_runs = []
