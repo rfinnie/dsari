@@ -20,6 +20,8 @@ Since this is a hash (based on the job name) and not a randomizer, the translate
 For example, both "job1" and "job2" may have the hourly schedule `H * * * *`.
 On "job1", this may hash to `27 * * * *`, while "job2" may hash to `46 * * * *`.
 
+If an actual random position is desired, use "R" instead of "H".
+
 If the 6th field (second) is not present in a definition, it is assumed to be "H" (hashed within the minute).
 If "*", it will be run every second, which is probably not what you want.
 

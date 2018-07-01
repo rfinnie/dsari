@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# croniter_hash - Extend croniter with hash support
-# Copyright (C) 2015-2016 Ryan Finnie
+# croniter_hash - Extend croniter with hash/random support
+# Copyright (C) 2015-2018 Ryan Finnie
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,6 +21,7 @@
 import binascii
 import re
 import croniter
+import random
 
 
 class croniter_hash(croniter.croniter):
@@ -31,12 +32,15 @@ class croniter_hash(croniter.croniter):
             del(kwargs['hash_id'])
         return super(croniter_hash, self).__init__(expr_format, *args, **kwargs)
 
-    def _hash_do(self, id, position, range_end=None, range_begin=None):
+    def _hash_do(self, id, position, range_end=None, range_begin=None, type='H'):
         if not range_end:
             range_end = self.RANGES[position][1]
         if not range_begin:
             range_begin = self.RANGES[position][0]
-        crc = binascii.crc32(id.encode('utf-8')) & 0xffffffff
+        if type == 'R':
+            crc = random.randint(0, 0xffffffff)
+        else:
+            crc = binascii.crc32(id.encode('utf-8')) & 0xffffffff
         return ((crc >> position) % (range_end - range_begin + 1)) + range_begin
 
     def _hash_expand(self, expr_format, id):
@@ -63,38 +67,38 @@ class croniter_hash(croniter.croniter):
 
     def _hash_expand_item(self, item, id, idx):
         # Example: H -> 32
-        if item == 'H':
-            return str(self._hash_do(id, idx))
+        if item in ('H', 'R'):
+            return str(self._hash_do(id, idx, type=item))
 
         # Example: H(30-59)/10 -> 34-59/10 (i.e. 34,44,54)
-        m = re.match('^H\((\d+)-(\d+)\)\/(\d+)$', item)
+        m = re.match('^(H|R)\((\d+)-(\d+)\)\/(\d+)$', item)
         if m:
             return '{}-{}/{}'.format(
                 self._hash_do(
-                    id, idx, int(m.group(3))
-                ) + int(m.group(1)),
-                int(m.group(2)),
-                int(m.group(3))
+                    id, idx, int(m.group(4)), type=m.group(1)
+                ) + int(m.group(2)),
+                int(m.group(3)),
+                int(m.group(4))
             )
 
         # Example: H(0-29) -> 12
-        m = re.match('^H\((\d+)-(\d+)\)$', item)
+        m = re.match('^(H|R)\((\d+)-(\d+)\)$', item)
         if m:
             return str(
                 self._hash_do(
-                    id, idx, int(m.group(2)), int(m.group(1))
+                    id, idx, int(m.group(3)), int(m.group(2)), type=m.group(1)
                 )
             )
 
         # Example: H/15 -> 7-59/15 (i.e. 7,22,37,52)
-        m = re.match('^H\/(\d+)$', item)
+        m = re.match('^(H|R)\/(\d+)$', item)
         if m:
             return '{}-{}/{}'.format(
                 self._hash_do(
-                    id, idx, int(m.group(1))
+                    id, idx, int(m.group(2)), type=m.group(1)
                 ),
                 self.RANGES[idx][1],
-                int(m.group(1))
+                int(m.group(2))
             )
 
         # Everything else
