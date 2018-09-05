@@ -92,6 +92,8 @@ stored in a SQLite database at ~/.dsari/var/dsari.sqlite3.
 When a run is executed, several environment variables are passed to the
 program to be run:
 
+    CI=true
+    DSARI=true
     JOB_NAME=sample-job
     RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
     PREVIOUS_RUN_ID=e5bd61b3-27f3-46ca-8169-372433056fc2
