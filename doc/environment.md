@@ -11,6 +11,8 @@ For example, the MAILNAME of the user starting `dsari-daemon` is not set, even i
 
 The following variables should always be present in a run:
 
+    CI=true
+    DSARI=true
     LOGNAME=user
     HOME=/home/user
     PWD=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
@@ -20,6 +22,10 @@ The following variables should always be present in a run:
     SCHEDULE_TIME=1460822675.99
     START_TIME=1460822677.34
     TRIGGER_TYPE=schedule
+
+### CI / DSARI
+
+Both set to "true", to easily indicate the script is being run from dsari CI.
 
 ### LOGNAME / HOME
 

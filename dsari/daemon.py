@@ -362,6 +362,8 @@ class Scheduler():
         else:
             environ['PATH'] = '/usr/bin:/bin'
 
+        environ['CI'] = 'true'
+        environ['DSARI'] = 'true'
         environ['DATA_DIR'] = self.config.data_dir
         environ['JOB_NAME'] = job.name
         environ['RUN_ID'] = run.id
