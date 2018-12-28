@@ -115,7 +115,8 @@ class AutoPager:
             if os.environ.get('PAGER'):
                 pager_cmd = shlex.split(os.environ.get('PAGER'))
             env = os.environ.copy()
-            env.update({'LESS': 'FRX'})
+            if not os.environ.get('LESS'):
+                env.update({'LESS': 'FRX'})
             try:
                 self.pager = subprocess.Popen(
                     pager_cmd, stdin=subprocess.PIPE, stdout=sys.stdout,
