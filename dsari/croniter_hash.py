@@ -1,30 +1,44 @@
-#!/usr/bin/env python3
-
 # croniter_hash - Extend croniter with hash/random support
-# Copyright (C) 2015-2018 Ryan Finnie
+# Copyright (C) 2015-2020 Ryan Finnie
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Originally from:
+# https://github.com/rfinnie/dsari/blob/master/dsari/croniter_hash.py
 
 import binascii
 import re
-import croniter
 import random
+
+import croniter
 
 
 class croniter_hash(croniter.croniter):
+    """Extend croniter with hash/random support
+
+    All croniter.croniter functionality is support; in addition,
+    Jenkins-style "H" hashing is supported, or "R" random.  Keyword
+    argument "hash_id" (a croniter_hash-specific addition) is required
+    for "H"/"R" definitions.
+    """
+
     def __init__(self, expr_format, *args, **kwargs):
         if 'hash_id' in kwargs:
             if kwargs['hash_id']:
@@ -71,7 +85,7 @@ class croniter_hash(croniter.croniter):
             return str(self._hash_do(id, idx, type=item))
 
         # Example: H(30-59)/10 -> 34-59/10 (i.e. 34,44,54)
-        m = re.match('^(H|R)\((\d+)-(\d+)\)\/(\d+)$', item)
+        m = re.match(r'^(H|R)\((\d+)-(\d+)\)\/(\d+)$', item)
         if m:
             return '{}-{}/{}'.format(
                 self._hash_do(
@@ -82,7 +96,7 @@ class croniter_hash(croniter.croniter):
             )
 
         # Example: H(0-29) -> 12
-        m = re.match('^(H|R)\((\d+)-(\d+)\)$', item)
+        m = re.match(r'^(H|R)\((\d+)-(\d+)\)$', item)
         if m:
             return str(
                 self._hash_do(
@@ -91,7 +105,7 @@ class croniter_hash(croniter.croniter):
             )
 
         # Example: H/15 -> 7-59/15 (i.e. 7,22,37,52)
-        m = re.match('^(H|R)\/(\d+)$', item)
+        m = re.match(r'^(H|R)\/(\d+)$', item)
         if m:
             return '{}-{}/{}'.format(
                 self._hash_do(
@@ -106,19 +120,14 @@ class croniter_hash(croniter.croniter):
 
 
 if __name__ == '__main__':
-    from datetime import datetime
-    import random
+    import datetime
     import string
-    id = 'foo'
+
     id = ''.join(
         random.choice(string.ascii_letters + string.digits)
         for i in range(30)
     )
-    base = datetime.now()
-    iter = croniter_hash('1 2 * * *', base)
-    iter = croniter_hash('3 4 * * *', base, hash_id=id)
+    base = datetime.datetime.now()
     iter = croniter_hash('H(30-59)/10 H(2-5) H/3 H *', base, hash_id=id)
-    print(iter.exprs)
-    print(iter.expanded)
     for i in range(10):
-        print(iter.get_next(datetime))
+        print(iter.get_next(datetime.datetime))
