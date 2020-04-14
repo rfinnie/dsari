@@ -18,22 +18,22 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import os
-import jinja2
-import datetime
 import argparse
+import datetime
+import gzip
 import logging
+import os
+
+try:
+    import lzma
+except ImportError as e:
+    lzma = e
+
+import jinja2
 
 import dsari
 import dsari.config
 import dsari.database
-
-import gzip
-HAS_LZMA = True
-try:
-    import lzma
-except ImportError:
-    HAS_LZMA = False
 
 __version__ = dsari.__version__
 
@@ -79,7 +79,7 @@ def read_output(filename):
     elif os.path.isfile('{}.gz'.format(filename)):
         with gzip.open('{}.gz'.format(filename), 'rb') as f:
             return f.read().decode('utf-8')
-    elif HAS_LZMA and os.path.isfile('{}.xz'.format(filename)):
+    elif (not isinstance(lzma, ImportError)) and os.path.isfile('{}.xz'.format(filename)):
         with open('{}.xz'.format(filename), 'rb') as f:
             return lzma.LZMADecompressor().decompress(f.read()).decode('utf-8')
     else:

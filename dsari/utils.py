@@ -18,23 +18,20 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import json
+import binascii
 import copy
 import datetime
-import binascii
+import json
+
+try:
+    import dateutil.rrule as dateutil_rrule
+except ImportError as e:
+    dateutil_rrule = e
 
 try:
     from . import croniter_hash
-    HAS_CRONITER = True
-except ImportError:
-    HAS_CRONITER = False
-
-try:
-    import dateutil.rrule
-    import dateutil.parser
-    HAS_DATEUTIL = True
-except ImportError:
-    HAS_DATEUTIL = False
+except ImportError as e:
+    croniter_hash = e
 
 
 def dict_merge(s, m):
@@ -95,14 +92,14 @@ def get_next_schedule_time(schedule, job_name, start_time=None):
     crc = binascii.crc32(job_name.encode('utf-8')) & 0xffffffff
     subsecond_offset = seconds_to_td(float(crc) / float(0xffffffff))
     if schedule.upper().startswith('RRULE:'):
-        if not HAS_DATEUTIL:
+        if isinstance(dateutil_rrule, ImportError):
             raise ImportError('dateutil not available, manual triggers only')
         hashed_epoch = start_time - seconds_to_td((dt_to_epoch(start_time) % (crc % 86400)))
-        t = dateutil.rrule.rrulestr(schedule, dtstart=hashed_epoch).after(start_time)
+        t = dateutil_rrule.rrulestr(schedule, dtstart=hashed_epoch).after(start_time)
         if t is not None:
             t = t + subsecond_offset
         return t
-    if not HAS_CRONITER:
+    if isinstance(croniter_hash, ImportError):
         raise ImportError('croniter not available, manual triggers only')
     if len(schedule.split(' ')) == 5:
         schedule = schedule + ' H'

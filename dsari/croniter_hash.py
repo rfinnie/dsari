@@ -24,8 +24,8 @@
 # https://github.com/rfinnie/dsari/blob/master/dsari/croniter_hash.py
 
 import binascii
-import re
 import random
+import re
 
 import croniter
 

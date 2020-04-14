@@ -18,20 +18,20 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import os
-import json
 import argparse
-import sys
-import subprocess
-import shlex
 import binascii
 import datetime
+import json
 import locale
+import os
+import shlex
+import subprocess
+import sys
 
 import dsari
 import dsari.config
 import dsari.database
-from dsari.utils import td_to_seconds, get_next_schedule_time
+from dsari.utils import get_next_schedule_time, td_to_seconds
 
 __version__ = dsari.__version__
 
@@ -287,7 +287,10 @@ class Info():
             dashchar = '\u2500'
         else:
             dashchar = '-'
-        line_data = ['{{:^{}}}'.format(largest_columns[i]).format(column_headers[i]) for i in range(len(printable_column_lengths))]
+        line_data = [
+            '{{:^{}}}'.format(largest_columns[i]).format(column_headers[i])
+            for i in range(len(printable_column_lengths))
+        ]
         print('   '.join(line_data), file=file)
         line_data = [dashchar * largest_columns[i] for i in range(len(printable_column_lengths))]
         print('   '.join(line_data), file=file)

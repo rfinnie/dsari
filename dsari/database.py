@@ -18,12 +18,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+import copy
 import json
 import os
-import copy
 
 import dsari
-from dsari.utils import epoch_to_dt, dt_to_epoch
+from dsari.utils import dt_to_epoch, epoch_to_dt
 
 
 def get_database(config):

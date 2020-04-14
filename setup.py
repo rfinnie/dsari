@@ -2,8 +2,11 @@
 
 import os
 import sys
+
 from setuptools import setup
+
 import dsari
+
 
 assert(sys.version_info > (3, 4))
 

@@ -18,8 +18,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import os
 import copy
+import os
 import re
 import shlex
 
@@ -100,9 +100,9 @@ class ConfigLoader():
             config_files = [
                 os.path.join(config_d, fn)
                 for fn in os.listdir(config_d)
-                if fn.endswith('.json') and
-                os.path.isfile(os.path.join(config_d, fn)) and
-                os.access(os.path.join(config_d, fn), os.R_OK)
+                if fn.endswith('.json')
+                and os.path.isfile(os.path.join(config_d, fn))
+                and os.access(os.path.join(config_d, fn), os.R_OK)
             ]
             config_files.sort()
             for file in config_files:
@@ -229,7 +229,11 @@ class ConfigLoader():
             try:
                 utils.get_next_schedule_time(job.schedule, job.name)
             except Exception as e:
-                raise ConfigError('Job {}: Invalid schedule ({}): {}: {}'.format(job.name, job.schedule, type(e), str(e)))
+                raise ConfigError(
+                    'Job {}: Invalid schedule ({}): {}: {}'.format(
+                        job.name, job.schedule, type(e), str(e)
+                    )
+                )
         self.build_job_concurrency_groups(job, job_dict)
         self.config.jobs[job.name] = job
 

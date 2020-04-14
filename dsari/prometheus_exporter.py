@@ -18,15 +18,15 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import time
-import datetime
 import argparse
-import sys
-import os
+import datetime
 import json
-import math
-import signal
 import logging
+import math
+import os
+import signal
+import sys
+import time
 from urllib.parse import parse_qs
 
 import dsari
@@ -102,14 +102,14 @@ def percentile(N, percent, key=lambda x: x):
     """
     if not N:
         return None
-    k = (len(N)-1) * percent
+    k = (len(N) - 1) * percent
     f = math.floor(k)
     c = math.ceil(k)
     if f == c:
         return key(N[int(k)])
-    d0 = key(N[int(f)]) * (c-k)
-    d1 = key(N[int(c)]) * (k-f)
-    return d0+d1
+    d0 = key(N[int(f)]) * (c - k)
+    d1 = key(N[int(c)]) * (k - f)
+    return d0 + d1
 
 
 def entry(values, type='gauge', help=None):
@@ -294,8 +294,8 @@ class Prometheus():
         metrics = {}
 
         if (
-            (self.job_cache is None) or
-            ((self.job_cache_time + datetime.timedelta(seconds=self.args.job_cache_time)) < datetime.datetime.now())
+            (self.job_cache is None)
+            or ((self.job_cache_time + datetime.timedelta(seconds=self.args.job_cache_time)) < datetime.datetime.now())
         ):
             self.job_cache = self.get_job_metrics()
             self.job_cache_time = datetime.datetime.now()

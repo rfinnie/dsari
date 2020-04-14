@@ -18,34 +18,34 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import os
-import json
-import time
-import math
-import random
-import logging
-import signal
 import argparse
 import copy
-import pwd
 import datetime
-
-import dsari
-import dsari.config
-import dsari.database
-from dsari.utils import seconds_to_td, td_to_seconds, epoch_to_dt, dt_to_epoch, validate_environment_dict, get_next_schedule_time
-
-try:
-    import dateutil.rrule
-    import dateutil.parser
-    HAS_DATEUTIL = True
-except ImportError:
-    HAS_DATEUTIL = False
+import json
+import logging
+import math
+import os
+import pwd
+import random
+import signal
+import time
 
 try:
     from shlex import quote as shquote
 except ImportError:
     from pipes import quote as shquote
+
+try:
+    import dateutil.parser as dateutil_parser
+except ImportError as e:
+    dateutil_parser = e
+
+import dsari
+import dsari.config
+import dsari.database
+from dsari.utils import dt_to_epoch, epoch_to_dt
+from dsari.utils import seconds_to_td, td_to_seconds
+from dsari.utils import get_next_schedule_time, validate_environment_dict
 
 __version__ = dsari.__version__
 
@@ -159,7 +159,11 @@ class Scheduler():
                 if run.term_sent:
                     continue
                 job = run.job
-                self.logger.info('[{} {}] Shutdown requested, sending SIGTERM to PID {}'.format(job.name, run.id, run.pid))
+                self.logger.info(
+                    '[{} {}] Shutdown requested, sending SIGTERM to PID {}'.format(
+                        job.name, run.id, run.pid
+                    )
+                )
                 os.kill(run.pid, signal.SIGTERM)
                 run.term_sent = True
         elif len(self.running_runs) > 0:
@@ -177,7 +181,11 @@ class Scheduler():
             if run.kill_sent:
                 continue
             job = run.job
-            self.logger.info('[{} {}] Shutdown grace time exceeded, sending SIGKILL to PID {}'.format(job.name, run.id, run.pid))
+            self.logger.info(
+                '[{} {}] Shutdown grace time exceeded, sending SIGKILL to PID {}'.format(
+                    job.name, run.id, run.pid
+                )
+            )
             os.kill(run.pid, signal.SIGKILL)
             run.kill_sent = True
 
@@ -489,12 +497,12 @@ class Scheduler():
         t = epoch_to_dt(os.path.getmtime(trigger_file))
         try:
             f = open(trigger_file)
-        except IOError as e:
+        except IOError:
             # Return silently, otherwise we spam the log during each loop
             return
         try:
             os.remove(trigger_file)
-        except OSError as e:
+        except OSError:
             # Return silently, otherwise we spam the log during each loop
             f.close()
             return
@@ -515,14 +523,22 @@ class Scheduler():
         if 'schedule_time' in j:
             if type(j['schedule_time']) in (int, float):
                 t = epoch_to_dt(float(j['schedule_time']))
-            elif HAS_DATEUTIL:
+            elif not isinstance(dateutil_parser, ImportError):
                 try:
-                    t = dateutil.parser.parse(j['schedule_time'])
+                    t = dateutil_parser.parse(j['schedule_time'])
                 except ValueError:
-                    self.logger.error('[{}] Invalid schedule_time "{}" for trigger'.format(job.name, j['schedule_time']))
+                    self.logger.error(
+                        '[{}] Invalid schedule_time "{}" for trigger'.format(
+                            job.name, j['schedule_time']
+                        )
+                    )
                     return
             else:
-                self.logger.error('[{}] Cannot parse schedule_time "{}" for trigger'.format(job.name, j['schedule_time']))
+                self.logger.error(
+                    '[{}] Cannot parse schedule_time "{}" for trigger'.format(
+                        job.name, j['schedule_time']
+                    )
+                )
                 return
 
         if 'environment' in j:
