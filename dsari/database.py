@@ -27,11 +27,11 @@ from dsari.utils import dt_to_epoch, epoch_to_dt
 
 
 def get_database(config):
-    if config.database['type'] == 'postgresql':
+    if config.database["type"] == "postgresql":
         return PostgreSQLDatabase(config)
-    elif config.database['type'] == 'mysql':
+    elif config.database["type"] == "mysql":
         return MySQLDatabase(config)
-    elif config.database['type'] == 'mongodb':
+    elif config.database["type"] == "mongodb":
         return MongoDBDatabase(config)
     else:
         return SQLite3Database(config)
@@ -65,7 +65,7 @@ class BaseDatabase:
 
 
 class BaseSQLDatabase(BaseDatabase):
-    placeholder = '%s'
+    placeholder = "%s"
 
     def __init__(self, config):
         self.config = config
@@ -75,30 +75,30 @@ class BaseSQLDatabase(BaseDatabase):
         pass
 
     def _modify_statement(self, sql):
-        return sql.format(*((self.placeholder,) * sql.count('{}')))
+        return sql.format(*((self.placeholder,) * sql.count("{}")))
 
     def _build_insert(self, pairs):
         out = []
         for (k, v) in pairs:
-            if k in ('trigger_data', 'run_data'):
+            if k in ("trigger_data", "run_data"):
                 out.append(json.dumps(v))
             else:
                 out.append(v)
         return out
 
     def _build_run_from_result(self, job, f):
-        run = dsari.Run(job, id=f['run_id'])
-        for k in ('schedule_time', 'start_time', 'stop_time'):
+        run = dsari.Run(job, id=f["run_id"])
+        for k in ("schedule_time", "start_time", "stop_time"):
             if k not in f.keys():
                 continue
             if type(f[k]) in (int, float):
                 setattr(run, k, epoch_to_dt(f[k]))
             else:
                 setattr(run, k, f[k])
-        if 'exit_code' in f.keys():
-            run.exit_code = f['exit_code']
-        run.trigger_type = f['trigger_type']
-        for k in ('trigger_data', 'run_data'):
+        if "exit_code" in f.keys():
+            run.exit_code = f["exit_code"]
+        run.trigger_type = f["trigger_type"]
+        for k in ("trigger_data", "run_data"):
             if type(f[k]) == dict:
                 setattr(run, k, f[k])
             else:
@@ -213,13 +213,13 @@ class BaseSQLDatabase(BaseDatabase):
             sql_statement,
             self._build_insert(
                 [
-                    ('job_name', run.job.name),
-                    ('run_id', run.id),
-                    ('schedule_time', run.schedule_time),
-                    ('start_time', run.start_time),
-                    ('trigger_type', run.trigger_type),
-                    ('trigger_data', run.trigger_data),
-                    ('run_data', run.run_data),
+                    ("job_name", run.job.name),
+                    ("run_id", run.id),
+                    ("schedule_time", run.schedule_time),
+                    ("start_time", run.start_time),
+                    ("trigger_type", run.trigger_type),
+                    ("trigger_data", run.trigger_data),
+                    ("run_data", run.run_data),
                 ]
             ),
         )
@@ -247,15 +247,15 @@ class BaseSQLDatabase(BaseDatabase):
             sql_statement,
             self._build_insert(
                 [
-                    ('job_name', run.job.name),
-                    ('run_id', run.id),
-                    ('schedule_time', run.schedule_time),
-                    ('start_time', run.start_time),
-                    ('stop_time', run.stop_time),
-                    ('exit_code', run.exit_code),
-                    ('trigger_type', run.trigger_type),
-                    ('trigger_data', run.trigger_data),
-                    ('run_data', run.run_data),
+                    ("job_name", run.job.name),
+                    ("run_id", run.id),
+                    ("schedule_time", run.schedule_time),
+                    ("start_time", run.start_time),
+                    ("stop_time", run.stop_time),
+                    ("exit_code", run.exit_code),
+                    ("trigger_type", run.trigger_type),
+                    ("trigger_data", run.trigger_data),
+                    ("run_data", run.run_data),
                 ]
             ),
         )
@@ -287,18 +287,18 @@ class BaseSQLDatabase(BaseDatabase):
 
     def get_runs(self, job_names=None, run_ids=None, runs_running=False):
         if run_ids is not None:
-            where = 'run_id'
+            where = "run_id"
             where_in = run_ids
         elif job_names is not None:
-            where = 'job_name'
+            where = "job_name"
             where_in = job_names
         else:
             where = None
             where_in = []
         if runs_running:
-            table_name = 'runs_running'
+            table_name = "runs_running"
         else:
-            table_name = 'runs'
+            table_name = "runs"
 
         sql_statement = """
             SELECT
@@ -313,7 +313,7 @@ class BaseSQLDatabase(BaseDatabase):
                 WHERE
                     {} in ({})
             """.format(
-                where, ','.join(['{}'] * len(where_in))
+                where, ",".join(["{}"] * len(where_in))
             )
         sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
@@ -323,13 +323,13 @@ class BaseSQLDatabase(BaseDatabase):
         # the config.
         fake_jobs = {}
         for db_result in cur:
-            if db_result['job_name'] in self.config.jobs:
-                job = self.config.jobs[db_result['job_name']]
-            elif db_result['job_name'] in fake_jobs:
-                job = fake_jobs[db_result['job_name']]
+            if db_result["job_name"] in self.config.jobs:
+                job = self.config.jobs[db_result["job_name"]]
+            elif db_result["job_name"] in fake_jobs:
+                job = fake_jobs[db_result["job_name"]]
             else:
-                job = dsari.Job(db_result['job_name'])
-                fake_jobs[db_result['job_name']] = job
+                job = dsari.Job(db_result["job_name"])
+                fake_jobs[db_result["job_name"]] = job
             runs.append(self._build_run_from_result(job, db_result))
         cur.close()
         return runs
@@ -341,7 +341,7 @@ class PostgreSQLDatabase(BaseSQLDatabase):
         import psycopg2.extras
 
         self.config = config
-        self.db_conn = psycopg2.connect(config.database['dsn'])
+        self.db_conn = psycopg2.connect(config.database["dsn"])
         self.db_conn.cursor_factory = psycopg2.extras.DictCursor
         self.populate_schema()
 
@@ -419,8 +419,8 @@ class MySQLDatabase(BaseSQLDatabase):
         import MySQLdb.cursors
 
         self.config = config
-        connection = copy.deepcopy(config.database['connection'])
-        connection['cursorclass'] = MySQLdb.cursors.DictCursor
+        connection = copy.deepcopy(config.database["connection"])
+        connection["cursorclass"] = MySQLdb.cursors.DictCursor
         self.db_conn = MySQLdb.connect(**connection)
         self.populate_schema()
 
@@ -493,20 +493,20 @@ class MySQLDatabase(BaseSQLDatabase):
 
 
 class SQLite3Database(BaseSQLDatabase):
-    placeholder = '?'
+    placeholder = "?"
 
     def __init__(self, config):
         import sqlite3
 
-        if 'file' not in config.database:
-            config.database['file'] = None
-        if config.database['file'] is None:
-            config.database['file'] = os.path.join(config.data_dir, 'dsari.sqlite3')
-        db_dir = os.path.dirname(config.database['file'])
+        if "file" not in config.database:
+            config.database["file"] = None
+        if config.database["file"] is None:
+            config.database["file"] = os.path.join(config.data_dir, "dsari.sqlite3")
+        db_dir = os.path.dirname(config.database["file"])
         if not os.path.exists(db_dir):
             os.makedirs(db_dir)
         self.config = config
-        self.db_conn = sqlite3.connect(config.database['file'])
+        self.db_conn = sqlite3.connect(config.database["file"])
         self.db_conn.row_factory = sqlite3.Row
         self.populate_schema()
 
@@ -583,9 +583,9 @@ class SQLite3Database(BaseSQLDatabase):
     def _build_insert(self, pairs):
         out = []
         for (k, v) in pairs:
-            if k in ('schedule_time', 'start_time', 'stop_time'):
+            if k in ("schedule_time", "start_time", "stop_time"):
                 out.append(dt_to_epoch(v))
-            elif k in ('trigger_data', 'run_data'):
+            elif k in ("trigger_data", "run_data"):
                 out.append(json.dumps(v))
             else:
                 out.append(v)
@@ -598,40 +598,40 @@ class MongoDBDatabase(BaseDatabase):
 
         self.config = config
         self.pymongo = pymongo
-        if ('uri' in config.database) and config.database['uri']:
-            uri = config.database['uri']
+        if ("uri" in config.database) and config.database["uri"]:
+            uri = config.database["uri"]
         else:
             uri = None
-        if ('connection' in config.database) and (type(config.database['connection']) == dict):
-            connection = config.database['connection']
+        if ("connection" in config.database) and (type(config.database["connection"]) == dict):
+            connection = config.database["connection"]
         else:
             connection = {}
         self.client = pymongo.MongoClient(uri, **connection)
-        if ('database' in config.database) and config.database['database']:
-            database = config.database['database']
+        if ("database" in config.database) and config.database["database"]:
+            database = config.database["database"]
         else:
-            database = 'dsari'
+            database = "dsari"
         self.db = self.client[database]
         self.populate_schema()
 
     def _build_run_from_result(self, job, f):
-        run = dsari.Run(job, id=f['run_id'])
-        for k in ('schedule_time', 'start_time', 'stop_time', 'exit_code', 'trigger_type', 'trigger_data', 'run_data'):
+        run = dsari.Run(job, id=f["run_id"])
+        for k in ("schedule_time", "start_time", "stop_time", "exit_code", "trigger_type", "trigger_data", "run_data"):
             if k not in f:
                 continue
             setattr(run, k, f[k])
         return run
 
     def get_previous_runs(self, job):
-        result = self.db.runs.find({'job_name': job.name}).sort([('stop_time', self.pymongo.DESCENDING)]).limit(1)
+        result = self.db.runs.find({"job_name": job.name}).sort([("stop_time", self.pymongo.DESCENDING)]).limit(1)
         try:
             previous_run = self._build_run_from_result(job, result[0])
         except IndexError:
             previous_run = None
 
         result = (
-            self.db.runs.find({'job_name': job.name, 'exit_code': 0})
-            .sort([('stop_time', self.pymongo.DESCENDING)])
+            self.db.runs.find({"job_name": job.name, "exit_code": 0})
+            .sort([("stop_time", self.pymongo.DESCENDING)])
             .limit(1)
         )
         try:
@@ -640,8 +640,8 @@ class MongoDBDatabase(BaseDatabase):
             previous_good_run = None
 
         result = (
-            self.db.runs.find({'job_name': job.name, 'exit_code': {'$ne': 0}})
-            .sort([('stop_time', self.pymongo.DESCENDING)])
+            self.db.runs.find({"job_name": job.name, "exit_code": {"$ne": 0}})
+            .sort([("stop_time", self.pymongo.DESCENDING)])
             .limit(1)
         )
         try:
@@ -654,47 +654,47 @@ class MongoDBDatabase(BaseDatabase):
     def insert_running_run(self, run):
         self.db.runs_running.insert_one(
             {
-                'job_name': run.job.name,
-                'run_id': run.id,
-                'schedule_time': run.schedule_time,
-                'start_time': run.start_time,
-                'trigger_type': run.trigger_type,
-                'trigger_data': run.trigger_data,
-                'run_data': run.run_data,
+                "job_name": run.job.name,
+                "run_id": run.id,
+                "schedule_time": run.schedule_time,
+                "start_time": run.start_time,
+                "trigger_type": run.trigger_type,
+                "trigger_data": run.trigger_data,
+                "run_data": run.run_data,
             }
         )
 
     def insert_run(self, run):
         self.db.runs.insert_one(
             {
-                'job_name': run.job.name,
-                'run_id': run.id,
-                'schedule_time': run.schedule_time,
-                'start_time': run.start_time,
-                'stop_time': run.stop_time,
-                'exit_code': run.exit_code,
-                'trigger_type': run.trigger_type,
-                'trigger_data': run.trigger_data,
-                'run_data': run.run_data,
+                "job_name": run.job.name,
+                "run_id": run.id,
+                "schedule_time": run.schedule_time,
+                "start_time": run.start_time,
+                "stop_time": run.stop_time,
+                "exit_code": run.exit_code,
+                "trigger_type": run.trigger_type,
+                "trigger_data": run.trigger_data,
+                "run_data": run.run_data,
             }
         )
-        self.db.runs_running.delete_many({'run_id': run.id})
+        self.db.runs_running.delete_many({"run_id": run.id})
 
     def clear_runs_running(self):
         self.db.runs_running.delete_many({})
 
     def get_runs(self, job_names=None, run_ids=None, runs_running=False):
         if run_ids is not None:
-            where = {'run_id': {'$in': run_ids}}
+            where = {"run_id": {"$in": run_ids}}
         elif job_names is not None:
-            where = {'job_name': {'$in': job_names}}
+            where = {"job_name": {"$in": job_names}}
         else:
             where = {}
 
         if runs_running:
-            collection_name = 'runs_running'
+            collection_name = "runs_running"
         else:
-            collection_name = 'runs'
+            collection_name = "runs"
         result = self.db[collection_name].find(where)
 
         runs = []
@@ -702,12 +702,12 @@ class MongoDBDatabase(BaseDatabase):
         # the config.
         fake_jobs = {}
         for db_result in result:
-            if db_result['job_name'] in self.config.jobs:
-                job = self.config.jobs[db_result['job_name']]
-            elif db_result['job_name'] in fake_jobs:
-                job = fake_jobs[db_result['job_name']]
+            if db_result["job_name"] in self.config.jobs:
+                job = self.config.jobs[db_result["job_name"]]
+            elif db_result["job_name"] in fake_jobs:
+                job = fake_jobs[db_result["job_name"]]
             else:
-                job = dsari.Job(db_result['job_name'])
-                fake_jobs[db_result['job_name']] = job
+                job = dsari.Job(db_result["job_name"])
+                fake_jobs[db_result["job_name"]] = job
             runs.append(self._build_run_from_result(job, db_result))
         return runs

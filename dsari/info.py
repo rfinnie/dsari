@@ -54,15 +54,15 @@ class Color:
             self.do_color = False
             return
         for c in self.termcolor.COLORS.keys():
-            if c in ('red', 'grey'):
+            if c in ("red", "grey"):
                 continue
-            self.hash_colors.append((c, ['bold']))
+            self.hash_colors.append((c, ["bold"]))
             self.hash_colors.append((c, []))
 
     def hash_colored(self, st):
         if not self.do_color:
             return st
-        crc = binascii.crc32(st.encode('utf-8')) & 0xFFFFFFFF
+        crc = binascii.crc32(st.encode("utf-8")) & 0xFFFFFFFF
         hashed_color = self.hash_colors[crc % len(self.hash_colors)]
         return self.termcolor.colored(st, hashed_color[0], attrs=hashed_color[1])
 
@@ -103,12 +103,12 @@ class AutoPager:
         self.closed = False
         self.pager = None
         if sys.stdout.isatty():
-            pager_cmd = ['pager']
-            if os.environ.get('PAGER'):
-                pager_cmd = shlex.split(os.environ.get('PAGER'))
+            pager_cmd = ["pager"]
+            if os.environ.get("PAGER"):
+                pager_cmd = shlex.split(os.environ.get("PAGER"))
             env = os.environ.copy()
-            if not os.environ.get('LESS'):
-                env.update({'LESS': 'FRX'})
+            if not os.environ.get("LESS"):
+                env.update({"LESS": "FRX"})
             try:
                 self.pager = subprocess.Popen(pager_cmd, stdin=subprocess.PIPE, stdout=sys.stdout, env=env)
             except FileNotFoundError:
@@ -120,7 +120,7 @@ class AutoPager:
 
         if self.pager:
             try:
-                self.pager.stdin.write(l.encode('utf-8'))
+                self.pager.stdin.write(l.encode("utf-8"))
             except KeyboardInterrupt:
                 self.close()
             except BrokenPipeError:
@@ -151,51 +151,51 @@ class AutoPager:
 
 
 def json_pretty_print(v):
-    return json.dumps(v, sort_keys=True, indent=4, separators=(',', ': '))
+    return json.dumps(v, sort_keys=True, indent=4, separators=(",", ": "))
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Do Something and Record It - job/run information ({})'.format(__version__),
+        description="Do Something and Record It - job/run information ({})".format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument('--version', action='version', version=__version__, help='report the program version')
+    parser.add_argument("--version", action="version", version=__version__, help="report the program version")
     parser.add_argument(
-        '--config-dir',
-        '-c',
+        "--config-dir",
+        "-c",
         type=str,
         default=dsari.config.DEFAULT_CONFIG_DIR,
-        help='configuration directory for dsari.json',
+        help="configuration directory for dsari.json",
     )
 
-    subparsers = parser.add_subparsers(dest='subcommand')
+    subparsers = parser.add_subparsers(dest="subcommand")
     subparsers.required = True
-    parser_list_jobs = subparsers.add_parser('list-jobs', help='list jobs')
-    parser_list_runs = subparsers.add_parser('list-runs', help='list runs')
-    parser_get_output = subparsers.add_parser('get-run-output', help='get run output')
-    parser_tail_output = subparsers.add_parser('tail-run-output', help='tail run output')
-    subparsers.add_parser('check-config', help='validate configuration')
-    parser_dump_config = subparsers.add_parser('dump-config', help='dump a compiled version of the loaded config')
+    parser_list_jobs = subparsers.add_parser("list-jobs", help="list jobs")
+    parser_list_runs = subparsers.add_parser("list-runs", help="list runs")
+    parser_get_output = subparsers.add_parser("get-run-output", help="get run output")
+    parser_tail_output = subparsers.add_parser("tail-run-output", help="tail run output")
+    subparsers.add_parser("check-config", help="validate configuration")
+    parser_dump_config = subparsers.add_parser("dump-config", help="dump a compiled version of the loaded config")
     parser_dump_config.add_argument(
-        '--raw', action='store_true', help='output raw config instead of compiled/normalized config'
+        "--raw", action="store_true", help="output raw config instead of compiled/normalized config"
     )
 
     for p in (parser_list_jobs, parser_list_runs):
-        p.add_argument('--job', type=str, action='append', help='job name to filter (can be given multiple times)')
+        p.add_argument("--job", type=str, action="append", help="job name to filter (can be given multiple times)")
         p.add_argument(
-            '--format', type=str, choices=['pretty', 'tabular', 'json'], default='pretty', help='output format'
+            "--format", type=str, choices=["pretty", "tabular", "json"], default="pretty", help="output format"
         )
 
-    parser_get_output.add_argument('run', type=str, default=None, help='run UUID')
-    parser_tail_output.add_argument('run', type=str, default=None, help='run UUID')
+    parser_get_output.add_argument("run", type=str, default=None, help="run UUID")
+    parser_tail_output.add_argument("run", type=str, default=None, help="run UUID")
 
     parser_list_runs.add_argument(
-        '--run', type=str, action='append', help='run ID to filter (can be given multiple times)'
+        "--run", type=str, action="append", help="run ID to filter (can be given multiple times)"
     )
 
-    parser_list_runs.add_argument('--running', action='store_true', help='list currently running runs')
+    parser_list_runs.add_argument("--running", action="store_true", help="list currently running runs")
 
-    subparsers.add_parser('shell', help='interactive shell')
+    subparsers.add_parser("shell", help="interactive shell")
 
     args = parser.parse_args()
     args.parser = parser
@@ -220,11 +220,11 @@ class Info:
         columns = 1000
         if sys.stdout.isatty():
             try:
-                columns = int(subprocess.check_output(['stty', 'size']).decode().split()[1])
+                columns = int(subprocess.check_output(["stty", "size"]).decode().split()[1])
             except Exception:
                 pass
         try:
-            columns = int(os.environ.get('COLUMNS'))
+            columns = int(os.environ.get("COLUMNS"))
         except Exception:
             pass
         while len(printable_column_lengths) >= 1:
@@ -232,25 +232,25 @@ class Info:
                 break
             printable_column_lengths.pop()
 
-        if locale.getlocale()[1] == 'UTF-8':
-            dashchar = '\u2500'
+        if locale.getlocale()[1] == "UTF-8":
+            dashchar = "\u2500"
         else:
-            dashchar = '-'
+            dashchar = "-"
         line_data = [
-            '{{:^{}}}'.format(largest_columns[i]).format(column_headers[i])
+            "{{:^{}}}".format(largest_columns[i]).format(column_headers[i])
             for i in range(len(printable_column_lengths))
         ]
-        print('   '.join(line_data), file=file)
+        print("   ".join(line_data), file=file)
         line_data = [dashchar * largest_columns[i] for i in range(len(printable_column_lengths))]
-        print('   '.join(line_data), file=file)
+        print("   ".join(line_data), file=file)
         for l in output_data:
             line_data = []
             for i in range(len(printable_column_lengths)):
                 if (i + 1) == len(l):
                     line_data.append(l[i][0])
                 else:
-                    line_data.append(l[i][0] + (' ' * (largest_columns[i] - l[i][1])))
-            print('   '.join(line_data), file=file)
+                    line_data.append(l[i][0] + (" " * (largest_columns[i] - l[i][1])))
+            print("   ".join(line_data), file=file)
 
     def dump_jobs(self, filter=None):
         jobs = {}
@@ -258,22 +258,22 @@ class Info:
             if filter is not None and job.name not in filter:
                 continue
             jobs[job.name] = {
-                'command': job.command,
-                'command_append_run': job.command_append_run,
-                'schedule': job.schedule,
-                'next_scheduled_run': (get_next_schedule_time(job.schedule, job.name) if job.schedule else None),
-                'environment': job.environment,
-                'max_execution': job.max_execution,
-                'max_execution_grace': job.max_execution_grace,
-                'concurrency_groups': sorted([concurrency_group.name for concurrency_group in job.concurrency_groups]),
-                'render_reports': job.render_reports,
-                'jenkins_environment': job.jenkins_environment,
-                'job_group': job.job_group,
-                'concurrent_runs': job.concurrent_runs,
+                "command": job.command,
+                "command_append_run": job.command_append_run,
+                "schedule": job.schedule,
+                "next_scheduled_run": (get_next_schedule_time(job.schedule, job.name) if job.schedule else None),
+                "environment": job.environment,
+                "max_execution": job.max_execution,
+                "max_execution_grace": job.max_execution_grace,
+                "concurrency_groups": sorted([concurrency_group.name for concurrency_group in job.concurrency_groups]),
+                "render_reports": job.render_reports,
+                "jenkins_environment": job.jenkins_environment,
+                "job_group": job.job_group,
+                "concurrent_runs": job.concurrent_runs,
             }
-            if jobs[job.name]['next_scheduled_run'] is not None:
-                jobs[job.name]['next_scheduled_run'] = jobs[job.name]['next_scheduled_run'].isoformat()
-            for k in ('max_execution', 'max_execution_grace'):
+            if jobs[job.name]["next_scheduled_run"] is not None:
+                jobs[job.name]["next_scheduled_run"] = jobs[job.name]["next_scheduled_run"].isoformat()
+            for k in ("max_execution", "max_execution_grace"):
                 if jobs[job.name][k] is not None:
                     jobs[job.name][k] = td_to_seconds(jobs[job.name][k])
         return jobs
@@ -282,55 +282,55 @@ class Info:
         if self.args.raw:
             config = self.config.raw_config
         else:
-            config = {'jobs': self.dump_jobs(), 'concurrency_groups': {}}
+            config = {"jobs": self.dump_jobs(), "concurrency_groups": {}}
             for attr in (
-                'config_d',
-                'data_dir',
-                'template_dir',
-                'report_html_gz',
-                'shutdown_kill_runs',
-                'shutdown_kill_grace',
-                'environment',
-                'database',
+                "config_d",
+                "data_dir",
+                "template_dir",
+                "report_html_gz",
+                "shutdown_kill_runs",
+                "shutdown_kill_grace",
+                "environment",
+                "database",
             ):
                 config[attr] = getattr(self.config, attr)
-            for attr in ('shutdown_kill_grace',):
+            for attr in ("shutdown_kill_grace",):
                 if config[attr] is not None:
                     config[attr] = td_to_seconds(config[attr])
             for concurrency_group in self.config.concurrency_groups.values():
-                config['concurrency_groups'][concurrency_group.name] = {'max': concurrency_group.max}
+                config["concurrency_groups"][concurrency_group.name] = {"max": concurrency_group.max}
         with AutoPager() as pager:
             print(json_pretty_print(config), file=pager)
 
     def cmd_check_config(self):
-        print('Config OK')
+        print("Config OK")
 
     def cmd_list_jobs(self):
         if self.args.job:
             jobs = self.dump_jobs(self.args.job)
         else:
             jobs = self.dump_jobs()
-        if self.args.format == 'json':
+        if self.args.format == "json":
             with AutoPager() as pager:
                 print(json_pretty_print(jobs), file=pager)
-        elif self.args.format == 'tabular':
+        elif self.args.format == "tabular":
             with AutoPager() as pager:
                 for job_name in sorted(jobs):
                     job = jobs[job_name]
-                    schedule = job['schedule'] or ''
-                    command = ' '.join([shlex.quote(x) for x in job['command']])
-                    next_scheduled_run = job['next_scheduled_run'] or ''
-                    print('\t'.join([job_name, schedule, command, next_scheduled_run]), file=pager)
+                    schedule = job["schedule"] or ""
+                    command = " ".join([shlex.quote(x) for x in job["command"]])
+                    next_scheduled_run = job["next_scheduled_run"] or ""
+                    print("\t".join([job_name, schedule, command, next_scheduled_run]), file=pager)
         else:
             color = Color()
-            column_headers = ('Job Name', 'Schedule', 'Next Scheduled Run', 'Command')
+            column_headers = ("Job Name", "Schedule", "Next Scheduled Run", "Command")
             output_data = []
 
             for job_name in sorted(jobs):
                 job = jobs[job_name]
-                schedule = job['schedule'] or ''
-                command = ' '.join([shlex.quote(x) for x in job['command']])
-                next_scheduled_run = job['next_scheduled_run'] or ''
+                schedule = job["schedule"] or ""
+                command = " ".join([shlex.quote(x) for x in job["command"]])
+                next_scheduled_run = job["next_scheduled_run"] or ""
                 output_data.append(
                     (
                         (color.hash_colored(job_name), len(job_name)),
@@ -347,34 +347,34 @@ class Info:
         run_ids = self.args.run
         runs_running = self.args.running
         runs = self.db.get_runs(job_names=job_names, run_ids=run_ids, runs_running=runs_running)
-        if self.args.format == 'json':
+        if self.args.format == "json":
             out = {}
             for run in runs:
                 out[run.id] = {
-                    'job_name': run.job.name,
-                    'schedule_time': run.schedule_time.isoformat(),
-                    'start_time': run.start_time.isoformat(),
-                    'stop_time': (None if runs_running else run.stop_time.isoformat()),
-                    'exit_code': (None if runs_running else run.exit_code),
-                    'trigger_type': run.trigger_type,
-                    'trigger_data': run.trigger_data,
-                    'run_data': run.run_data,
+                    "job_name": run.job.name,
+                    "schedule_time": run.schedule_time.isoformat(),
+                    "start_time": run.start_time.isoformat(),
+                    "stop_time": (None if runs_running else run.stop_time.isoformat()),
+                    "exit_code": (None if runs_running else run.exit_code),
+                    "trigger_type": run.trigger_type,
+                    "trigger_data": run.trigger_data,
+                    "run_data": run.run_data,
                 }
             with AutoPager() as pager:
                 print(json_pretty_print(out), file=pager)
-        elif self.args.format == 'tabular':
+        elif self.args.format == "tabular":
             with AutoPager() as pager:
                 for run in sorted(runs, key=lambda run: (run.start_time if runs_running else run.stop_time)):
                     print(
-                        '\t'.join(
+                        "\t".join(
                             [
                                 run.id,
                                 run.job.name,
-                                ('' if runs_running else str(run.exit_code)),
+                                ("" if runs_running else str(run.exit_code)),
                                 run.trigger_type,
                                 run.schedule_time.isoformat(),
                                 run.start_time.isoformat(),
-                                ('' if runs_running else run.stop_time.isoformat()),
+                                ("" if runs_running else run.stop_time.isoformat()),
                             ]
                         ),
                         file=pager,
@@ -385,15 +385,15 @@ class Info:
             def time_color(t):
                 now = datetime.datetime.now()
                 if (now - t) <= datetime.timedelta(hours=1):
-                    return 'green'
+                    return "green"
                 elif (now - t) <= datetime.timedelta(days=1):
-                    return 'blue'
+                    return "blue"
                 else:
                     return None
 
             output_data = []
             if runs_running:
-                column_headers = ('Run ID', 'Job', 'Start Time', 'Type', 'Schedule Delay')
+                column_headers = ("Run ID", "Job", "Start Time", "Type", "Schedule Delay")
                 for run in sorted(runs, key=lambda run: run.start_time, reverse=True):
                     output_data.append(
                         (
@@ -404,20 +404,20 @@ class Info:
                                 len(run.start_time.isoformat()),
                             ),
                             (
-                                color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
+                                color.colored(run.trigger_type, ("blue" if run.trigger_type == "file" else None)),
                                 len(run.trigger_type),
                             ),
                             (str(run.start_time - run.schedule_time), len(str(run.start_time - run.schedule_time))),
                         )
                     )
             else:
-                column_headers = ('Run ID', 'Exit', 'Job', 'Duration', 'Start Time', 'Type', 'Schedule Delay')
+                column_headers = ("Run ID", "Exit", "Job", "Duration", "Start Time", "Type", "Schedule Delay")
                 for run in sorted(runs, key=lambda run: run.stop_time, reverse=True):
                     output_data.append(
                         (
                             (run.id, len(run.id)),
                             (
-                                color.colored(str(run.exit_code), ('red' if run.exit_code > 0 else None)),
+                                color.colored(str(run.exit_code), ("red" if run.exit_code > 0 else None)),
                                 len(str(run.exit_code)),
                             ),
                             (color.hash_colored(run.job.name), len(run.job.name)),
@@ -427,7 +427,7 @@ class Info:
                                 len(run.start_time.isoformat()),
                             ),
                             (
-                                color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
+                                color.colored(run.trigger_type, ("blue" if run.trigger_type == "file" else None)),
                                 len(run.trigger_type),
                             ),
                             (str(run.start_time - run.schedule_time), len(str(run.start_time - run.schedule_time))),
@@ -443,9 +443,9 @@ class Info:
         if len(runs) == 0:
             runs = self.db.get_runs(run_ids=[run_id], runs_running=True)
             if len(runs) == 0:
-                self.args.parser.error('Cannot find run ID {}'.format(run_id))
+                self.args.parser.error("Cannot find run ID {}".format(run_id))
         run = runs[0]
-        fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
+        fn = os.path.join(self.config.data_dir, "runs", run.job.name, run.id, "output.txt")
         with AutoPager() as pager:
             with open(fn) as f:
                 for l in f:
@@ -457,34 +457,34 @@ class Info:
         if len(runs) == 0:
             runs = self.db.get_runs(run_ids=[run_id], runs_running=True)
             if len(runs) == 0:
-                self.args.parser.error('Cannot find run ID {}'.format(run_id))
+                self.args.parser.error("Cannot find run ID {}".format(run_id))
         run = runs[0]
-        fn = os.path.join(self.config.data_dir, 'runs', run.job.name, run.id, 'output.txt')
-        os.execvp('tail', ['tail', '-f', fn])
+        fn = os.path.join(self.config.data_dir, "runs", run.job.name, run.id, "output.txt")
+        os.execvp("tail", ["tail", "-f", fn])
 
     def cmd_shell(self):
         # readline is used transparently by code.InteractiveConsole()
         import readline  # noqa: F401
 
         vars = {
-            'concurrency_groups': self.config.concurrency_groups,
-            'config': self.config,
-            'datetime': datetime,
-            'db': self.db,
-            'dsari': dsari,
-            'jobs': self.config.jobs,
+            "concurrency_groups": self.config.concurrency_groups,
+            "config": self.config,
+            "datetime": datetime,
+            "db": self.db,
+            "dsari": dsari,
+            "jobs": self.config.jobs,
         }
-        banner = 'Additional variables available:\n'
+        banner = "Additional variables available:\n"
         for (k, v) in vars.items():
             v = vars[k]
             if type(v) == dict:
-                r = 'Dictionary ({} items)'.format(len(v))
+                r = "Dictionary ({} items)".format(len(v))
             elif type(v) == list:
-                r = 'List ({} items)'.format(len(v))
+                r = "List ({} items)".format(len(v))
             else:
                 r = repr(v)
-            banner += '    {}: {}\n'.format(k, r)
-        banner += '\n'
+            banner += "    {}: {}\n".format(k, r)
+        banner += "\n"
 
         sh = None
         try:
@@ -493,7 +493,7 @@ class Info:
             sh = InteractiveShellEmbed(user_ns=vars, banner2=banner)
             sh.excepthook = sys.__excepthook__
         except ImportError:
-            print('ipython not available. Using normal python shell.')
+            print("ipython not available. Using normal python shell.")
 
         if sh:
             sh()
@@ -503,19 +503,19 @@ class Info:
             class DsariConsole(code.InteractiveConsole):
                 pass
 
-            console_vars = vars.copy().update({'__name__': '__console__', '__doc__': None})
-            print(banner, end='')
+            console_vars = vars.copy().update({"__name__": "__console__", "__doc__": None})
+            print(banner, end="")
             DsariConsole(locals=console_vars).interact()
 
     def main(self):
         cmd_map = {
-            'dump-config': self.cmd_dump_config,
-            'check-config': self.cmd_check_config,
-            'list-jobs': self.cmd_list_jobs,
-            'list-runs': self.cmd_list_runs,
-            'get-run-output': self.cmd_get_run_output,
-            'tail-run-output': self.cmd_tail_run_output,
-            'shell': self.cmd_shell,
+            "dump-config": self.cmd_dump_config,
+            "check-config": self.cmd_check_config,
+            "list-jobs": self.cmd_list_jobs,
+            "list-runs": self.cmd_list_runs,
+            "get-run-output": self.cmd_get_run_output,
+            "tail-run-output": self.cmd_tail_run_output,
+            "shell": self.cmd_shell,
         }
         cmd_map[self.args.subcommand]()
 
@@ -526,5 +526,5 @@ def main():
     r.main()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

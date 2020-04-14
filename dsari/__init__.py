@@ -22,7 +22,7 @@ import uuid
 
 from . import utils
 
-__version__ = '2.0'
+__version__ = "2.0"
 
 
 class ConcurrencyGroup(object):
@@ -36,7 +36,7 @@ class ConcurrencyGroup(object):
         return NotImplemented
 
     def __repr__(self):
-        return '<ConcurrencyGroup {} ({})>'.format(self.name, self.max)
+        return "<ConcurrencyGroup {} ({})>".format(self.name, self.max)
 
 
 class Job(object):
@@ -61,9 +61,9 @@ class Job(object):
 
     def __repr__(self):
         if self.schedule:
-            return '<Job {} ({})>'.format(self.name, self.schedule)
+            return "<Job {} ({})>".format(self.name, self.schedule)
         else:
-            return '<Job {}>'.format(self.name)
+            return "<Job {}>".format(self.name)
 
 
 class Run(object):
@@ -90,4 +90,4 @@ class Run(object):
         return NotImplemented
 
     def __repr__(self):
-        return '<Run {} ({})>'.format(self.id, self.job.name)
+        return "<Run {} ({})>".format(self.id, self.job.name)
