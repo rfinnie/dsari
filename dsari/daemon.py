@@ -84,31 +84,21 @@ def parse_args():
         description='Do Something and Record It - scheduler daemon ({})'.format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parser.add_argument('--version', action='version', version=__version__, help='report the program version')
     parser.add_argument(
-        '--version', action='version',
-        version=__version__,
-        help='report the program version',
-    )
-    parser.add_argument(
-        '--config-dir', '-c', type=str, default=dsari.config.DEFAULT_CONFIG_DIR,
+        '--config-dir',
+        '-c',
+        type=str,
+        default=dsari.config.DEFAULT_CONFIG_DIR,
         help='configuration directory for dsari.json',
     )
-    parser.add_argument(
-        '--fork', action='store_true',
-        help='fork into the background after starting',
-    )
-    parser.add_argument(
-        '--debug', action='store_true',
-        help='output additional debugging information',
-    )
-    parser.add_argument(
-        '--no-timestamp', action='store_true',
-        help='do not show timestamps in logging output',
-    )
+    parser.add_argument('--fork', action='store_true', help='fork into the background after starting')
+    parser.add_argument('--debug', action='store_true', help='output additional debugging information')
+    parser.add_argument('--no-timestamp', action='store_true', help='do not show timestamps in logging output')
     return parser.parse_args()
 
 
-class Scheduler():
+class Scheduler:
     def __init__(self, args):
         self.shutdown = False
         self.args = args
@@ -160,9 +150,7 @@ class Scheduler():
                     continue
                 job = run.job
                 self.logger.info(
-                    '[{} {}] Shutdown requested, sending SIGTERM to PID {}'.format(
-                        job.name, run.id, run.pid
-                    )
+                    '[{} {}] Shutdown requested, sending SIGTERM to PID {}'.format(job.name, run.id, run.pid)
                 )
                 os.kill(run.pid, signal.SIGTERM)
                 run.term_sent = True
@@ -182,9 +170,7 @@ class Scheduler():
                 continue
             job = run.job
             self.logger.info(
-                '[{} {}] Shutdown grace time exceeded, sending SIGKILL to PID {}'.format(
-                    job.name, run.id, run.pid
-                )
+                '[{} {}] Shutdown grace time exceeded, sending SIGKILL to PID {}'.format(job.name, run.id, run.pid)
             )
             os.kill(run.pid, signal.SIGKILL)
             run.kill_sent = True
@@ -211,15 +197,7 @@ class Scheduler():
         for run in sorted(self.running_runs, key=lambda x: x.job.name):
             job = run.job
             t = run.start_time
-            self.logger.info(
-                '[{} {}] PID {} running since {} ({})'.format(
-                    job.name,
-                    run.id,
-                    run.pid,
-                    t,
-                    (now - t)
-                )
-            )
+            self.logger.info('[{} {}] PID {} running since {} ({})'.format(job.name, run.id, run.pid, t, (now - t)))
             if run.concurrency_group:
                 concurrency_group = run.concurrency_group
                 self.logger.info(
@@ -241,15 +219,7 @@ class Scheduler():
             else:
                 delta_str = str(t - now)
 
-            self.logger.info(
-                '[{} {}] Next run ({}): {} ({})'.format(
-                    job.name,
-                    run.id,
-                    run.trigger_type,
-                    t,
-                    delta_str,
-                )
-            )
+            self.logger.info('[{} {}] Next run ({}): {} ({})'.format(job.name, run.id, run.trigger_type, t, delta_str))
 
     def load_config(self):
         self.config = dsari.config.get_config(self.args.config_dir)
@@ -269,21 +239,14 @@ class Scheduler():
                 continue
             t = get_next_schedule_time(job.schedule, job.name, start_time=now)
             if t is None:
-                self.logger.debug('[{}] Schedule {} does not produce a future run, skipping'.format(
-                    job.name, job.schedule
-                ))
+                self.logger.debug(
+                    '[{}] Schedule {} does not produce a future run, skipping'.format(job.name, job.schedule)
+                )
                 continue
             run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'
-            self.logger.debug(
-                '[{} {}] Next scheduled run: {} ({})'.format(
-                    job.name,
-                    run.id,
-                    t,
-                    (t - now)
-                )
-            )
+            self.logger.debug('[{} {}] Next scheduled run: {} ({})'.format(job.name, run.id, t, (t - now)))
             run.schedule_time = t
             self.scheduled_runs.append(run)
 
@@ -318,10 +281,7 @@ class Scheduler():
             if not run.kill_sent:
                 self.logger.warning(
                     '[{} {}] SIGTERM grace ({}) exceeded, sending SIGKILL to {}'.format(
-                        job.name,
-                        run.id,
-                        sigterm_grace,
-                        run.pid
+                        job.name, run.id, sigterm_grace, run.pid
                     )
                 )
                 os.kill(run.pid, signal.SIGKILL)
@@ -331,10 +291,7 @@ class Scheduler():
             if not run.term_sent:
                 self.logger.warn(
                     '[{} {}] Max execution ({}) exceeded, sending SIGTERM to {}'.format(
-                        job.name,
-                        run.id,
-                        job.max_execution,
-                        run.pid
+                        job.name, run.id, job.max_execution, run.pid
                     )
                 )
                 os.kill(run.pid, signal.SIGTERM)
@@ -465,12 +422,11 @@ class Scheduler():
         now = datetime.datetime.now()
         run.stop_time = now
         run.exit_code = child_exit
-        self.logger.info('[{} {}] Finished with status {} in {}'.format(
-            job.name,
-            run.id,
-            child_exit,
-            (run.stop_time - run.start_time),
-        ))
+        self.logger.info(
+            '[{} {}] Finished with status {} in {}'.format(
+                job.name, run.id, child_exit, (run.stop_time - run.start_time)
+            )
+        )
         return_data_fn = os.path.join(self.config.data_dir, 'runs', job.name, run.id, 'return_data.json')
         if os.path.exists(return_data_fn):
             try:
@@ -528,16 +484,12 @@ class Scheduler():
                     t = dateutil_parser.parse(j['schedule_time'])
                 except ValueError:
                     self.logger.error(
-                        '[{}] Invalid schedule_time "{}" for trigger'.format(
-                            job.name, j['schedule_time']
-                        )
+                        '[{}] Invalid schedule_time "{}" for trigger'.format(job.name, j['schedule_time'])
                     )
                     return
             else:
                 self.logger.error(
-                    '[{}] Cannot parse schedule_time "{}" for trigger'.format(
-                        job.name, j['schedule_time']
-                    )
+                    '[{}] Cannot parse schedule_time "{}" for trigger'.format(job.name, j['schedule_time'])
                 )
                 return
 
@@ -563,9 +515,9 @@ class Scheduler():
                 old_run = scheduled_job_runs[0]
                 run.respawn = old_run.respawn
                 self.scheduled_runs.remove(old_run)
-                self.logger.info('[{} {}] Trigger detected, created run for {}, replacing {}'.format(
-                    job.name, run.id, t, old_run.id
-                ))
+                self.logger.info(
+                    '[{} {}] Trigger detected, created run for {}, replacing {}'.format(job.name, run.id, t, old_run.id)
+                )
             else:
                 self.logger.info('[{} {}] Trigger detected, created run for {}'.format(job.name, run.id, t))
             self.scheduled_runs.append(run)
@@ -591,17 +543,19 @@ class Scheduler():
                     break
             if not run.concurrency_group:
                 backoff_time = backoff(run.schedule_time, now)
-                self.logger.debug('[{} {}] Cannot run due to concurrency limits ({}), will try again within {}'.format(
-                    job.name,
-                    run.id,
-                    ', '.join([
-                        '{}={}'.format(
-                            concurrency_group.name,
-                            concurrency_group.max,
-                        ) for concurrency_group in sorted(job_concurrency_groups)
-                    ]),
-                    backoff_time,
-                ))
+                self.logger.debug(
+                    '[{} {}] Cannot run due to concurrency limits ({}), will try again within {}'.format(
+                        job.name,
+                        run.id,
+                        ', '.join(
+                            [
+                                '{}={}'.format(concurrency_group.name, concurrency_group.max)
+                                for concurrency_group in sorted(job_concurrency_groups)
+                            ]
+                        ),
+                        backoff_time,
+                    )
+                )
                 self.wakeups.append(now + backoff_time)
                 return
 
@@ -621,12 +575,9 @@ class Scheduler():
             self.run_child_executor(run)
             raise OSError('run_child_executor returned, when it should not have')
         run.pid = child_pid
-        self.logger.info('[{} {}] Running PID {}: {}'.format(
-            job.name,
-            run.id,
-            run.pid,
-            ' '.join([shquote(x) for x in job.command]),
-        ))
+        self.logger.info(
+            '[{} {}] Running PID {}: {}'.format(job.name, run.id, run.pid, ' '.join([shquote(x) for x in job.command]))
+        )
         self.scheduled_runs.remove(run)
         self.running_runs.append(run)
         if run.concurrency_group:
@@ -634,23 +585,16 @@ class Scheduler():
         if run.respawn and job.schedule:
             t = get_next_schedule_time(job.schedule, job.name, start_time=now)
             if t is None:
-                self.logger.debug('[{}] Schedule {} does not produce a future run, skipping'.format(
-                    job.name, job.schedule
-                ))
+                self.logger.debug(
+                    '[{}] Schedule {} does not produce a future run, skipping'.format(job.name, job.schedule)
+                )
                 return
             run = dsari.Run(job)
             run.respawn = True
             run.trigger_type = 'schedule'
             run.schedule_time = t
             self.scheduled_runs.append(run)
-            self.logger.debug(
-                '[{} {}] Next scheduled run: {} ({})'.format(
-                    job.name,
-                    run.id,
-                    t,
-                    (t - now)
-                )
-            )
+            self.logger.debug('[{} {}] Next scheduled run: {} ({})'.format(job.name, run.id, t, (t - now)))
 
     def process_wakeups(self):
         self.next_wakeup = datetime.datetime.now() + seconds_to_td(60.0)
@@ -708,4 +652,5 @@ def main():
 
 if __name__ == '__main__':
     import sys
+
     sys.exit(main())

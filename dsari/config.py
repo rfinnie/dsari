@@ -51,7 +51,7 @@ class ConfigError(RuntimeError):
     pass
 
 
-class Config():
+class Config:
     def __init__(self):
         self.raw_config = {}
 
@@ -64,13 +64,10 @@ class Config():
         self.shutdown_kill_runs = False
         self.shutdown_kill_grace = None
         self.environment = {}
-        self.database = {
-            'type': 'sqlite3',
-            'file': None,
-        }
+        self.database = {'type': 'sqlite3', 'file': None}
 
 
-class ConfigLoader():
+class ConfigLoader:
     def __init__(self, config):
         self.config = config
 
@@ -117,21 +114,14 @@ class ConfigLoader():
             if k not in valid_values:
                 continue
             if type(v) not in valid_values[k]:
-                raise ConfigError('{}: {}: Invalid value {} (expected {})'.format(
-                    level,
-                    k,
-                    repr(type(v)),
-                    repr(valid_values[k]))
+                raise ConfigError(
+                    '{}: {}: Invalid value {} (expected {})'.format(level, k, repr(type(v)), repr(valid_values[k]))
                 )
             if k in value_transforms:
                 try:
                     v = value_transforms[k](v)
                 except Exception as e:
-                    raise ConfigError('{}: {}: Invalid value during transformation: {}'.format(
-                        level,
-                        k,
-                        str(e),
-                    ))
+                    raise ConfigError('{}: {}: Invalid value during transformation: {}'.format(level, k, str(e)))
                     return
             setattr(obj, k, v)
 
@@ -155,9 +145,7 @@ class ConfigLoader():
         if 'concurrency_groups' not in config:
             return
 
-        valid_values = {
-            'max': (int,),
-        }
+        valid_values = {'max': (int,)}
         value_transforms = {}
 
         for concurrency_group_name, concurrency_group_dict in config['concurrency_groups'].items():
@@ -190,7 +178,7 @@ class ConfigLoader():
             for job_name in job_template['job_names']:
                 jobs[job_name] = copy.deepcopy(job_template)
                 jobs[job_name]['job_group'] = job_group_name
-                del(jobs[job_name]['job_names'])
+                del jobs[job_name]['job_names']
 
         for job_name in jobs.keys():
             self.build_job(job_name, jobs[job_name])
@@ -221,18 +209,13 @@ class ConfigLoader():
         if type(job_dict['command']) == str:
             job_dict['command'] = shlex.split(job_dict['command'])
         job = dsari.Job(job_name)
-        self.populate_object(
-            job, 'Job {}'.format(job_name), job_dict,
-            valid_values, value_transforms,
-        )
+        self.populate_object(job, 'Job {}'.format(job_name), job_dict, valid_values, value_transforms)
         if job.schedule is not None:
             try:
                 utils.get_next_schedule_time(job.schedule, job.name)
             except Exception as e:
                 raise ConfigError(
-                    'Job {}: Invalid schedule ({}): {}: {}'.format(
-                        job.name, job.schedule, type(e), str(e)
-                    )
+                    'Job {}: Invalid schedule ({}): {}: {}'.format(job.name, job.schedule, type(e), str(e))
                 )
         self.build_job_concurrency_groups(job, job_dict)
         self.config.jobs[job.name] = job

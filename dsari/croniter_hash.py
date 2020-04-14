@@ -43,7 +43,7 @@ class croniter_hash(croniter.croniter):
         if 'hash_id' in kwargs:
             if kwargs['hash_id']:
                 expr_format = self._hash_expand(expr_format, kwargs['hash_id'])
-            del(kwargs['hash_id'])
+            del kwargs['hash_id']
         return super(croniter_hash, self).__init__(expr_format, *args, **kwargs)
 
     def _hash_do(self, id, position, range_end=None, range_begin=None, type='H'):
@@ -52,9 +52,9 @@ class croniter_hash(croniter.croniter):
         if not range_begin:
             range_begin = self.RANGES[position][0]
         if type == 'R':
-            crc = random.randint(0, 0xffffffff)
+            crc = random.randint(0, 0xFFFFFFFF)
         else:
-            crc = binascii.crc32(id.encode('utf-8')) & 0xffffffff
+            crc = binascii.crc32(id.encode('utf-8')) & 0xFFFFFFFF
         return ((crc >> position) % (range_end - range_begin + 1)) + range_begin
 
     def _hash_expand(self, expr_format, id):
@@ -88,31 +88,21 @@ class croniter_hash(croniter.croniter):
         m = re.match(r'^(H|R)\((\d+)-(\d+)\)\/(\d+)$', item)
         if m:
             return '{}-{}/{}'.format(
-                self._hash_do(
-                    id, idx, int(m.group(4)), type=m.group(1)
-                ) + int(m.group(2)),
+                self._hash_do(id, idx, int(m.group(4)), type=m.group(1)) + int(m.group(2)),
                 int(m.group(3)),
-                int(m.group(4))
+                int(m.group(4)),
             )
 
         # Example: H(0-29) -> 12
         m = re.match(r'^(H|R)\((\d+)-(\d+)\)$', item)
         if m:
-            return str(
-                self._hash_do(
-                    id, idx, int(m.group(3)), int(m.group(2)), type=m.group(1)
-                )
-            )
+            return str(self._hash_do(id, idx, int(m.group(3)), int(m.group(2)), type=m.group(1)))
 
         # Example: H/15 -> 7-59/15 (i.e. 7,22,37,52)
         m = re.match(r'^(H|R)\/(\d+)$', item)
         if m:
             return '{}-{}/{}'.format(
-                self._hash_do(
-                    id, idx, int(m.group(2)), type=m.group(1)
-                ),
-                self.RANGES[idx][1],
-                int(m.group(2))
+                self._hash_do(id, idx, int(m.group(2)), type=m.group(1)), self.RANGES[idx][1], int(m.group(2))
             )
 
         # Everything else
@@ -123,10 +113,7 @@ if __name__ == '__main__':
     import datetime
     import string
 
-    id = ''.join(
-        random.choice(string.ascii_letters + string.digits)
-        for i in range(30)
-    )
+    id = ''.join(random.choice(string.ascii_letters + string.digits) for i in range(30))
     base = datetime.datetime.now()
     iter = croniter_hash('H(30-59)/10 H(2-5) H/3 H *', base, hash_id=id)
     for i in range(10):

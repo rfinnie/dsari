@@ -32,7 +32,7 @@ class ConcurrencyGroup(object):
 
     def __lt__(self, other):
         if isinstance(other, self.__class__):
-            return (self.name < other.name)
+            return self.name < other.name
         return NotImplemented
 
     def __repr__(self):
@@ -56,7 +56,7 @@ class Job(object):
 
     def __lt__(self, other):
         if isinstance(other, self.__class__):
-            return (self.name < other.name)
+            return self.name < other.name
         return NotImplemented
 
     def __repr__(self):
@@ -86,7 +86,7 @@ class Run(object):
 
     def __lt__(self, other):
         if isinstance(other, self.__class__):
-            return (self.id < other.id)
+            return self.id < other.id
         return NotImplemented
 
     def __repr__(self):

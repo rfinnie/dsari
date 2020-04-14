@@ -75,9 +75,9 @@ def dt_to_epoch(dt):
 def validate_environment_dict(env_in):
     env_out = {}
     for k in env_in:
-        if type(k) not in (str, ):
+        if type(k) not in (str,):
             raise KeyError('Invalid environment key name: {} ({})'.format(repr(k), repr(type(k))))
-        if type(env_in[k]) in (str, ):
+        if type(env_in[k]) in (str,):
             env_out[k] = env_in[k]
         elif type(env_in[k]) in (int, float):
             env_out[k] = str(env_in[k])
@@ -89,8 +89,8 @@ def validate_environment_dict(env_in):
 def get_next_schedule_time(schedule, job_name, start_time=None):
     if start_time is None:
         start_time = datetime.datetime.now()
-    crc = binascii.crc32(job_name.encode('utf-8')) & 0xffffffff
-    subsecond_offset = seconds_to_td(float(crc) / float(0xffffffff))
+    crc = binascii.crc32(job_name.encode('utf-8')) & 0xFFFFFFFF
+    subsecond_offset = seconds_to_td(float(crc) / float(0xFFFFFFFF))
     if schedule.upper().startswith('RRULE:'):
         if isinstance(dateutil_rrule, ImportError):
             raise ImportError('dateutil not available, manual triggers only')
@@ -103,9 +103,8 @@ def get_next_schedule_time(schedule, job_name, start_time=None):
         raise ImportError('croniter not available, manual triggers only')
     if len(schedule.split(' ')) == 5:
         schedule = schedule + ' H'
-    t = croniter_hash.croniter_hash(
-        schedule,
-        start_time=start_time,
-        hash_id=job_name
-    ).get_next(datetime.datetime) + subsecond_offset
+    t = (
+        croniter_hash.croniter_hash(schedule, start_time=start_time, hash_id=job_name).get_next(datetime.datetime)
+        + subsecond_offset
+    )
     return t

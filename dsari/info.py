@@ -48,6 +48,7 @@ class Color:
             return
         try:
             import termcolor
+
             self.termcolor = termcolor
         except ImportError:
             self.do_color = False
@@ -61,7 +62,7 @@ class Color:
     def hash_colored(self, st):
         if not self.do_color:
             return st
-        crc = binascii.crc32(st.encode('utf-8')) & 0xffffffff
+        crc = binascii.crc32(st.encode('utf-8')) & 0xFFFFFFFF
         hashed_color = self.hash_colors[crc % len(self.hash_colors)]
         return self.termcolor.colored(st, hashed_color[0], attrs=hashed_color[1])
 
@@ -72,27 +73,18 @@ class Color:
 
     def format(self, st, *args, **kwargs):
         if not self.do_color:
-            return st.format(
-                *(i[0] for i in args),
-                **{k: v[0] for k, v in kwargs.items()}
-            )
+            return st.format(*(i[0] for i in args), **{k: v[0] for k, v in kwargs.items()})
         cargs = []
         for arg in args:
             if len(arg) > 1:
-                cargs.append(self.termcolor.colored(
-                    arg[0],
-                    arg[1],
-                    attrs=(arg[2] if len(arg) > 2 else [])
-                ))
+                cargs.append(self.termcolor.colored(arg[0], arg[1], attrs=(arg[2] if len(arg) > 2 else [])))
             else:
                 cargs.append(arg[0])
         ckwargs = {}
         for k in kwargs:
             if len(kwargs[k]) > 1:
                 ckwargs[k] = self.termcolor.colored(
-                    kwargs[k][0],
-                    kwargs[k][1],
-                    attrs=(kwargs[k][2] if len(kwargs[k]) > 2 else [])
+                    kwargs[k][0], kwargs[k][1], attrs=(kwargs[k][2] if len(kwargs[k]) > 2 else [])
                 )
             else:
                 ckwargs[k] = kwargs[k][0]
@@ -118,10 +110,7 @@ class AutoPager:
             if not os.environ.get('LESS'):
                 env.update({'LESS': 'FRX'})
             try:
-                self.pager = subprocess.Popen(
-                    pager_cmd, stdin=subprocess.PIPE, stdout=sys.stdout,
-                    env=env
-                )
+                self.pager = subprocess.Popen(pager_cmd, stdin=subprocess.PIPE, stdout=sys.stdout, env=env)
             except FileNotFoundError:
                 pass
 
@@ -170,83 +159,43 @@ def parse_args():
         description='Do Something and Record It - job/run information ({})'.format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parser.add_argument('--version', action='version', version=__version__, help='report the program version')
     parser.add_argument(
-        '--version', action='version',
-        version=__version__,
-        help='report the program version',
-    )
-    parser.add_argument(
-        '--config-dir', '-c', type=str, default=dsari.config.DEFAULT_CONFIG_DIR,
+        '--config-dir',
+        '-c',
+        type=str,
+        default=dsari.config.DEFAULT_CONFIG_DIR,
         help='configuration directory for dsari.json',
     )
 
-    subparsers = parser.add_subparsers(
-        dest='subcommand',
-    )
+    subparsers = parser.add_subparsers(dest='subcommand')
     subparsers.required = True
-    parser_list_jobs = subparsers.add_parser(
-        'list-jobs',
-        help='list jobs',
-    )
-    parser_list_runs = subparsers.add_parser(
-        'list-runs',
-        help='list runs',
-    )
-    parser_get_output = subparsers.add_parser(
-        'get-run-output',
-        help='get run output',
-    )
-    parser_tail_output = subparsers.add_parser(
-        'tail-run-output',
-        help='tail run output',
-    )
-    subparsers.add_parser(
-        'check-config',
-        help='validate configuration'
-    )
-    parser_dump_config = subparsers.add_parser(
-        'dump-config',
-        help='dump a compiled version of the loaded config'
-    )
+    parser_list_jobs = subparsers.add_parser('list-jobs', help='list jobs')
+    parser_list_runs = subparsers.add_parser('list-runs', help='list runs')
+    parser_get_output = subparsers.add_parser('get-run-output', help='get run output')
+    parser_tail_output = subparsers.add_parser('tail-run-output', help='tail run output')
+    subparsers.add_parser('check-config', help='validate configuration')
+    parser_dump_config = subparsers.add_parser('dump-config', help='dump a compiled version of the loaded config')
     parser_dump_config.add_argument(
-        '--raw', action='store_true',
-        help='output raw config instead of compiled/normalized config',
+        '--raw', action='store_true', help='output raw config instead of compiled/normalized config'
     )
 
     for p in (parser_list_jobs, parser_list_runs):
+        p.add_argument('--job', type=str, action='append', help='job name to filter (can be given multiple times)')
         p.add_argument(
-            '--job', type=str, action='append',
-            help='job name to filter (can be given multiple times)',
-        )
-        p.add_argument(
-            '--format', type=str, choices=['pretty', 'tabular', 'json'],
-            default='pretty',
-            help='output format',
+            '--format', type=str, choices=['pretty', 'tabular', 'json'], default='pretty', help='output format'
         )
 
-    parser_get_output.add_argument(
-        'run', type=str, default=None,
-        help='run UUID',
-    )
-    parser_tail_output.add_argument(
-        'run', type=str, default=None,
-        help='run UUID',
-    )
+    parser_get_output.add_argument('run', type=str, default=None, help='run UUID')
+    parser_tail_output.add_argument('run', type=str, default=None, help='run UUID')
 
     parser_list_runs.add_argument(
-        '--run', type=str, action='append',
-        help='run ID to filter (can be given multiple times)',
+        '--run', type=str, action='append', help='run ID to filter (can be given multiple times)'
     )
 
-    parser_list_runs.add_argument(
-        '--running', action='store_true',
-        help='list currently running runs',
-    )
+    parser_list_runs.add_argument('--running', action='store_true', help='list currently running runs')
 
-    subparsers.add_parser(
-        'shell',
-        help='interactive shell',
-    )
+    subparsers.add_parser('shell', help='interactive shell')
 
     args = parser.parse_args()
     args.parser = parser
@@ -254,7 +203,7 @@ def parse_args():
     return args
 
 
-class Info():
+class Info:
     def __init__(self, args):
         self.args = args
         self.config = dsari.config.get_config(self.args.config_dir)
@@ -333,10 +282,7 @@ class Info():
         if self.args.raw:
             config = self.config.raw_config
         else:
-            config = {
-                'jobs': self.dump_jobs(),
-                'concurrency_groups': {},
-            }
+            config = {'jobs': self.dump_jobs(), 'concurrency_groups': {}}
             for attr in (
                 'config_d',
                 'data_dir',
@@ -352,9 +298,7 @@ class Info():
                 if config[attr] is not None:
                     config[attr] = td_to_seconds(config[attr])
             for concurrency_group in self.config.concurrency_groups.values():
-                config['concurrency_groups'][concurrency_group.name] = {
-                    'max': concurrency_group.max,
-                }
+                config['concurrency_groups'][concurrency_group.name] = {'max': concurrency_group.max}
         with AutoPager() as pager:
             print(json_pretty_print(config), file=pager)
 
@@ -376,12 +320,7 @@ class Info():
                     schedule = job['schedule'] or ''
                     command = ' '.join([shlex.quote(x) for x in job['command']])
                     next_scheduled_run = job['next_scheduled_run'] or ''
-                    print('\t'.join([
-                        job_name,
-                        schedule,
-                        command,
-                        next_scheduled_run,
-                    ]), file=pager)
+                    print('\t'.join([job_name, schedule, command, next_scheduled_run]), file=pager)
         else:
             color = Color()
             column_headers = ('Job Name', 'Schedule', 'Next Scheduled Run', 'Command')
@@ -392,12 +331,14 @@ class Info():
                 schedule = job['schedule'] or ''
                 command = ' '.join([shlex.quote(x) for x in job['command']])
                 next_scheduled_run = job['next_scheduled_run'] or ''
-                output_data.append((
-                    (color.hash_colored(job_name), len(job_name)),
-                    (schedule, len(schedule)),
-                    (next_scheduled_run, len(next_scheduled_run)),
-                    (command, len(command)),
-                ))
+                output_data.append(
+                    (
+                        (color.hash_colored(job_name), len(job_name)),
+                        (schedule, len(schedule)),
+                        (next_scheduled_run, len(next_scheduled_run)),
+                        (command, len(command)),
+                    )
+                )
             with AutoPager() as pager:
                 self.pretty_print_table(output_data, column_headers, pager)
 
@@ -424,15 +365,20 @@ class Info():
         elif self.args.format == 'tabular':
             with AutoPager() as pager:
                 for run in sorted(runs, key=lambda run: (run.start_time if runs_running else run.stop_time)):
-                    print('\t'.join([
-                        run.id,
-                        run.job.name,
-                        ('' if runs_running else str(run.exit_code)),
-                        run.trigger_type,
-                        run.schedule_time.isoformat(),
-                        run.start_time.isoformat(),
-                        ('' if runs_running else run.stop_time.isoformat()),
-                    ]), file=pager)
+                    print(
+                        '\t'.join(
+                            [
+                                run.id,
+                                run.job.name,
+                                ('' if runs_running else str(run.exit_code)),
+                                run.trigger_type,
+                                run.schedule_time.isoformat(),
+                                run.start_time.isoformat(),
+                                ('' if runs_running else run.stop_time.isoformat()),
+                            ]
+                        ),
+                        file=pager,
+                    )
         else:
             color = Color()
 
@@ -449,40 +395,44 @@ class Info():
             if runs_running:
                 column_headers = ('Run ID', 'Job', 'Start Time', 'Type', 'Schedule Delay')
                 for run in sorted(runs, key=lambda run: run.start_time, reverse=True):
-                    output_data.append((
-                        (run.id, len(run.id)),
-                        (color.hash_colored(run.job.name), len(run.job.name)),
+                    output_data.append(
                         (
-                            color.colored(run.start_time.isoformat(), time_color(run.start_time)),
-                            len(run.start_time.isoformat())
-                        ),
-                        (
-                            color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
-                            len(run.trigger_type)
-                        ),
-                        (str(run.start_time - run.schedule_time), len(str(run.start_time - run.schedule_time))),
-                    ))
+                            (run.id, len(run.id)),
+                            (color.hash_colored(run.job.name), len(run.job.name)),
+                            (
+                                color.colored(run.start_time.isoformat(), time_color(run.start_time)),
+                                len(run.start_time.isoformat()),
+                            ),
+                            (
+                                color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
+                                len(run.trigger_type),
+                            ),
+                            (str(run.start_time - run.schedule_time), len(str(run.start_time - run.schedule_time))),
+                        )
+                    )
             else:
                 column_headers = ('Run ID', 'Exit', 'Job', 'Duration', 'Start Time', 'Type', 'Schedule Delay')
                 for run in sorted(runs, key=lambda run: run.stop_time, reverse=True):
-                    output_data.append((
-                        (run.id, len(run.id)),
+                    output_data.append(
                         (
-                            color.colored(str(run.exit_code), ('red' if run.exit_code > 0 else None)),
-                            len(str(run.exit_code))
-                        ),
-                        (color.hash_colored(run.job.name), len(run.job.name)),
-                        (str(run.stop_time - run.start_time), len(str(run.stop_time - run.start_time))),
-                        (
-                            color.colored(run.start_time.isoformat(), time_color(run.start_time)),
-                            len(run.start_time.isoformat())
-                        ),
-                        (
-                            color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
-                            len(run.trigger_type)
-                        ),
-                        (str(run.start_time - run.schedule_time), len(str(run.start_time - run.schedule_time))),
-                    ))
+                            (run.id, len(run.id)),
+                            (
+                                color.colored(str(run.exit_code), ('red' if run.exit_code > 0 else None)),
+                                len(str(run.exit_code)),
+                            ),
+                            (color.hash_colored(run.job.name), len(run.job.name)),
+                            (str(run.stop_time - run.start_time), len(str(run.stop_time - run.start_time))),
+                            (
+                                color.colored(run.start_time.isoformat(), time_color(run.start_time)),
+                                len(run.start_time.isoformat()),
+                            ),
+                            (
+                                color.colored(run.trigger_type, ('blue' if run.trigger_type == 'file' else None)),
+                                len(run.trigger_type),
+                            ),
+                            (str(run.start_time - run.schedule_time), len(str(run.start_time - run.schedule_time))),
+                        )
+                    )
 
             with AutoPager() as pager:
                 self.pretty_print_table(output_data, column_headers, file=pager)
@@ -539,6 +489,7 @@ class Info():
         sh = None
         try:
             from IPython.terminal.embed import InteractiveShellEmbed
+
             sh = InteractiveShellEmbed(user_ns=vars, banner2=banner)
             sh.excepthook = sys.__excepthook__
         except ImportError:
@@ -552,10 +503,7 @@ class Info():
             class DsariConsole(code.InteractiveConsole):
                 pass
 
-            console_vars = vars.copy().update({
-                '__name__': '__console__',
-                '__doc__': None,
-            })
+            console_vars = vars.copy().update({'__name__': '__console__', '__doc__': None})
             print(banner, end='')
             DsariConsole(locals=console_vars).interact()
 

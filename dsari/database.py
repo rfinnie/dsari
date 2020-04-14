@@ -37,7 +37,7 @@ def get_database(config):
         return SQLite3Database(config)
 
 
-class BaseDatabase():
+class BaseDatabase:
     def __init__(self, config):
         self.config = config
         self.populate_schema()
@@ -80,10 +80,7 @@ class BaseSQLDatabase(BaseDatabase):
     def _build_insert(self, pairs):
         out = []
         for (k, v) in pairs:
-            if k in (
-                'trigger_data',
-                'run_data',
-            ):
+            if k in ('trigger_data', 'run_data'):
                 out.append(json.dumps(v))
             else:
                 out.append(v)
@@ -212,15 +209,20 @@ class BaseSQLDatabase(BaseDatabase):
         """
         sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
-        cur.execute(sql_statement, self._build_insert([
-            ('job_name', run.job.name),
-            ('run_id', run.id),
-            ('schedule_time', run.schedule_time),
-            ('start_time', run.start_time),
-            ('trigger_type', run.trigger_type),
-            ('trigger_data', run.trigger_data),
-            ('run_data', run.run_data),
-        ]))
+        cur.execute(
+            sql_statement,
+            self._build_insert(
+                [
+                    ('job_name', run.job.name),
+                    ('run_id', run.id),
+                    ('schedule_time', run.schedule_time),
+                    ('start_time', run.start_time),
+                    ('trigger_type', run.trigger_type),
+                    ('trigger_data', run.trigger_data),
+                    ('run_data', run.run_data),
+                ]
+            ),
+        )
         self.db_conn.commit()
 
     def insert_run(self, run):
@@ -241,17 +243,22 @@ class BaseSQLDatabase(BaseDatabase):
             )
         """
         sql_statement = self._modify_statement(sql_statement)
-        cur.execute(sql_statement, self._build_insert([
-            ('job_name', run.job.name),
-            ('run_id', run.id),
-            ('schedule_time', run.schedule_time),
-            ('start_time', run.start_time),
-            ('stop_time', run.stop_time),
-            ('exit_code', run.exit_code),
-            ('trigger_type', run.trigger_type),
-            ('trigger_data', run.trigger_data),
-            ('run_data', run.run_data),
-        ]))
+        cur.execute(
+            sql_statement,
+            self._build_insert(
+                [
+                    ('job_name', run.job.name),
+                    ('run_id', run.id),
+                    ('schedule_time', run.schedule_time),
+                    ('start_time', run.start_time),
+                    ('stop_time', run.stop_time),
+                    ('exit_code', run.exit_code),
+                    ('trigger_type', run.trigger_type),
+                    ('trigger_data', run.trigger_data),
+                    ('run_data', run.run_data),
+                ]
+            ),
+        )
 
         sql_statement = """
             DELETE
@@ -261,9 +268,7 @@ class BaseSQLDatabase(BaseDatabase):
                 run_id = {}
         """
         sql_statement = self._modify_statement(sql_statement)
-        cur.execute(sql_statement, (
-            run.id,
-        ))
+        cur.execute(sql_statement, (run.id,))
         self.db_conn.commit()
 
     def clear_runs_running(self):
@@ -300,14 +305,15 @@ class BaseSQLDatabase(BaseDatabase):
                 *
             FROM
                 {}
-        """.format(table_name)
+        """.format(
+            table_name
+        )
         if where is not None:
             sql_statement += """
                 WHERE
                     {} in ({})
             """.format(
-                where,
-                ','.join(['{}'] * len(where_in)),
+                where, ','.join(['{}'] * len(where_in))
             )
         sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
@@ -577,16 +583,9 @@ class SQLite3Database(BaseSQLDatabase):
     def _build_insert(self, pairs):
         out = []
         for (k, v) in pairs:
-            if k in (
-                'schedule_time',
-                'start_time',
-                'stop_time',
-            ):
+            if k in ('schedule_time', 'start_time', 'stop_time'):
                 out.append(dt_to_epoch(v))
-            elif k in (
-                'trigger_data',
-                'run_data',
-            ):
+            elif k in ('trigger_data', 'run_data'):
                 out.append(json.dumps(v))
             else:
                 out.append(v)
@@ -617,48 +616,34 @@ class MongoDBDatabase(BaseDatabase):
 
     def _build_run_from_result(self, job, f):
         run = dsari.Run(job, id=f['run_id'])
-        for k in (
-            'schedule_time',
-            'start_time',
-            'stop_time',
-            'exit_code',
-            'trigger_type',
-            'trigger_data',
-            'run_data',
-        ):
+        for k in ('schedule_time', 'start_time', 'stop_time', 'exit_code', 'trigger_type', 'trigger_data', 'run_data'):
             if k not in f:
                 continue
             setattr(run, k, f[k])
         return run
 
     def get_previous_runs(self, job):
-        result = self.db.runs.find({
-            'job_name': job.name,
-        }).sort([
-            ('stop_time', self.pymongo.DESCENDING),
-        ]).limit(1)
+        result = self.db.runs.find({'job_name': job.name}).sort([('stop_time', self.pymongo.DESCENDING)]).limit(1)
         try:
             previous_run = self._build_run_from_result(job, result[0])
         except IndexError:
             previous_run = None
 
-        result = self.db.runs.find({
-            'job_name': job.name,
-            'exit_code': 0,
-        }).sort([
-            ('stop_time', self.pymongo.DESCENDING),
-        ]).limit(1)
+        result = (
+            self.db.runs.find({'job_name': job.name, 'exit_code': 0})
+            .sort([('stop_time', self.pymongo.DESCENDING)])
+            .limit(1)
+        )
         try:
             previous_good_run = self._build_run_from_result(job, result[0])
         except IndexError:
             previous_good_run = None
 
-        result = self.db.runs.find({
-            'job_name': job.name,
-            'exit_code': {'$ne': 0},
-        }).sort([
-            ('stop_time', self.pymongo.DESCENDING),
-        ]).limit(1)
+        result = (
+            self.db.runs.find({'job_name': job.name, 'exit_code': {'$ne': 0}})
+            .sort([('stop_time', self.pymongo.DESCENDING)])
+            .limit(1)
+        )
         try:
             previous_bad_run = self._build_run_from_result(job, result[0])
         except IndexError:
@@ -667,28 +652,32 @@ class MongoDBDatabase(BaseDatabase):
         return (previous_run, previous_good_run, previous_bad_run)
 
     def insert_running_run(self, run):
-        self.db.runs_running.insert_one({
-            'job_name': run.job.name,
-            'run_id': run.id,
-            'schedule_time': run.schedule_time,
-            'start_time': run.start_time,
-            'trigger_type': run.trigger_type,
-            'trigger_data': run.trigger_data,
-            'run_data': run.run_data,
-        })
+        self.db.runs_running.insert_one(
+            {
+                'job_name': run.job.name,
+                'run_id': run.id,
+                'schedule_time': run.schedule_time,
+                'start_time': run.start_time,
+                'trigger_type': run.trigger_type,
+                'trigger_data': run.trigger_data,
+                'run_data': run.run_data,
+            }
+        )
 
     def insert_run(self, run):
-        self.db.runs.insert_one({
-            'job_name': run.job.name,
-            'run_id': run.id,
-            'schedule_time': run.schedule_time,
-            'start_time': run.start_time,
-            'stop_time': run.stop_time,
-            'exit_code': run.exit_code,
-            'trigger_type': run.trigger_type,
-            'trigger_data': run.trigger_data,
-            'run_data': run.run_data,
-        })
+        self.db.runs.insert_one(
+            {
+                'job_name': run.job.name,
+                'run_id': run.id,
+                'schedule_time': run.schedule_time,
+                'start_time': run.start_time,
+                'stop_time': run.stop_time,
+                'exit_code': run.exit_code,
+                'trigger_type': run.trigger_type,
+                'trigger_data': run.trigger_data,
+                'run_data': run.run_data,
+            }
+        )
         self.db.runs_running.delete_many({'run_id': run.id})
 
     def clear_runs_running(self):

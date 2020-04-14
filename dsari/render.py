@@ -52,23 +52,16 @@ def parse_args():
         description='Do Something and Record It - report renderer ({})'.format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parser.add_argument('--version', action='version', version=__version__, help='report the program version')
     parser.add_argument(
-        '--version', action='version',
-        version=__version__,
-        help='report the program version',
-    )
-    parser.add_argument(
-        '--config-dir', '-c', type=str, default=dsari.config.DEFAULT_CONFIG_DIR,
+        '--config-dir',
+        '-c',
+        type=str,
+        default=dsari.config.DEFAULT_CONFIG_DIR,
         help='configuration directory for dsari.json',
     )
-    parser.add_argument(
-        '--regenerate', '-r', action='store_true',
-        help='regenerate all reports',
-    )
-    parser.add_argument(
-        '--debug', action='store_true',
-        help='output additional debugging information',
-    )
+    parser.add_argument('--regenerate', '-r', action='store_true', help='regenerate all reports')
+    parser.add_argument('--debug', action='store_true', help='output additional debugging information')
     return parser.parse_args()
 
 
@@ -95,7 +88,7 @@ def write_html_file(filename, content):
             f.write(content.encode('utf-8'))
 
 
-class Renderer():
+class Renderer:
     def __init__(self, args):
         self.args = args
         self.config = dsari.config.get_config(self.args.config_dir)
@@ -113,16 +106,13 @@ class Renderer():
 
         if self.config.template_dir:
             loader = jinja2.ChoiceLoader(
-                jinja2.FileSystemLoader(self.config.template_dir),
-                jinja2.PackageLoader('dsari'),
+                jinja2.FileSystemLoader(self.config.template_dir), jinja2.PackageLoader('dsari')
             )
         else:
             loader = jinja2.PackageLoader('dsari')
 
         self.templates = jinja2.Environment(
-            autoescape=guess_autoescape,
-            loader=loader,
-            extensions=['jinja2.ext.autoescape'],
+            autoescape=guess_autoescape, loader=loader, extensions=['jinja2.ext.autoescape']
         )
         self.templates.globals['now'] = datetime.datetime.now()
 
@@ -165,9 +155,7 @@ class Renderer():
             os.makedirs(os.path.join(self.config.data_dir, 'html', job.name, run.id))
         run.output = read_output(os.path.join(self.config.data_dir, 'runs', job.name, run.id, 'output.txt'))
         self.logger.info('Writing {}'.format(run_html_filename))
-        context = {
-            'run': run,
-        }
+        context = {'run': run}
         write_html_file(run_html_filename, self.run_template.render(context))
         if job not in self.jobs_written:
             self.jobs_written.append(job)
@@ -181,10 +169,7 @@ class Renderer():
             self.render_job(job)
 
     def render_job(self, job):
-        context = {
-            'job': job,
-            'runs': sorted(self.job_runs[job.name], key=lambda run: run.stop_time, reverse=True),
-        }
+        context = {'job': job, 'runs': sorted(self.job_runs[job.name], key=lambda run: run.stop_time, reverse=True)}
         if not os.path.exists(os.path.join(self.config.data_dir, 'html', job.name)):
             os.makedirs(os.path.join(self.config.data_dir, 'html', job.name))
         job_html_filename = os.path.join(self.config.data_dir, 'html', job.name, 'index.html')
@@ -196,10 +181,7 @@ class Renderer():
     def render_index(self):
         self.index_template = self.templates.get_template('index.html')
         if (len(self.jobs_written) > 0) or self.args.regenerate:
-            context = {
-                'jobs': self.jobs,
-                'runs': sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[:25],
-            }
+            context = {'jobs': self.jobs, 'runs': sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[:25]}
             index_html_filename = os.path.join(self.config.data_dir, 'html', 'index.html')
             if self.config.report_html_gz:
                 index_html_filename = '{}.gz'.format(index_html_filename)
@@ -215,4 +197,5 @@ def main():
 
 if __name__ == '__main__':
     import sys
+
     sys.exit(main())

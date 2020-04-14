@@ -8,7 +8,7 @@ from setuptools import setup
 import dsari
 
 
-assert(sys.version_info > (3, 4))
+assert sys.version_info > (3, 4)
 
 
 def read(filename):
@@ -40,17 +40,13 @@ setup(
         'Topic :: Software Development :: Quality Assurance',
         'Topic :: Software Development :: Testing',
     ],
-    install_requires=[
-        'croniter',
-        'python-dateutil',
-        'Jinja2>=2.4',
-    ],
+    install_requires=['croniter', 'python-dateutil', 'Jinja2>=2.4'],
     entry_points={
         'console_scripts': [
             'dsari-daemon = dsari.daemon:main',
             'dsari-info = dsari.info:main',
             'dsari-prometheus-exporter = dsari.prometheus_exporter:main',
             'dsari-render = dsari.render:main',
-        ],
+        ]
     },
 )
