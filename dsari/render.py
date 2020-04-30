@@ -49,10 +49,17 @@ def guess_autoescape(template_name):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Do Something and Record It - report renderer ({})".format(__version__),
+        description="Do Something and Record It - report renderer ({})".format(
+            __version__
+        ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--version", action="version", version=__version__, help="report the program version")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=__version__,
+        help="report the program version",
+    )
     parser.add_argument(
         "--config-dir",
         "-c",
@@ -60,8 +67,12 @@ def parse_args():
         default=dsari.config.DEFAULT_CONFIG_DIR,
         help="configuration directory for dsari.json",
     )
-    parser.add_argument("--regenerate", "-r", action="store_true", help="regenerate all reports")
-    parser.add_argument("--debug", action="store_true", help="output additional debugging information")
+    parser.add_argument(
+        "--regenerate", "-r", action="store_true", help="regenerate all reports"
+    )
+    parser.add_argument(
+        "--debug", action="store_true", help="output additional debugging information"
+    )
     return parser.parse_args()
 
 
@@ -72,7 +83,9 @@ def read_output(filename):
     elif os.path.isfile("{}.gz".format(filename)):
         with gzip.open("{}.gz".format(filename), "rb") as f:
             return f.read().decode("utf-8")
-    elif (not isinstance(lzma, ImportError)) and os.path.isfile("{}.xz".format(filename)):
+    elif (not isinstance(lzma, ImportError)) and os.path.isfile(
+        "{}.xz".format(filename)
+    ):
         with open("{}.xz".format(filename), "rb") as f:
             return lzma.LZMADecompressor().decompress(f.read()).decode("utf-8")
     else:
@@ -96,7 +109,9 @@ class Renderer:
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
         lh_console = logging.StreamHandler()
-        lh_console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
+        lh_console_formatter = logging.Formatter(
+            "[%(asctime)s] %(levelname)s: %(message)s"
+        )
         lh_console.setFormatter(lh_console_formatter)
         if self.args.debug:
             lh_console.setLevel(logging.DEBUG)
@@ -106,13 +121,16 @@ class Renderer:
 
         if self.config.template_dir:
             loader = jinja2.ChoiceLoader(
-                jinja2.FileSystemLoader(self.config.template_dir), jinja2.PackageLoader("dsari")
+                jinja2.FileSystemLoader(self.config.template_dir),
+                jinja2.PackageLoader("dsari"),
             )
         else:
             loader = jinja2.PackageLoader("dsari")
 
         self.templates = jinja2.Environment(
-            autoescape=guess_autoescape, loader=loader, extensions=["jinja2.ext.autoescape"]
+            autoescape=guess_autoescape,
+            loader=loader,
+            extensions=["jinja2.ext.autoescape"],
         )
         self.templates.globals["now"] = datetime.datetime.now()
 
@@ -134,7 +152,9 @@ class Renderer:
 
     def render_runs(self):
         self.run_template = self.templates.get_template("run.html")
-        runs = self.db.get_runs(job_names=[job.name for job in self.jobs if job.render_reports])
+        runs = self.db.get_runs(
+            job_names=[job.name for job in self.jobs if job.render_reports]
+        )
         for run in runs:
             self.render_run(run)
 
@@ -145,15 +165,21 @@ class Renderer:
         job.last_run = run
         if run.exit_code == 0:
             job.last_successful_run = run
-        run_html_filename = os.path.join(self.config.data_dir, "html", job.name, run.id, "index.html")
+        run_html_filename = os.path.join(
+            self.config.data_dir, "html", job.name, run.id, "index.html"
+        )
         if self.config.report_html_gz:
             run_html_filename = "{}.gz".format(run_html_filename)
         if os.path.isfile(run_html_filename):
             if not self.args.regenerate:
                 return
-        if not os.path.exists(os.path.join(self.config.data_dir, "html", job.name, run.id)):
+        if not os.path.exists(
+            os.path.join(self.config.data_dir, "html", job.name, run.id)
+        ):
             os.makedirs(os.path.join(self.config.data_dir, "html", job.name, run.id))
-        run.output = read_output(os.path.join(self.config.data_dir, "runs", job.name, run.id, "output.txt"))
+        run.output = read_output(
+            os.path.join(self.config.data_dir, "runs", job.name, run.id, "output.txt")
+        )
         self.logger.info("Writing {}".format(run_html_filename))
         context = {"run": run}
         write_html_file(run_html_filename, self.run_template.render(context))
@@ -169,10 +195,17 @@ class Renderer:
             self.render_job(job)
 
     def render_job(self, job):
-        context = {"job": job, "runs": sorted(self.job_runs[job.name], key=lambda run: run.stop_time, reverse=True)}
+        context = {
+            "job": job,
+            "runs": sorted(
+                self.job_runs[job.name], key=lambda run: run.stop_time, reverse=True
+            ),
+        }
         if not os.path.exists(os.path.join(self.config.data_dir, "html", job.name)):
             os.makedirs(os.path.join(self.config.data_dir, "html", job.name))
-        job_html_filename = os.path.join(self.config.data_dir, "html", job.name, "index.html")
+        job_html_filename = os.path.join(
+            self.config.data_dir, "html", job.name, "index.html"
+        )
         if self.config.report_html_gz:
             job_html_filename = "{}.gz".format(job_html_filename)
         self.logger.info("Writing {}".format(job_html_filename))
@@ -181,8 +214,15 @@ class Renderer:
     def render_index(self):
         self.index_template = self.templates.get_template("index.html")
         if (len(self.jobs_written) > 0) or self.args.regenerate:
-            context = {"jobs": self.jobs, "runs": sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[:25]}
-            index_html_filename = os.path.join(self.config.data_dir, "html", "index.html")
+            context = {
+                "jobs": self.jobs,
+                "runs": sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[
+                    :25
+                ],
+            }
+            index_html_filename = os.path.join(
+                self.config.data_dir, "html", "index.html"
+            )
             if self.config.report_html_gz:
                 index_html_filename = "{}.gz".format(index_html_filename)
             self.logger.info("Writing {}".format(index_html_filename))

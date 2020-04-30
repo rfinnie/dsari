@@ -88,7 +88,8 @@ class croniter_hash(croniter.croniter):
         m = re.match(r"^(H|R)\((\d+)-(\d+)\)\/(\d+)$", item)
         if m:
             return "{}-{}/{}".format(
-                self._hash_do(id, idx, int(m.group(4)), type=m.group(1)) + int(m.group(2)),
+                self._hash_do(id, idx, int(m.group(4)), type=m.group(1))
+                + int(m.group(2)),
                 int(m.group(3)),
                 int(m.group(4)),
             )
@@ -96,13 +97,19 @@ class croniter_hash(croniter.croniter):
         # Example: H(0-29) -> 12
         m = re.match(r"^(H|R)\((\d+)-(\d+)\)$", item)
         if m:
-            return str(self._hash_do(id, idx, int(m.group(3)), int(m.group(2)), type=m.group(1)))
+            return str(
+                self._hash_do(
+                    id, idx, int(m.group(3)), int(m.group(2)), type=m.group(1)
+                )
+            )
 
         # Example: H/15 -> 7-59/15 (i.e. 7,22,37,52)
         m = re.match(r"^(H|R)\/(\d+)$", item)
         if m:
             return "{}-{}/{}".format(
-                self._hash_do(id, idx, int(m.group(2)), type=m.group(1)), self.RANGES[idx][1], int(m.group(2))
+                self._hash_do(id, idx, int(m.group(2)), type=m.group(1)),
+                self.RANGES[idx][1],
+                int(m.group(2)),
             )
 
         # Everything else

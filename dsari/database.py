@@ -602,7 +602,9 @@ class MongoDBDatabase(BaseDatabase):
             uri = config.database["uri"]
         else:
             uri = None
-        if ("connection" in config.database) and (type(config.database["connection"]) == dict):
+        if ("connection" in config.database) and (
+            type(config.database["connection"]) == dict
+        ):
             connection = config.database["connection"]
         else:
             connection = {}
@@ -616,14 +618,26 @@ class MongoDBDatabase(BaseDatabase):
 
     def _build_run_from_result(self, job, f):
         run = dsari.Run(job, id=f["run_id"])
-        for k in ("schedule_time", "start_time", "stop_time", "exit_code", "trigger_type", "trigger_data", "run_data"):
+        for k in (
+            "schedule_time",
+            "start_time",
+            "stop_time",
+            "exit_code",
+            "trigger_type",
+            "trigger_data",
+            "run_data",
+        ):
             if k not in f:
                 continue
             setattr(run, k, f[k])
         return run
 
     def get_previous_runs(self, job):
-        result = self.db.runs.find({"job_name": job.name}).sort([("stop_time", self.pymongo.DESCENDING)]).limit(1)
+        result = (
+            self.db.runs.find({"job_name": job.name})
+            .sort([("stop_time", self.pymongo.DESCENDING)])
+            .limit(1)
+        )
         try:
             previous_run = self._build_run_from_result(job, result[0])
         except IndexError:
