@@ -108,7 +108,7 @@ class AutoPager:
                 pager_cmd = shlex.split(os.environ.get("PAGER"))
             env = os.environ.copy()
             if not os.environ.get("LESS"):
-                env.update({"LESS": "FRX"})
+                env.update({"LESS": "-FRSXMQ"})
             try:
                 self.pager = subprocess.Popen(pager_cmd, stdin=subprocess.PIPE, stdout=sys.stdout, env=env)
             except FileNotFoundError:
