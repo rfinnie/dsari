@@ -212,6 +212,14 @@ class Renderer:
         write_html_file(job_html_filename, self.job_template.render(context))
 
     def render_index(self):
+        base_dir = os.path.join(self.config.data_dir, "html")
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
+        css_filename = os.path.join(base_dir, "darkly.min.css")
+        if not os.path.exists(css_filename):
+            css_template = self.templates.get_template("darkly.min.css")
+            with open(css_filename, "wb") as f:
+                f.write(css_template.render({}).encode("utf-8"))
         self.index_template = self.templates.get_template("index.html")
         if (len(self.jobs_written) > 0) or self.args.regenerate:
             context = {
@@ -220,9 +228,7 @@ class Renderer:
                     :25
                 ],
             }
-            index_html_filename = os.path.join(
-                self.config.data_dir, "html", "index.html"
-            )
+            index_html_filename = os.path.join(base_dir, "index.html")
             if self.config.report_html_gz:
                 index_html_filename = "{}.gz".format(index_html_filename)
             self.logger.info("Writing {}".format(index_html_filename))
