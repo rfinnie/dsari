@@ -17,8 +17,10 @@ The following variables should always be present in a run:
     HOME=/home/user
     PWD=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
     PATH=/usr/bin:/bin
+    DATA_DIR=/home/user/.dsari/var
     JOB_NAME=sample-job
     RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+    RUN_DIR=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
     SCHEDULE_TIME=1460822675.99
     START_TIME=1460822677.34
     TRIGGER_TYPE=schedule
