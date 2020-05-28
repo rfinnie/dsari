@@ -19,11 +19,13 @@ The following variables should always be present in a run:
     PATH=/usr/bin:/bin
     DATA_DIR=/home/user/.dsari/var
     JOB_NAME=sample-job
+    JOB_DIR=home/user/.dsari/var/runs/sample-job
     RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
     RUN_DIR=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
     SCHEDULE_TIME=1460822675.99
     START_TIME=1460822677.34
     TRIGGER_TYPE=schedule
+    TRIGGER_DIR=/home/user/.dsari/var/trigger
 
 ### CI / DSARI
 
@@ -48,11 +50,15 @@ If it cannot be determined, it's set to "/usr/bin:/bin".
 ### DATA_DIR
 
 The configured data base directory.
-This may be used to construct a trigger path (${DATA_DIR}/trigger/${OTHER_JOB}/trigger.json) for cascading job runs.
 
 ### JOB_NAME
 
 The defined name of the running job.
+
+### JOB_DIR
+
+The location of the run's job, with run UUIDs as subdirectories.
+This location may be used to store data shared across a job's runs.
 
 ### RUN_ID
 
@@ -78,6 +84,11 @@ Unix epoch time when the run actually began, sometime after SCHEDULE_TIME.
 ### TRIGGER_TYPE
 
 The type of event which triggered the run, either "schedule" or "file".
+
+### TRIGGER_DIR
+
+The base directory used for triggers.
+This may be used to construct a trigger (${TRIGGER_DIR}/${OTHER_JOB}/trigger.json) for cascading job runs.
 
 ## Conditional
 

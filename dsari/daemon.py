@@ -378,6 +378,7 @@ class Scheduler:
         environ["DSARI"] = "true"
         environ["DATA_DIR"] = self.config.data_dir
         environ["JOB_NAME"] = job.name
+        environ["JOB_DIR"] = os.path.join(self.config.data_dir, "runs", job.name)
         environ["RUN_ID"] = run.id
         environ["RUN_DIR"] = os.path.join(
             self.config.data_dir, "runs", job.name, run.id
@@ -385,6 +386,7 @@ class Scheduler:
         environ["SCHEDULE_TIME"] = str(dt_to_epoch(run.schedule_time))
         environ["START_TIME"] = str(dt_to_epoch(run.start_time))
         environ["TRIGGER_TYPE"] = run.trigger_type
+        environ["TRIGGER_DIR"] = os.path.join(self.config.data_dir, "trigger")
         if run.concurrency_group:
             environ["CONCURRENCY_GROUP"] = run.concurrency_group.name
         if run.previous_run:
