@@ -1,5 +1,4 @@
 FIND := find
-PANDOC := pandoc
 PYTHON := python3
 
 all: build
@@ -27,8 +26,5 @@ clean:
 	$(PYTHON) setup.py clean
 	$(RM) -r build MANIFEST
 
-doc: README
+doc:
 	$(MAKE) -C doc
-
-README: README.md
-	$(PANDOC) -s -t plain -o $@ $<

@@ -7,7 +7,7 @@ It can be as simple as the following:
     $ mkdir -p ~/.dsari/var/trigger/sample-job
     $ echo '{}' >~/.dsari/var/trigger/sample-job/trigger.yaml
 
-The daemon will notice this trigger within 60 seconds, set up a new one-off run, and delete the trigger JSON file.
+The daemon will notice this trigger within 60 seconds, set up a new one-off run, and delete the trigger file.
 If you want the trigger to be noticed sooner, send dsari-daemon a USR1 signal.
 
 A trigger file may be valid YAML (`trigger.yaml`) or JSON (`trigger.json`).
