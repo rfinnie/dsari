@@ -521,7 +521,9 @@ class Scheduler:
             if not os.path.exists(test_file):
                 continue
             if fn_type == "yaml" and isinstance(yaml, ImportError):
-                # Maybe warn here
+                self.logger.warning(
+                    "{} found, but yaml not available, ignoring".format(test_file)
+                )
                 continue
             return_data_file = test_file
             return_data_file_type = fn_type
@@ -554,7 +556,6 @@ class Scheduler:
             if not os.path.exists(test_file):
                 continue
             if fn_type == "yaml" and isinstance(yaml, ImportError):
-                # Maybe warn here
                 continue
             trigger_file = test_file
             trigger_file_type = fn_type
