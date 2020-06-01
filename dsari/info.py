@@ -223,10 +223,6 @@ def parse_args():
         help="run ID to filter (can be given multiple times)",
     )
 
-    parser_list_runs.add_argument(
-        "--running", action="store_true", help="list currently running runs"
-    )
-
     subparsers.add_parser("shell", help="interactive shell")
 
     args = parser.parse_args()
@@ -403,10 +399,9 @@ class Info:
     def cmd_list_runs(self):
         job_names = self.args.job
         run_ids = self.args.run
-        runs_running = self.args.running
         runs = self.db.get_runs(
-            job_names=job_names, run_ids=run_ids, runs_running=runs_running
-        )
+            job_names=job_names, run_ids=run_ids, runs_running=False
+        ) + self.db.get_runs(job_names=job_names, run_ids=run_ids, runs_running=True)
         if self.args.format == "json":
             out = {}
             for run in runs:
@@ -414,8 +409,10 @@ class Info:
                     "job_name": run.job.name,
                     "schedule_time": run.schedule_time.isoformat(),
                     "start_time": run.start_time.isoformat(),
-                    "stop_time": (None if runs_running else run.stop_time.isoformat()),
-                    "exit_code": (None if runs_running else run.exit_code),
+                    "stop_time": (
+                        None if not run.stop_time else run.stop_time.isoformat()
+                    ),
+                    "exit_code": (None if not run.stop_time else run.exit_code),
                     "trigger_type": run.trigger_type,
                     "trigger_data": run.trigger_data,
                     "run_data": run.run_data,
@@ -424,20 +421,21 @@ class Info:
                 print(json_pretty_print(out), file=pager)
         elif self.args.format == "tabular":
             with AutoPager() as pager:
-                for run in sorted(
-                    runs,
-                    key=lambda run: (run.start_time if runs_running else run.stop_time),
-                ):
+                for run in sorted(runs, key=lambda run: run.start_time):
                     print(
                         "\t".join(
                             [
                                 run.id,
                                 run.job.name,
-                                ("" if runs_running else str(run.exit_code)),
+                                ("" if not run.stop_time else str(run.exit_code)),
                                 run.trigger_type,
                                 run.schedule_time.isoformat(),
                                 run.start_time.isoformat(),
-                                ("" if runs_running else run.stop_time.isoformat()),
+                                (
+                                    ""
+                                    if not run.stop_time
+                                    else run.stop_time.isoformat()
+                                ),
                             ]
                         ),
                         file=pager,
@@ -455,40 +453,7 @@ class Info:
                     return None
 
             output_data = []
-            if runs_running:
-                column_headers = (
-                    "Run ID",
-                    "Job",
-                    "Start Time",
-                    "Type",
-                    "Schedule Delay",
-                )
-                for run in sorted(runs, key=lambda run: run.start_time, reverse=True):
-                    output_data.append(
-                        (
-                            (run.id, len(run.id)),
-                            (color.hash_colored(run.job.name), len(run.job.name)),
-                            (
-                                color.colored(
-                                    run.start_time.isoformat(),
-                                    time_color(run.start_time),
-                                ),
-                                len(run.start_time.isoformat()),
-                            ),
-                            (
-                                color.colored(
-                                    run.trigger_type,
-                                    ("blue" if run.trigger_type == "file" else None),
-                                ),
-                                len(run.trigger_type),
-                            ),
-                            (
-                                str(run.start_time - run.schedule_time),
-                                len(str(run.start_time - run.schedule_time)),
-                            ),
-                        )
-                    )
-            else:
+            if True:
                 column_headers = (
                     "Run ID",
                     "Exit",
@@ -498,22 +463,27 @@ class Info:
                     "Type",
                     "Schedule Delay",
                 )
-                for run in sorted(runs, key=lambda run: run.stop_time, reverse=True):
+                now = datetime.datetime.now()
+                for run in sorted(runs, key=lambda run: run.start_time, reverse=True):
+                    if run.stop_time is not None:
+                        run_time = str(run.stop_time - run.start_time)
+                        run_time_color = None
+                        exit_code = str(run.exit_code)
+                        exit_code_color = "red" if run.exit_code > 0 else None
+                    else:
+                        run_time = str(now - run.start_time)
+                        run_time_color = "blue"
+                        exit_code = "..."
+                        exit_code_color = "blue"
                     output_data.append(
                         (
                             (run.id, len(run.id)),
                             (
-                                color.colored(
-                                    str(run.exit_code),
-                                    ("red" if run.exit_code > 0 else None),
-                                ),
-                                len(str(run.exit_code)),
+                                color.colored(exit_code, exit_code_color),
+                                len(str(exit_code)),
                             ),
                             (color.hash_colored(run.job.name), len(run.job.name)),
-                            (
-                                str(run.stop_time - run.start_time),
-                                len(str(run.stop_time - run.start_time)),
-                            ),
+                            (color.colored(run_time, run_time_color), len(run_time)),
                             (
                                 color.colored(
                                     run.start_time.isoformat(),
