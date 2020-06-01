@@ -22,6 +22,7 @@ import binascii
 import copy
 import datetime
 import json
+import os
 
 try:
     import dateutil.rrule as dateutil_rrule
@@ -47,8 +48,10 @@ def dict_merge(s, m):
     return out
 
 
-def json_load_file(file):
+def json_load_file(file, delete_during=False):
     with open(file) as f:
+        if delete_during:
+            os.remove(file)
         try:
             return json.load(f)
         except ValueError as e:
@@ -118,3 +121,7 @@ def get_next_schedule_time(schedule, job_name, start_time=None):
         + subsecond_offset
     )
     return t
+
+
+def json_pretty_print(v):
+    return json.dumps(v, sort_keys=True, indent=4, separators=(",", ": "))

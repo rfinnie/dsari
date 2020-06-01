@@ -21,7 +21,6 @@
 import argparse
 import copy
 import datetime
-import json
 import logging
 import math
 import os
@@ -45,7 +44,11 @@ import dsari.config
 import dsari.database
 from dsari.utils import dt_to_epoch, epoch_to_dt
 from dsari.utils import seconds_to_td, td_to_seconds
-from dsari.utils import get_next_schedule_time, validate_environment_dict
+from dsari.utils import (
+    json_load_file,
+    get_next_schedule_time,
+    validate_environment_dict,
+)
 
 __version__ = dsari.__version__
 
@@ -514,8 +517,7 @@ class Scheduler:
         )
         if os.path.exists(return_data_fn):
             try:
-                with open(return_data_fn) as f:
-                    run.run_data["return_data"] = json.load(f)
+                run.run_data["return_data"] = json_load_file(return_data_fn)
             except Exception:
                 pass
         self.db.insert_run(run)
@@ -538,25 +540,20 @@ class Scheduler:
             return
         t = epoch_to_dt(os.path.getmtime(trigger_file))
         try:
-            f = open(trigger_file)
+            j = json_load_file(trigger_file, delete_during=True)
         except IOError:
+            # Likely during open()
             # Return silently, otherwise we spam the log during each loop
             return
-        try:
-            os.remove(trigger_file)
         except OSError:
+            # Likely during os.remove()
             # Return silently, otherwise we spam the log during each loop
-            f.close()
             return
-        try:
-            j = json.load(f)
         except ValueError as e:
             self.logger.error(
                 "[{}] Cannot load trigger: {}".format(job.name, e.message)
             )
-            f.close()
             return
-        f.close()
         if type(j) != dict:
             self.logger.error(
                 "[{}] Cannot load trigger: Data must be a dict".format(job.name)

@@ -21,7 +21,6 @@
 import argparse
 import binascii
 import datetime
-import json
 import locale
 import os
 import shlex
@@ -31,7 +30,7 @@ import sys
 import dsari
 import dsari.config
 import dsari.database
-from dsari.utils import get_next_schedule_time, td_to_seconds
+from dsari.utils import get_next_schedule_time, json_pretty_print, td_to_seconds
 
 __version__ = dsari.__version__
 
@@ -158,10 +157,6 @@ class AutoPager:
                     continue
 
         self.closed = True
-
-
-def json_pretty_print(v):
-    return json.dumps(v, sort_keys=True, indent=4, separators=(",", ": "))
 
 
 def parse_args():
