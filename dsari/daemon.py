@@ -45,7 +45,6 @@ import dsari.database
 from dsari.utils import dt_to_epoch, epoch_to_dt
 from dsari.utils import seconds_to_td, td_to_seconds
 from dsari.utils import (
-    dict_merge,
     get_next_schedule_time,
     load_structured_file,
     validate_environment_dict,
@@ -517,20 +516,20 @@ class Scheduler:
 
         return_data_file = None
         return_data_file_type = None
-        for fn, type in [("return_data.json", "json"), ("return_data.yaml", "yaml")]:
+        for fn, fn_type in [("return_data.json", "json"), ("return_data.yaml", "yaml")]:
             test_file = os.path.join(self.config.data_dir, "runs", job.name, run.id, fn)
             if not os.path.exists(test_file):
                 continue
-            if type == "yaml" and isinstance(yaml, ImportError):
+            if fn_type == "yaml" and isinstance(yaml, ImportError):
                 # Maybe warn here
                 continue
             return_data_file = test_file
-            return_data_file_type = type
+            return_data_file_type = fn_type
             break
         if return_data_file is not None:
             try:
                 run.run_data["return_data"] = load_structured_file(
-                    return_data_file, type=return_data_file_type
+                    return_data_file, file_type=return_data_file_type
                 )
             except Exception:
                 pass
@@ -550,22 +549,22 @@ class Scheduler:
     def process_trigger_job(self, job):
         trigger_file = None
         trigger_file_type = None
-        for fn, type in [("trigger.json", "json"), ("trigger.yaml", "yaml")]:
+        for fn, fn_type in [("trigger.json", "json"), ("trigger.yaml", "yaml")]:
             test_file = os.path.join(self.config.data_dir, "trigger", job.name, fn)
             if not os.path.exists(test_file):
                 continue
-            if type == "yaml" and isinstance(yaml, ImportError):
+            if fn_type == "yaml" and isinstance(yaml, ImportError):
                 # Maybe warn here
                 continue
             trigger_file = test_file
-            trigger_file_type = type
+            trigger_file_type = fn_type
             break
         if trigger_file is None:
             return
         t = epoch_to_dt(os.path.getmtime(trigger_file))
         try:
             j = load_structured_file(
-                trigger_file, type=trigger_file_type, delete_during=True
+                trigger_file, file_type=trigger_file_type, delete_during=True
             )
         except IOError:
             # Likely during open()

@@ -84,13 +84,13 @@ class ConfigLoader:
 
     def load_dir(self, config_dir=DEFAULT_CONFIG_DIR):
         config = {}
-        for fn, type in [("dsari.yaml", "yaml"), ("dsari.json", "json")]:
+        for fn, fn_type in [("dsari.yaml", "yaml"), ("dsari.json", "json")]:
             if os.path.exists(os.path.join(config_dir, fn)):
                 try:
                     config = utils.dict_merge(
                         config,
                         utils.load_structured_file(
-                            os.path.join(config_dir, fn), type=type
+                            os.path.join(config_dir, fn), file_type=fn_type
                         ),
                     )
                 except (ValueError, ImportError) as e:
@@ -101,11 +101,11 @@ class ConfigLoader:
         if self.config.config_d and os.path.isdir(self.config.config_d):
             config_d = self.config.config_d
 
-            for type in ["yaml", "json"]:
+            for fn_type in ["yaml", "json"]:
                 config_files = [
                     os.path.join(config_d, fn)
                     for fn in os.listdir(config_d)
-                    if fn.endswith("." + type)
+                    if fn.endswith("." + fn_type)
                     and os.path.isfile(os.path.join(config_d, fn))
                     and os.access(os.path.join(config_d, fn), os.R_OK)
                 ]
@@ -113,7 +113,7 @@ class ConfigLoader:
                 for file in config_files:
                     try:
                         config = utils.dict_merge(
-                            config, utils.load_structured_file(file, type=type)
+                            config, utils.load_structured_file(file, file_type=fn_type)
                         )
                     except (ValueError, ImportError) as e:
                         raise ConfigError(e)

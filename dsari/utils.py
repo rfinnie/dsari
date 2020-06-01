@@ -53,14 +53,14 @@ def dict_merge(s, m):
     return out
 
 
-def load_structured_file(file, type="json", delete_during=False):
-    if type == "yaml" and isinstance(yaml, ImportError):
+def load_structured_file(file, file_type="json", delete_during=False):
+    if file_type == "yaml" and isinstance(yaml, ImportError):
         raise ImportError("yaml not available")
     with open(file) as f:
         if delete_during:
             os.remove(file)
         try:
-            if type == "yaml":
+            if file_type == "yaml":
                 return yaml.safe_load(f)
             else:
                 return json.load(f)
