@@ -217,7 +217,7 @@ def parse_args():
         )
 
     parser_get_output.add_argument("run", type=str, default=None, help="run UUID")
-    parser_tail_output.add_argument("run", type=str, default=None, help="run UUID")
+    parser_tail_output.add_argument("run", type=str, nargs="+", help="run UUID")
 
     parser_list_runs.add_argument(
         "--run",
@@ -534,17 +534,16 @@ class Info:
                     pager.write(l)
 
     def cmd_tail_run_output(self):
-        run_id = self.args.run
-        runs = self.db.get_runs(run_ids=[run_id])
-        if len(runs) == 0:
-            runs = self.db.get_runs(run_ids=[run_id], runs_running=True)
-            if len(runs) == 0:
-                self.args.parser.error("Cannot find run ID {}".format(run_id))
-        run = runs[0]
-        fn = os.path.join(
-            self.config.data_dir, "runs", run.job.name, run.id, "output.txt"
-        )
-        os.execvp("tail", ["tail", "-f", fn])
+        runs = self.db.get_runs(run_ids=self.args.run, runs_running=True)
+        filenames = []
+        for run in runs:
+            filename = os.path.join(
+                self.config.data_dir, "runs", run.job.name, run.id, "output.txt"
+            )
+            if os.path.exists(filename):
+                filenames.append(filename)
+        if filenames:
+            os.execvp("tail", ["tail", "-f", *filenames])
 
     def cmd_shell(self):
         # readline is used transparently by code.InteractiveConsole()

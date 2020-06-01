@@ -40,8 +40,8 @@ get-run-output *run_id*
 :   Print the collected output of a run.
     If a run is currently running, output collected until that point will be printed.
 
-tail-run-output *run_id*
-:   Monitor the collected output of a run as it is collected.
+tail-run-output *run_id* [*run_id*]
+:   Monitor the output of running runs, as they are collected.
 
 shell
 :   Enter a Python shell, with several dsari-specific variables pre-loaded (config, db, etc).
