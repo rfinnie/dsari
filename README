@@ -14,6 +14,7 @@ Requirements
 dsari requires Python 3.4 or later, and will run on Unix-based
 platforms. It may use the following non-core packages:
 
+-   PyYAML, for using YAML files as configuration files, triggers, etc
 -   croniter, for parsing cron-style schedule definitions
 -   python-dateutil, for parsing iCalendar RRULE-style schedule
     definitions
@@ -27,7 +28,7 @@ platforms. It may use the following non-core packages:
 All non-core packages are optional, with the following limitations:
 
 -   If neither croniter nor python-dateutil are installed, dsari-daemon
-    will run, but it will not process scheduled runs (i.e. manual
+    will run, but it will not process scheduled runs (i.e. manual
     triggers only).
 -   Jinja2 is only required if you intend to use dsari-render.
 -   psycopg2, mysqlclient or pymongo are only required if you intend to
@@ -41,15 +42,15 @@ dsari may be installed as any normal Python package:
 
     $ sudo python3 setup.py install
 
-When this is done, dsari will expect its configuration file --
-dsari.json -- in /usr/local/etc/dsari/, and will store its data in
+When this is done, dsari will expect its configuration file – dsari.yaml
+and/or dsari.json – in /usr/local/etc/dsari/, and will store its data in
 /usr/local/lib/dsari/.
 
 These locations may be customized by passing -c argument to dsari-* to
 specify the configuration directory, and the data_dir configuration
 option, respectively.
 
-When dsari is installed directly in /usr/ (i.e. as part of distribution
+When dsari is installed directly in /usr/ (i.e. as part of distribution
 packaging), the default configuration and data directories will be
 /etc/dsari/ and /var/lib/dsari/, respectively.
 
@@ -57,13 +58,21 @@ dsari does not need to be installed at all, it can be run directly from
 the repository directory. In this case, the default configuration and
 data directories will be ~/.dsari/etc/ and ~/.dsari/var/, respectively.
 
-The rest of these documents assume a locally-running setup, i.e.
-~/.dsari/.
+The rest of these documents assume a locally-running setup,
+i.e. ~/.dsari/.
 
 
 Configuration
 
-A basic configuration for dsari.json looks as follows:
+A basic configuration for dsari.yaml looks as follows:
+
+    jobs:
+      sample-job:
+        command:
+        - /usr/bin/env
+        schedule: "H/5 * * * *"
+
+or for dsari.json:
 
     {
         "jobs": {
@@ -74,7 +83,7 @@ A basic configuration for dsari.json looks as follows:
         }
     }
 
-This defines a job named "sample-job", which is run every 5 minutes.
+This defines a job named “sample-job”, which is run every 5 minutes.
 Many more configuration options are available in the doc/ directory.
 
 
@@ -84,7 +93,7 @@ Once dsari is configured, run dsari-daemon. By default, dsari-daemon
 will run in the foreground, and can be used with a supervisor (upstart,
 systemd, supervisord, etc). If given -d, it will daemonize.
 
-When a job is scheduled to be run, it produces a "run". Runs are
+When a job is scheduled to be run, it produces a “run”. Runs are
 identified by a UUID, the run output is stored in ~/.dsari/var/runs/,
 and data related to the run (start time, stop time, exit code, etc) is
 stored in a SQLite database at ~/.dsari/var/dsari.sqlite3.
@@ -103,7 +112,7 @@ program to be run:
     PREVIOUS_EXIT_CODE=0
 
 PREVIOUS_* variables are not set if there is no previous run. In
-addition, several extra environment variables are present, if the job's
+addition, several extra environment variables are present, if the job’s
 jenkins_environment option is set, to aid with migrations from Jenkins
 setups:
 

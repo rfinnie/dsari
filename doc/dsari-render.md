@@ -16,7 +16,7 @@ dsari-render [*options*]
 
 --config-dir=*directory*, -c *directory*
 :   Base configuration directory.
-    A file named `dsari.json` is expected in this directory.
+    Files named `dsari.yaml` and/or `dsari.json` are expected in this directory.
 
 --regenerate, -r
 :   (Re)generate all report files, even if `dsari-render` determines regeneration is not needed.

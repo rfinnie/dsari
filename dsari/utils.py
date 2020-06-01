@@ -30,6 +30,11 @@ except ImportError as e:
     dateutil_rrule = e
 
 try:
+    import yaml
+except ImportError as e:
+    yaml = e
+
+try:
     from . import croniter_hash
 except ImportError as e:
     croniter_hash = e
@@ -48,12 +53,17 @@ def dict_merge(s, m):
     return out
 
 
-def json_load_file(file, delete_during=False):
+def load_structured_file(file, type="json", delete_during=False):
+    if type == "yaml" and isinstance(yaml, ImportError):
+        raise ImportError("yaml not available")
     with open(file) as f:
         if delete_during:
             os.remove(file)
         try:
-            return json.load(f)
+            if type == "yaml":
+                return yaml.safe_load(f)
+            else:
+                return json.load(f)
         except ValueError as e:
             e.args += (file,)
             raise

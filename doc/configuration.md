@@ -1,23 +1,43 @@
 # Configuration
 
-dsari is configured via a JSON file, `dsari.json`.
-Here is a sample format:
+dsari is configured via YAML and/or JSON files, beginning with `dsari.yaml` and `dsari.json`.
+JSON files take precedence, in that `.json` files will be merged after `.yaml` files.
 
-    {
-        "shutdown_kill_runs": true,
-        "jobs": {
-            "sample-job": {
-                "command": ["/usr/bin/env"],
-                "schedule": "H/5 * * * *",
-                "concurrency_groups": ["sample-group"]
-            }
-        },
-        "concurrency_groups": {
-            "sample-group": {
-                "max": 1
-            }
+Here is a sample `dsari.yaml`:
+
+```yaml
+shutdown_kill_runs: true
+jobs:
+  sample-job:
+    command:
+    - /usr/bin/env
+    schedule: "H/5 * * * *"
+    concurrency_groups:
+    - sample-group
+concurrency_groups:
+  sample-group:
+    max: 1
+```
+
+And the equivalent `dsari.json`:
+
+```json
+{
+    "shutdown_kill_runs": true,
+    "jobs": {
+        "sample-job": {
+            "command": ["/usr/bin/env"],
+            "schedule": "H/5 * * * *",
+            "concurrency_groups": ["sample-group"]
+        }
+    },
+    "concurrency_groups": {
+        "sample-group": {
+            "max": 1
         }
     }
+}
+```
 
 ## Main
 
@@ -25,16 +45,23 @@ Main options are in the root of the configuration array.
 
 ### config_d
 
-    "config_d": "/path/to/additional/config/dir"
+Example:
+```yaml
+config_d: /path/to/additional/config/dir
+```
 
 Default: "config.d" subdirectory of configuration directory
 
-Additional configuration JSON files may be placed in the config.d subdirectory, and will be merged into the main configuration from `dsari.json`.
-Files must end in `.json`, and are loaded in alphanumeric order.
+Additional configuration YAML/JSON files may be placed in the config.d subdirectory, and will be merged into the main configuration from `dsari.yaml` and `dsari.json`.
+Files must end in `.yaml` or `.json`, and are loaded in alphanumeric order.
+JSON files take precedence, in that `.json` files will be merged after `.yaml` files.
 
 ### data_dir
 
-    "data_dir": "/path/to/data/dir"
+Example:
+```yaml
+data_dir: /path/to/data/dir
+```
 
 Default: *varies by installation*
 
@@ -42,10 +69,12 @@ Overridden path to the data (var) directory.
 
 ### database
 
-    "database": {
-        "type": "sqlite3",
-        "file": "/path/to/dsari.sqlite3"
-    }
+Example:
+```yaml
+database:
+  type: sqlite3
+  file: /path/to/dsari.sqlite3
+```
 
 Default: *automatically generated sqlite3 configuration*
 
@@ -54,9 +83,11 @@ For more information, see the [database documentation](database.md).
 
 ### environment
 
-    "environment": {
-        "ENV_NAME": "value"
-    }
+Example:
+```yaml
+environment:
+  ENV_NAME: value
+```
 
 Default: {}
 
@@ -64,7 +95,10 @@ An associative array of environment variables to be set for all jobs' runs.
 
 ### shutdown_kill_runs
 
-    "shutdown_kill_runs": true
+Example:
+```yaml
+shutdown_kill_runs: true
+```
 
 Default: false
 
@@ -74,7 +108,10 @@ If true, `dsari-daemon` sends a SIGTERM to running jobs and waits for them to fi
 
 ### shutdown_kill_grace
 
-    "shutdown_kill_grace": 5.0
+Example:
+```yaml
+shutdown_kill_grace: 5.0
+```
 
 Default: null
 
@@ -83,7 +120,10 @@ Note that individual jobs also have a grace period ("max_execution_grace"), whic
 
 ### template_dir
 
-    "template_dir": "/path/to/custom/templates"
+Example:
+```yaml
+template_dir: /path/to/custom/templates
+```
 
 Default: *varies by installation*
 
@@ -96,7 +136,13 @@ Each job definition may have the following options:
 
 ### command
 
-    "command": ["ssh", "host", "command"]
+Example:
+```yaml
+command:
+- ssh
+- host
+- command
+```
 
 Default: null (but required)
 
@@ -108,7 +154,10 @@ However, for the most accurate command interpretation, an array is recommended.
 
 ### command_append_run
 
-    "command_append_run": true
+Example:
+```yaml
+command_append_run: true
+```
 
 Default: false
 
@@ -116,7 +165,10 @@ If true, two arguments are appended to the command when run: the job name, and t
 
 ### schedule
 
-    "schedule": "H/5 * * * *"
+Example:
+```yaml
+schedule: "H/5 * * * *"
+```
 
 Default: null
 
@@ -125,9 +177,11 @@ If not set, no recurring schedule is set up, and the job only responds to [manua
 
 ### environment
 
-    "environment": {
-        "ENV_NAME": "value"
-    }
+Example:
+```yaml
+environment:
+  ENV_NAME: value
+```
 
 Default: {}
 
@@ -135,7 +189,10 @@ An associative array of environment variables to be set for the job's run.
 
 ### max_execution
 
-    "max_execution": 300.0
+Example:
+```yaml
+max_execution: 300.0
+```
 
 Default: null (wait forever)
 
@@ -145,7 +202,10 @@ If the run does not exit within "max_execution_grace" seconds of the SIGTERM, it
 
 ### max_execution_grace
 
-    "max_execution_grace": 60.0
+Example:
+```yaml
+max_execution_grace: 60.0
+```
 
 Default: 60.0
 
@@ -155,7 +215,12 @@ If the run does not exit within this number of seconds of the SIGTERM, it will b
 
 ### concurrency_groups
 
-    "concurrency_groups": ["group-a", "group-b"]
+Example:
+```yaml
+concurrency_groups:
+- group-a
+- group-b
+```
 
 Default: []
 
@@ -165,13 +230,19 @@ A list of [concurrency groups](concurrency.md) the job is a member of.
 
 Default: true
 
-    "render_reports": false
+Example:
+```yaml
+render_reports: false
+```
 
 If false, the job and all of its runs will be hidden from `dsari-render`.
 
 ### jenkins_environment
 
-    "jenkins_environment": true
+Example:
+```yaml
+jenkins_environment: true
+```
 
 Default: false
 
@@ -193,14 +264,20 @@ They can be individually overridden by explicit `environment` options.
 
 Default: null
 
-    "job_group": "sample-job"
+Example:
+```yaml
+job_group: sample-job
+```
 
 If set, the `JOB_GROUP` environment variable is set to this during a run.
 Normally this is not set by hand, but is set automatically when a job_groups definition (see below) is expanded into multiple jobs.
 
 ### concurrent_runs
 
-    "concurrent_runs": true
+Example:
+```yaml
+concurrent_runs: true
+```
 
 Default: false
 
@@ -219,35 +296,32 @@ Job groups are a way to save configuration effort when you have multiple jobs wi
 
 For example, this:
 
-    {
-        "job_groups": {
-            "sample-jobs": {
-                "job_names": [
-                    "sample-job-1",
-                    "sample-job-2"
-                ],
-                "command": ["job-wrapper"],
-                "schedule": "H H * * *"
-            }
-        }
-    }
+```yaml
+job_groups:
+  sample-jobs:
+    job_names:
+    - sample-job-1
+    - sample-job-2
+    command:
+    - job-wrapper
+    schedule: "H H * * *"
+```
 
 is the exact same as this:
 
-    {
-        "jobs": {
-            "sample-job-1": {
-                "command": ["job-wrapper"],
-                "schedule": "H H * * *",
-                "job_group": "sample-jobs"
-            },
-            "sample-job-2": {
-                "command": ["job-wrapper"],
-                "schedule": "H H * * *",
-                "job_group": "sample-jobs"
-            }
-        }
-    }
+```yaml
+jobs:
+  sample-job-1:
+    command:
+    - job-wrapper
+    schedule: "H H * * *"
+    job_group: sample-jobs
+  sample-job-2:
+    command:
+    - job-wrapper
+    schedule: "H H * * *"
+    job_group: sample-jobs
+```
 
 When a job_groups definition is internally expanded into multiple jobs, the group name is added to each job as "job_group", which sets the `JOB_GROUP` environment variable.
 
@@ -258,7 +332,10 @@ Each concurrency group definition may have the following options:
 
 ### max
 
-    "max": 2
+Example:
+```yaml
+max: 2
+```
 
 Default: 1
 

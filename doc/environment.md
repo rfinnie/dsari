@@ -11,21 +11,23 @@ For example, the MAILNAME of the user starting `dsari-daemon` is not set, even i
 
 The following variables should always be present in a run:
 
-    CI=true
-    DSARI=true
-    LOGNAME=user
-    HOME=/home/user
-    PWD=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    PATH=/usr/bin:/bin
-    DATA_DIR=/home/user/.dsari/var
-    JOB_NAME=sample-job
-    JOB_DIR=home/user/.dsari/var/runs/sample-job
-    RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    RUN_DIR=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    SCHEDULE_TIME=1460822675.99
-    START_TIME=1460822677.34
-    TRIGGER_TYPE=schedule
-    TRIGGER_DIR=/home/user/.dsari/var/trigger
+```bash
+CI=true
+DSARI=true
+LOGNAME=user
+HOME=/home/user
+PWD=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+PATH=/usr/bin:/bin
+DATA_DIR=/home/user/.dsari/var
+JOB_NAME=sample-job
+JOB_DIR=home/user/.dsari/var/runs/sample-job
+RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+RUN_DIR=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+SCHEDULE_TIME=1460822675.99
+START_TIME=1460822677.34
+TRIGGER_TYPE=schedule
+TRIGGER_DIR=/home/user/.dsari/var/trigger
+```
 
 ### CI / DSARI
 
@@ -70,8 +72,9 @@ The directory used by the run for storing the execution output (output.txt).
 By default, this will be the same as PWD at command execution time, but shells will usually update PWD when the cwd is changed during the script (see above).
 PWD may also be defined by the job and/or trigger and hence may be different at command execution time, so RUN_DIR may be easily referred to for knowing where output.txt is stored.
 
-A run may also write a file named `return_data.json` in this directory.
-If it exists when the run is completed, it is read and, if valid JSON, added as the "return_data" key of the run_data column.
+A run may also write a file named `return_data.yaml` or `return_data.json` in this directory.
+If both files exist, `return_data.json` will be taken over `return_data.yaml`.
+If it exists when the run is completed, it is read and, if valid YAML/JSON, added as the "return_data" key of the run_data column.
 
 ### SCHEDULE_TIME
 
@@ -88,29 +91,31 @@ The type of event which triggered the run, either "schedule" or "file".
 ### TRIGGER_DIR
 
 The base directory used for triggers.
-This may be used to construct a trigger (${TRIGGER_DIR}/${OTHER_JOB}/trigger.json) for cascading job runs.
+This may be used to construct a trigger (`${TRIGGER_DIR}/${OTHER_JOB}/trigger.yaml` or `${TRIGGER_DIR}/${OTHER_JOB}/trigger.json`) for cascading job runs.
 
 ## Conditional
 
 The following variables may be present depending on how the job and/or run were set up:
 
-    CONCURRENCY_GROUP=host-a_group
-    JOB_GROUP=common-jobs
-    PREVIOUS_RUN_ID=281b8322-cf1d-44f4-8d23-889a6c5051e9
-    PREVIOUS_SCHEDULE_TIME=1460224658.62
-    PREVIOUS_START_TIME=1460224658.84
-    PREVIOUS_STOP_TIME=1460224661.02
-    PREVIOUS_EXIT_CODE=0
-    PREVIOUS_GOOD_RUN_ID=281b8322-cf1d-44f4-8d23-889a6c5051e9
-    PREVIOUS_GOOD_SCHEDULE_TIME=1460224658.62
-    PREVIOUS_GOOD_START_TIME=1460224658.84
-    PREVIOUS_GOOD_STOP_TIME=1460224661.02
-    PREVIOUS_GOOD_EXIT_CODE=0
-    PREVIOUS_BAD_RUN_ID=0edc1a75-9a2e-4588-8722-fc52596b6041
-    PREVIOUS_BAD_SCHEDULE_TIME=1460216442.33
-    PREVIOUS_BAD_START_TIME=1460216443.14
-    PREVIOUS_BAD_STOP_TIME=1460216484.66
-    PREVIOUS_BAD_EXIT_CODE=2
+```bash
+CONCURRENCY_GROUP=host-a_group
+JOB_GROUP=common-jobs
+PREVIOUS_RUN_ID=281b8322-cf1d-44f4-8d23-889a6c5051e9
+PREVIOUS_SCHEDULE_TIME=1460224658.62
+PREVIOUS_START_TIME=1460224658.84
+PREVIOUS_STOP_TIME=1460224661.02
+PREVIOUS_EXIT_CODE=0
+PREVIOUS_GOOD_RUN_ID=281b8322-cf1d-44f4-8d23-889a6c5051e9
+PREVIOUS_GOOD_SCHEDULE_TIME=1460224658.62
+PREVIOUS_GOOD_START_TIME=1460224658.84
+PREVIOUS_GOOD_STOP_TIME=1460224661.02
+PREVIOUS_GOOD_EXIT_CODE=0
+PREVIOUS_BAD_RUN_ID=0edc1a75-9a2e-4588-8722-fc52596b6041
+PREVIOUS_BAD_SCHEDULE_TIME=1460216442.33
+PREVIOUS_BAD_START_TIME=1460216443.14
+PREVIOUS_BAD_STOP_TIME=1460216484.66
+PREVIOUS_BAD_EXIT_CODE=2
+```
 
 ### CONCURRENCY_GROUP
 
@@ -147,14 +152,16 @@ Set if a previous run has been completed, and it was a bad (not exit 0) run.
 
 The following variables are set if the job has the `jenkins_envionment` option set:
 
-    BUILD_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    BUILD_NUMBER=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    BUILD_TAG=dsari-sample-job-fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    BUILD_URL=file:///home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75/
-    EXECUTOR_NUMBER=0
-    JENKINS_URL=file:///home/user/.dsari/var/
-    NODE_NAME=master
-    WORKSPACE=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+```bash
+BUILD_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+BUILD_NUMBER=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+BUILD_TAG=dsari-sample-job-fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+BUILD_URL=file:///home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75/
+EXECUTOR_NUMBER=0
+JENKINS_URL=file:///home/user/.dsari/var/
+NODE_NAME=master
+WORKSPACE=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+```
 
 ### BUILD_ID / BUILD_NUMBER
 
@@ -186,46 +193,46 @@ Set to the run directory (cwd of the run).
 
 ## Global-Defined Configuration
 
-The global dsari.json may have multiple arbitrary variables set for all jobs' runs in the installation.
+The global configuration may have multiple arbitrary variables set for all jobs' runs in the installation.
 For example:
 
-    {
-        "environment": {
-            "INSTALLATION_LOCATION": "dc-west",
-            "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-        }
-    }
+```yaml
+environment:
+- INSTALLATION_LOCATION: dc-west
+- PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+```
 
 would produce:
 
-    INSTALLATION_LOCATION=dc-west
-    PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin/sbin
+```bash
+INSTALLATION_LOCATION=dc-west
+PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin/sbin
+```
 
 Globally-defined variables always override automatically-generated variables.
 In certain situations this is desirable (for example, PATH), but it wouldn't be a good idea to override e.g. RUN_ID.
 
 ## Job-Defined
 
-The run can have multiple arbitrary variables set as defined in the job's JSON.
+The run can have multiple arbitrary variables set as defined in the job's configuration.
 For example:
 
-    {
-        "jobs": {
-            "example_job": {
-                "environment": {
-                    "JOB_LOCATION": "datacenter",
-                    "JOB_CONTACT": "Jane User <jane@example.com>",
-                    "PATH": "/usr/local/bin:/usr/bin:/bin"
-                }
-            }
-        }
-    }
+```yaml
+jobs:
+  example_job:
+    environment:
+    - JOB_LOCATION: datacenter
+    - JOB_CONTACT: "Jane User <jane@example.com>"
+    - PATH: "/usr/local/bin:/usr/bin:/bin"
+```
 
 would produce:
 
-    JOB_LOCATION=datacenter
-    JOB_CONTACT="Jane User <jane@example.com>"
-    PATH=/usr/local/bin:/usr/bin:/bin
+```bash
+JOB_LOCATION=datacenter
+JOB_CONTACT="Jane User <jane@example.com>"
+PATH=/usr/local/bin:/usr/bin:/bin
+```
 
 Job-defined variables always override globally-defined and automatically-generated variables.
 
@@ -234,18 +241,19 @@ Job-defined variables always override globally-defined and automatically-generat
 [Triggers](triggers.md) may also set environment variables.
 For example:
 
-    {
-        "type": "git",
-        "description": "A new commit has been detected",
-        "environment": {
-            "GIT_COMMIT": "d1700a76c4e703040fa4545c9a40d702fb23e8eb",
-            "GIT_AUTHOR": "Joe User <joe@example.com>"
-        }
-    }
+```yaml
+type: git
+description: "A new commit has been detected"
+environment:
+- GIT_COMMIT: d1700a76c4e703040fa4545c9a40d702fb23e8eb
+- GIT_AUTHOR: "Joe User <joe@example.com>"
+```
 
 would produce:
 
-    GIT_COMMIT=d1700a76c4e703040fa4545c9a40d702fb23e8eb
-    GIT_AUTHOR="Joe User <joe@example.com>"
+```bash
+GIT_COMMIT=d1700a76c4e703040fa4545c9a40d702fb23e8eb
+GIT_AUTHOR="Joe User <joe@example.com>"
+```
 
 Trigger-defined variables always override job-defined, globally-defined and automatically-generated variables.

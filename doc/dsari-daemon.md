@@ -17,7 +17,7 @@ It reads a configuration file containing job information, and schedules runs of 
 
 --config-dir=*directory*, -c *directory*
 :   Base configuration directory.
-    A file named `dsari.json` is expected in this directory.
+    Files named `dsari.yaml` and/or `dsari.json` are expected in this directory.
 
 --fork
 :   Fork into the background after starting.

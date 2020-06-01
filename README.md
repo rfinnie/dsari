@@ -9,6 +9,7 @@ Job scheduling is handled via `dsari-daemon`, while `dsari-render` may be used t
 dsari requires Python 3.4 or later, and will run on Unix-based platforms.
 It may use the following non-core packages:
 
+  - [`PyYAML`](https://pypi.org/project/PyYAML/), for using YAML files as configuration files, triggers, etc
   - [`croniter`](https://pypi.python.org/pypi/croniter), for parsing cron-style schedule definitions
   - [`python-dateutil`](https://pypi.python.org/pypi/python-dateutil), for parsing iCalendar RRULE-style schedule definitions
   - [`Jinja2`](https://pypi.python.org/pypi/Jinja2), for rendering HTML reports
@@ -29,9 +30,11 @@ All non-core packages are optional, with the following limitations:
 
 dsari may be installed as any normal Python package:
 
-    $ sudo python3 setup.py install
+```
+$ sudo python3 setup.py install
+```
 
-When this is done, dsari will expect its configuration file -- `dsari.json` -- in `/usr/local/etc/dsari/`, and will store its data in `/usr/local/lib/dsari/`.
+When this is done, dsari will expect its configuration file -- `dsari.yaml` and/or `dsari.json` -- in `/usr/local/etc/dsari/`, and will store its data in `/usr/local/lib/dsari/`.
 
 These locations may be customized by passing `-c` argument to `dsari-*` to specify the configuration directory, and the `data_dir` configuration option, respectively.
 
@@ -44,16 +47,28 @@ The rest of these documents assume a locally-running setup, i.e. `~/.dsari/`.
 
 ## Configuration
 
-A basic configuration for `dsari.json` looks as follows:
+A basic configuration for `dsari.yaml` looks as follows:
 
-    {
-        "jobs": {
-            "sample-job": {
-                "command": ["/usr/bin/env"],
-                "schedule": "H/5 * * * *"
-            }
+```yaml
+jobs:
+  sample-job:
+    command:
+    - /usr/bin/env
+    schedule: "H/5 * * * *"
+```
+
+or for `dsari.json`:
+
+```json
+{
+    "jobs": {
+        "sample-job": {
+            "command": ["/usr/bin/env"],
+            "schedule": "H/5 * * * *"
         }
     }
+}
+```
 
 This defines a job named "sample-job", which is run every 5 minutes.
 Many more configuration options are available in the `doc/` directory.
@@ -69,27 +84,31 @@ Runs are identified by a UUID, the run output is stored in `~/.dsari/var/runs/`,
 
 When a run is executed, several environment variables are passed to the program to be run:
 
-    CI=true
-    DSARI=true
-    JOB_NAME=sample-job
-    RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    PREVIOUS_RUN_ID=e5bd61b3-27f3-46ca-8169-372433056fc2
-    PREVIOUS_SCHEDULE_TIME=1437004689.27
-    PREVIOUS_START_TIME=1437004689.65
-    PREVIOUS_STOP_TIME=1437004689.71
-    PREVIOUS_EXIT_CODE=0
+```bash
+CI=true
+DSARI=true
+JOB_NAME=sample-job
+RUN_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+PREVIOUS_RUN_ID=e5bd61b3-27f3-46ca-8169-372433056fc2
+PREVIOUS_SCHEDULE_TIME=1437004689.27
+PREVIOUS_START_TIME=1437004689.65
+PREVIOUS_STOP_TIME=1437004689.71
+PREVIOUS_EXIT_CODE=0
+```
 
 `PREVIOUS_*` variables are not set if there is no previous run.
 In addition, several extra environment variables are present, if the job's `jenkins_environment` option is set, to aid with migrations from Jenkins setups:
 
-    BUILD_NUMBER=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    BUILD_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    BUILD_URL=file:///home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75/
-    NODE_NAME=master
-    BUILD_TAG=dsari-sample-job-fa0490b8-7a8e-4f6b-b73c-160199a9ff75
-    JENKINS_URL=file:///home/user/.dsari/var/
-    EXECUTOR_NUMBER=0
-    WORKSPACE=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+```bash
+BUILD_NUMBER=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+BUILD_ID=fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+BUILD_URL=file:///home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75/
+NODE_NAME=master
+BUILD_TAG=dsari-sample-job-fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+JENKINS_URL=file:///home/user/.dsari/var/
+EXECUTOR_NUMBER=0
+WORKSPACE=/home/user/.dsari/var/runs/sample-job/fa0490b8-7a8e-4f6b-b73c-160199a9ff75
+```
 
 ## Reports
 

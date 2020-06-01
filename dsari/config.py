@@ -84,29 +84,40 @@ class ConfigLoader:
 
     def load_dir(self, config_dir=DEFAULT_CONFIG_DIR):
         config = {}
-        if os.path.exists(os.path.join(config_dir, "dsari.json")):
-            try:
-                config = utils.json_load_file(os.path.join(config_dir, "dsari.json"))
-            except ValueError as e:
-                raise ConfigError(e)
+        for fn, type in [("dsari.yaml", "yaml"), ("dsari.json", "json")]:
+            if os.path.exists(os.path.join(config_dir, fn)):
+                try:
+                    config = utils.dict_merge(
+                        config,
+                        utils.load_structured_file(
+                            os.path.join(config_dir, fn), type=type
+                        ),
+                    )
+                except (ValueError, ImportError) as e:
+                    raise ConfigError(e)
         self.config.config_d = os.path.join(config_dir, "config.d")
         if "config_d" in config:
             self.config.config_d = config["config_d"]
         if self.config.config_d and os.path.isdir(self.config.config_d):
             config_d = self.config.config_d
-            config_files = [
-                os.path.join(config_d, fn)
-                for fn in os.listdir(config_d)
-                if fn.endswith(".json")
-                and os.path.isfile(os.path.join(config_d, fn))
-                and os.access(os.path.join(config_d, fn), os.R_OK)
-            ]
-            config_files.sort()
-            for file in config_files:
-                try:
-                    config = utils.dict_merge(config, utils.json_load_file(file))
-                except ValueError as e:
-                    raise ConfigError(e)
+
+            for type in ["yaml", "json"]:
+                config_files = [
+                    os.path.join(config_d, fn)
+                    for fn in os.listdir(config_d)
+                    if fn.endswith("." + type)
+                    and os.path.isfile(os.path.join(config_d, fn))
+                    and os.access(os.path.join(config_d, fn), os.R_OK)
+                ]
+                config_files.sort()
+                for file in config_files:
+                    try:
+                        config = utils.dict_merge(
+                            config, utils.load_structured_file(file, type=type)
+                        )
+                    except (ValueError, ImportError) as e:
+                        raise ConfigError(e)
+
         self.load(config)
 
     def populate_object(self, obj, level, source, valid_values, value_transforms):

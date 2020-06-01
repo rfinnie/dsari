@@ -45,9 +45,11 @@ import dsari.database
 from dsari.utils import dt_to_epoch, epoch_to_dt
 from dsari.utils import seconds_to_td, td_to_seconds
 from dsari.utils import (
-    json_load_file,
+    dict_merge,
     get_next_schedule_time,
+    load_structured_file,
     validate_environment_dict,
+    yaml,
 )
 
 __version__ = dsari.__version__
@@ -512,14 +514,27 @@ class Scheduler:
                 job.name, run.id, child_exit, (run.stop_time - run.start_time)
             )
         )
-        return_data_fn = os.path.join(
-            self.config.data_dir, "runs", job.name, run.id, "return_data.json"
-        )
-        if os.path.exists(return_data_fn):
+
+        return_data_file = None
+        return_data_file_type = None
+        for fn, type in [("return_data.json", "json"), ("return_data.yaml", "yaml")]:
+            test_file = os.path.join(self.config.data_dir, "runs", job.name, run.id, fn)
+            if not os.path.exists(test_file):
+                continue
+            if type == "yaml" and isinstance(yaml, ImportError):
+                # Maybe warn here
+                continue
+            return_data_file = test_file
+            return_data_file_type = type
+            break
+        if return_data_file is not None:
             try:
-                run.run_data["return_data"] = json_load_file(return_data_fn)
+                run.run_data["return_data"] = load_structured_file(
+                    return_data_file, type=return_data_file_type
+                )
             except Exception:
                 pass
+
         self.db.insert_run(run)
         self.running_runs.remove(run)
         if run.concurrency_group and run in self.running_groups[run.concurrency_group]:
@@ -533,14 +548,25 @@ class Scheduler:
             self.process_trigger_job(job)
 
     def process_trigger_job(self, job):
-        trigger_file = os.path.join(
-            self.config.data_dir, "trigger", job.name, "trigger.json"
-        )
-        if not os.path.exists(trigger_file):
+        trigger_file = None
+        trigger_file_type = None
+        for fn, type in [("trigger.json", "json"), ("trigger.yaml", "yaml")]:
+            test_file = os.path.join(self.config.data_dir, "trigger", job.name, fn)
+            if not os.path.exists(test_file):
+                continue
+            if type == "yaml" and isinstance(yaml, ImportError):
+                # Maybe warn here
+                continue
+            trigger_file = test_file
+            trigger_file_type = type
+            break
+        if trigger_file is None:
             return
         t = epoch_to_dt(os.path.getmtime(trigger_file))
         try:
-            j = json_load_file(trigger_file, delete_during=True)
+            j = load_structured_file(
+                trigger_file, type=trigger_file_type, delete_during=True
+            )
         except IOError:
             # Likely during open()
             # Return silently, otherwise we spam the log during each loop
