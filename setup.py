@@ -18,7 +18,8 @@ def read(filename):
 setup(
     name="dsari",
     description="Do Something and Record It",
-    long_description=read("README"),
+    long_description=read("README.md"),
+    # long_description_content_type="text/markdown",  # Safe to add circa 2023
     version=dsari.__version__,
     license="GPLv2+",
     platforms=["Unix"],
@@ -40,7 +41,6 @@ setup(
         "Topic :: Software Development :: Quality Assurance",
         "Topic :: Software Development :: Testing",
     ],
-    install_requires=["croniter", "python-dateutil", "Jinja2>=2.4"],
     entry_points={
         "console_scripts": [
             "dsari-daemon = dsari.daemon:main",
