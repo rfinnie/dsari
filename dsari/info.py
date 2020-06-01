@@ -30,7 +30,7 @@ import sys
 import dsari
 import dsari.config
 import dsari.database
-from dsari.utils import get_next_schedule_time, json_pretty_print, td_to_seconds
+from dsari.utils import get_next_schedule_time, json_pretty_print, td_to_seconds, yaml
 
 __version__ = dsari.__version__
 
@@ -205,10 +205,13 @@ def parse_args():
             action="append",
             help="job name to filter (can be given multiple times)",
         )
+        format_choices = ["pretty", "tabular", "json"]
+        if not isinstance(yaml, ImportError):
+            format_choices.append("yaml")
         p.add_argument(
             "--format",
             type=str,
-            choices=["pretty", "tabular", "json"],
+            choices=format_choices,
             default="pretty",
             help="output format",
         )
@@ -364,6 +367,9 @@ class Info:
         if self.args.format == "json":
             with AutoPager() as pager:
                 print(json_pretty_print(jobs), file=pager)
+        elif self.args.format == "yaml":
+            with AutoPager() as pager:
+                print(yaml.safe_dump(jobs), file=pager, end="")
         elif self.args.format == "tabular":
             with AutoPager() as pager:
                 for job_name in sorted(jobs):
@@ -402,7 +408,7 @@ class Info:
         runs = self.db.get_runs(
             job_names=job_names, run_ids=run_ids, runs_running=False
         ) + self.db.get_runs(job_names=job_names, run_ids=run_ids, runs_running=True)
-        if self.args.format == "json":
+        if self.args.format in ("json", "yaml"):
             out = {}
             for run in runs:
                 out[run.id] = {
@@ -418,7 +424,10 @@ class Info:
                     "run_data": run.run_data,
                 }
             with AutoPager() as pager:
-                print(json_pretty_print(out), file=pager)
+                if self.args.format == "json":
+                    print(json_pretty_print(out), file=pager)
+                elif self.args.format == "yaml":
+                    print(yaml.safe_dump(out), file=pager, end="")
         elif self.args.format == "tabular":
             with AutoPager() as pager:
                 for run in sorted(runs, key=lambda run: run.start_time):
