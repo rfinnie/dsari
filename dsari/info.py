@@ -217,7 +217,7 @@ def parse_args():
         )
 
     parser_get_output.add_argument("run", type=str, default=None, help="run UUID")
-    parser_tail_output.add_argument("run", type=str, nargs="+", help="run UUID")
+    parser_tail_output.add_argument("run", type=str, nargs="*", help="run UUID")
 
     parser_list_runs.add_argument(
         "--run",
@@ -534,7 +534,9 @@ class Info:
                     pager.write(l)
 
     def cmd_tail_run_output(self):
-        runs = self.db.get_runs(run_ids=self.args.run, runs_running=True)
+        runs = self.db.get_runs(
+            run_ids=(self.args.run if self.args.run else None), runs_running=True
+        )
         filenames = []
         for run in runs:
             filename = os.path.join(
