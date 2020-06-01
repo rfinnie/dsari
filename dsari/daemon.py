@@ -340,7 +340,7 @@ class Scheduler:
             self.wakeups.append(now + sigkill_grace)
         elif delta > job.max_execution:
             if not run.term_sent:
-                self.logger.warn(
+                self.logger.warning(
                     "[{} {}] Max execution ({}) exceeded, sending SIGTERM to {}".format(
                         job.name, run.id, job.max_execution, run.pid
                     )
