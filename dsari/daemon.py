@@ -27,6 +27,7 @@ import os
 import pwd
 import random
 import signal
+import sys
 import time
 
 try:
@@ -109,11 +110,6 @@ def parse_args():
     parser.add_argument(
         "--debug", action="store_true", help="output additional debugging information"
     )
-    parser.add_argument(
-        "--no-timestamp",
-        action="store_true",
-        help="do not show timestamps in logging output",
-    )
     return parser.parse_args()
 
 
@@ -126,13 +122,10 @@ class Scheduler:
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
         lh_console = logging.StreamHandler()
-        if self.args.no_timestamp:
-            lh_console_formatter = logging.Formatter("%(levelname)s: %(message)s")
-        else:
-            lh_console_formatter = logging.Formatter(
-                "[%(asctime)s] %(levelname)s: %(message)s"
-            )
-        lh_console.setFormatter(lh_console_formatter)
+        log_format = "%(levelname)s: %(message)s"
+        if sys.stdout.isatty():
+            log_format = "[%(asctime)s] " + log_format
+        lh_console.setFormatter(logging.Formatter(log_format))
         if self.args.debug:
             lh_console.setLevel(logging.DEBUG)
         else:
@@ -804,6 +797,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
-
     sys.exit(main())
