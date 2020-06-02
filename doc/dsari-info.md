@@ -22,19 +22,19 @@ check-config
 dump-config
 :   Dump a compiled, assembled configuration.
 
-    Options: *--raw*
+    Options: *\-\-raw*
 
 list-jobs
 :   List known jobs.
-    Note that while *list-jobs* *--format=json* looks like a valid job configuration array for dsari.json, it is not guaranteed to be.
-    For a guaranteed loadable configuration, use *dump-config*.
+    Note that while *\-\-format=yaml* or *\-\-format=json* look like valid job configurations, they are not guaranteed to be.
+    For a guaranteed loadable configuration, use *dump-config* instead.
 
-    Options: *--job*, *--format*
+    Options: *\-\-job*, *\-\-format*
 
 list-runs
 :   List recorded runs.
 
-    Options: *--job*, *--run*, *--format*, *--epoch*
+    Options: *\-\-job*, *\-\-run*, *\-\-format*
 
 get-run-output *run_id*
 :   Print the collected output of a run.
@@ -49,26 +49,23 @@ shell
 
 # OPTIONS
 
---config-dir=*directory*, -c *directory*
+\-\-config-dir=*directory*, -c *directory*
 :   Base configuration directory.
-    A file named `dsari.json` is expected in this directory.
+    A file named `dsari.yaml` and/or `dsari.json` is expected in this directory.
 
---job=*job_name* [--job=*job_name*]
+\-\-job=*job_name* [\-\-job=*job_name*]
 :   Job name to filter.
     Can be given multiple times.
 
---run=*run_id* [--run=*run_id*]
+\-\-run=*run_id* [\-\-run=*run_id*]
 :   Run ID to filter.
     Can be given multiple times.
 
---format=*format*
+\-\-format=*format*
 :   Output format to present data in.
-    Valid values: *tabular* (default), *json*
+    Valid values: *pretty* (default), *tabular*, *json*, *yaml*
 
---epoch
-:   Output times in Unix epoch format (seconds since 1970-01-01), instead of ISO 8601.
-
---raw
+\-\-raw
 :   For *dump-config*, instead of a compiled/normalized config, output the raw JSON config.
 
 # SEE ALSO

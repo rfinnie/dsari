@@ -65,7 +65,7 @@ def parse_args():
         "-c",
         type=str,
         default=dsari.config.DEFAULT_CONFIG_DIR,
-        help="configuration directory for dsari.json",
+        help="configuration directory",
     )
     parser.add_argument(
         "--regenerate", "-r", action="store_true", help="regenerate all reports"

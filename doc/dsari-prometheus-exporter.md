@@ -14,32 +14,32 @@ dsari-prometheus-exporter [*options*]
 
 # OPTIONS
 
---config-dir=*directory*, -c *directory*
+\-\-config-dir=*directory*, -c *directory*
 :   Base configuration directory.
-    A file named `dsari.json` is expected in this directory.
+    A file named `dsari.yaml` and/or `dsari.json` is expected in this directory.
 
---debug
+\-\-debug
 :   Print extra debugging information while running.
 
---metrics-path=*path*
+\-\-metrics-path=*path*
 :   Path to serve metrics from in daemon mode (default `/metrics`).
 
---listen-address=*address*
+\-\-listen-address=*address*
 :   IP address to listen on in daemon mode (default `0.0.0.0`).
 
---listen-port=*port*
+\-\-listen-port=*port*
 :   Port address to listen on in daemon mode (default `50575`).
 
---job-cache-time=*seconds*
+\-\-job-cache-time=*seconds*
 :   Seconds to cache non-running run metrics (default `120`).
 
---quantiles=*quantiles*
+\-\-quantiles=*quantiles*
 :   Comma-separated list of quantiles to use for summaries (default `0.01,0.1,0.5,0.9,0.99`).
 
---no-running
+\-\-no-running
 :   Do not gather running run metrics.
 
---dump
+\-\-dump
 :   Dump metrics to stdout and exit, do not start daemon.
 
 # WSGI

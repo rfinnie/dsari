@@ -102,7 +102,7 @@ def parse_args():
         "-c",
         type=str,
         default=dsari.config.DEFAULT_CONFIG_DIR,
-        help="configuration directory for dsari.json",
+        help="configuration directory",
     )
     parser.add_argument(
         "--fork", action="store_true", help="fork into the background after starting"

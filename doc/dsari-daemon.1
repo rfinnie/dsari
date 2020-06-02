@@ -15,15 +15,15 @@ It reads a configuration file containing job information, and schedules
 runs of the jobs.
 .SH OPTIONS
 .TP
-.B \[en]config\-dir=\f[I]directory\f[R], \-c \f[I]directory\f[R]
+.B \-\-config\-dir=\f[I]directory\f[R], \-c \f[I]directory\f[R]
 Base configuration directory.
 Files named \f[C]dsari.yaml\f[R] and/or \f[C]dsari.json\f[R] are
 expected in this directory.
 .TP
-.B \[en]fork
+.B \-\-fork
 Fork into the background after starting.
 .TP
-.B \[en]debug
+.B \-\-debug
 Print extra debugging information while running.
 .SH SIGNALS
 .TP
@@ -44,6 +44,10 @@ Outputs the current status of the \f[C]dsari\-daemon\f[R] process,
 including which jobs have runs in progress, and when the jobs\[cq] next
 runs are scheduled for.
 .SH SEE ALSO
+.IP \[bu] 2
+\f[C]dsari\-info\f[R]
+.IP \[bu] 2
+\f[C]dsari\-prometheus\-exporter\f[R]
 .IP \[bu] 2
 \f[C]dsari\-render\f[R]
 .IP \[bu] 2

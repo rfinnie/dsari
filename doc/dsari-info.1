@@ -26,26 +26,25 @@ Options: None
 Dump a compiled, assembled configuration.
 .RS
 .PP
-Options: \f[I]\[en]raw\f[R]
+Options: \f[I]\-\-raw\f[R]
 .RE
 .TP
 .B list\-jobs
 List known jobs.
-Note that while \f[I]list\-jobs\f[R] \f[I]\[en]format=json\f[R] looks
-like a valid job configuration array for dsari.json, it is not
-guaranteed to be.
-For a guaranteed loadable configuration, use \f[I]dump\-config\f[R].
+Note that while \f[I]\-\-format=yaml\f[R] or \f[I]\-\-format=json\f[R]
+look like valid job configurations, they are not guaranteed to be.
+For a guaranteed loadable configuration, use \f[I]dump\-config\f[R]
+instead.
 .RS
 .PP
-Options: \f[I]\[en]job\f[R], \f[I]\[en]format\f[R]
+Options: \f[I]\-\-job\f[R], \f[I]\-\-format\f[R]
 .RE
 .TP
 .B list\-runs
 List recorded runs.
 .RS
 .PP
-Options: \f[I]\[en]job\f[R], \f[I]\[en]run\f[R], \f[I]\[en]format\f[R],
-\f[I]\[en]epoch\f[R]
+Options: \f[I]\-\-job\f[R], \f[I]\-\-run\f[R], \f[I]\-\-format\f[R]
 .RE
 .TP
 .B get\-run\-output \f[I]run_id\f[R]
@@ -62,27 +61,25 @@ Enter a Python shell, with several dsari\-specific variables pre\-loaded
 (config, db, etc).
 .SH OPTIONS
 .TP
-.B \[en]config\-dir=\f[I]directory\f[R], \-c \f[I]directory\f[R]
+.B \-\-config\-dir=\f[I]directory\f[R], \-c \f[I]directory\f[R]
 Base configuration directory.
-A file named \f[C]dsari.json\f[R] is expected in this directory.
+A file named \f[C]dsari.yaml\f[R] and/or \f[C]dsari.json\f[R] is
+expected in this directory.
 .TP
-.B \[en]job=\f[I]job_name\f[R] [\[en]job=\f[I]job_name\f[R]]
+.B \-\-job=\f[I]job_name\f[R] [\-\-job=\f[I]job_name\f[R]]
 Job name to filter.
 Can be given multiple times.
 .TP
-.B \[en]run=\f[I]run_id\f[R] [\[en]run=\f[I]run_id\f[R]]
+.B \-\-run=\f[I]run_id\f[R] [\-\-run=\f[I]run_id\f[R]]
 Run ID to filter.
 Can be given multiple times.
 .TP
-.B \[en]format=\f[I]format\f[R]
+.B \-\-format=\f[I]format\f[R]
 Output format to present data in.
-Valid values: \f[I]tabular\f[R] (default), \f[I]json\f[R]
+Valid values: \f[I]pretty\f[R] (default), \f[I]tabular\f[R],
+\f[I]json\f[R], \f[I]yaml\f[R]
 .TP
-.B \[en]epoch
-Output times in Unix epoch format (seconds since 1970\-01\-01), instead
-of ISO 8601.
-.TP
-.B \[en]raw
+.B \-\-raw
 For \f[I]dump\-config\f[R], instead of a compiled/normalized config,
 output the raw JSON config.
 .SH SEE ALSO

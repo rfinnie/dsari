@@ -177,7 +177,7 @@ def parse_args():
         "-c",
         type=str,
         default=dsari.config.DEFAULT_CONFIG_DIR,
-        help="configuration directory for dsari.json",
+        help="configuration directory",
     )
 
     subparsers = parser.add_subparsers(dest="subcommand")

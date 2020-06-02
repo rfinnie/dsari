@@ -15,14 +15,14 @@ It reads a configuration file containing job information, and schedules runs of 
 
 # OPTIONS
 
---config-dir=*directory*, -c *directory*
+\-\-config-dir=*directory*, -c *directory*
 :   Base configuration directory.
     Files named `dsari.yaml` and/or `dsari.json` are expected in this directory.
 
---fork
+\-\-fork
 :   Fork into the background after starting.
 
---debug
+\-\-debug
 :   Print extra debugging information while running.
 
 # SIGNALS
@@ -41,5 +41,7 @@ It reads a configuration file containing job information, and schedules runs of 
 
 # SEE ALSO
 
+* `dsari-info`
+* `dsari-prometheus-exporter`
 * `dsari-render`
 * [dsari](https://github.com/rfinnie/dsari)

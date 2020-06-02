@@ -14,14 +14,14 @@ dsari-render [*options*]
 
 # OPTIONS
 
---config-dir=*directory*, -c *directory*
+\-\-config-dir=*directory*, -c *directory*
 :   Base configuration directory.
     Files named `dsari.yaml` and/or `dsari.json` are expected in this directory.
 
---regenerate, -r
+\-\-regenerate, -r
 :   (Re)generate all report files, even if `dsari-render` determines regeneration is not needed.
 
---debug
+\-\-debug
 :   Print extra debugging information while running.
 
 # SEE ALSO

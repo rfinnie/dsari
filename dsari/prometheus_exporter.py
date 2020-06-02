@@ -58,7 +58,7 @@ def parse_args(argv):
         "-c",
         type=str,
         default=dsari.config.DEFAULT_CONFIG_DIR,
-        help="configuration directory for dsari.json",
+        help="configuration directory",
     )
     parser.add_argument(
         "--metrics-path",
