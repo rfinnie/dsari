@@ -157,11 +157,30 @@ class Renderer:
             os.path.join(self.config.data_dir, "html", job.name, run.id)
         ):
             os.makedirs(os.path.join(self.config.data_dir, "html", job.name, run.id))
-        run.output = dsari.utils.read_output(
+        raw_output = dsari.utils.read_output(
             os.path.join(self.config.data_dir, "runs", job.name, run.id, "output.txt")
         )
-        if self.config.report_output_limit > 0:
-            run.output = run.output[(0 - self.config.report_output_limit) :]
+        raw_len = 0 if raw_output is None else len(raw_output)
+        limit_start = self.config.report_run_output_start
+        limit_end = self.config.report_run_output_end
+        limit_combined = limit_start + limit_end
+        if (
+            (raw_output is not None)
+            and (limit_start > 0 or limit_end > 0)
+            and (
+                raw_len > limit_combined
+                or (raw_len > limit_start and limit_start > 0)
+                or (raw_len > limit_end and limit_end > 0)
+            )
+        ):
+            run.output = ""
+            if limit_start > 0:
+                run.output += raw_output[0:limit_start]
+            run.output += "\n\n\n[...]\n\n\n"
+            if limit_end > 0:
+                run.output += raw_output[(0 - limit_end) :]
+        else:
+            run.output = raw_output
         self.logger.info("Writing {}".format(run_html_filename))
         context = {"run": run}
         write_html_file(run_html_filename, self.run_template.render(context))

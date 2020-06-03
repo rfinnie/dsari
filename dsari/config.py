@@ -61,7 +61,8 @@ class Config:
         self.data_dir = DEFAULT_DATA_DIR
         self.template_dir = None
         self.report_html_gz = False
-        self.report_output_limit = 0
+        self.report_run_output_start = 0
+        self.report_run_output_end = 0
         self.shutdown_kill_runs = False
         self.shutdown_kill_grace = None
         self.environment = {}
@@ -148,7 +149,8 @@ class ConfigLoader:
             "data_dir": (str,),
             "template_dir": (str,),
             "report_html_gz": (bool,),
-            "report_output_limit": (int,),
+            "report_run_output_start": (int,),
+            "report_run_output_end": (int,),
             "shutdown_kill_runs": (bool,),
             "shutdown_kill_grace": (int, float),
             "environment": (dict,),
