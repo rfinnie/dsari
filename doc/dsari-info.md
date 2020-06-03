@@ -22,7 +22,7 @@ check-config
 dump-config
 :   Dump a compiled, assembled configuration.
 
-    Options: *\-\-raw*
+    Options: *\-\-raw*, *\-\-format*
 
 list-jobs
 :   List known jobs.

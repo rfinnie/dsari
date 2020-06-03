@@ -197,6 +197,16 @@ def parse_args():
         action="store_true",
         help="output raw config instead of compiled/normalized config",
     )
+    format_choices = ["json"]
+    if not isinstance(yaml, ImportError):
+        format_choices.append("yaml")
+    parser_dump_config.add_argument(
+        "--format",
+        type=str,
+        choices=format_choices,
+        default="json",
+        help="output format",
+    )
 
     for p in (parser_list_jobs, parser_list_runs):
         p.add_argument(
@@ -355,7 +365,10 @@ class Info:
                     "max": concurrency_group.max
                 }
         with AutoPager() as pager:
-            print(json_pretty_print(config), file=pager)
+            if self.args.format == "yaml":
+                print(yaml.safe_dump(config), file=pager, end="")
+            else:
+                print(json_pretty_print(config), file=pager)
 
     def cmd_check_config(self):
         print("Config OK")
