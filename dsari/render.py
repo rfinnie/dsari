@@ -24,16 +24,12 @@ import gzip
 import logging
 import os
 
-try:
-    import lzma
-except ImportError as e:
-    lzma = e
-
 import jinja2
 
 import dsari
 import dsari.config
 import dsari.database
+import dsari.utils
 
 __version__ = dsari.__version__
 
@@ -74,22 +70,6 @@ def parse_args():
         "--debug", action="store_true", help="output additional debugging information"
     )
     return parser.parse_args()
-
-
-def read_output(filename):
-    if os.path.isfile(filename):
-        with open(filename, "rb") as f:
-            return f.read().decode("utf-8")
-    elif os.path.isfile("{}.gz".format(filename)):
-        with gzip.open("{}.gz".format(filename), "rb") as f:
-            return f.read().decode("utf-8")
-    elif (not isinstance(lzma, ImportError)) and os.path.isfile(
-        "{}.xz".format(filename)
-    ):
-        with open("{}.xz".format(filename), "rb") as f:
-            return lzma.LZMADecompressor().decompress(f.read()).decode("utf-8")
-    else:
-        return None
 
 
 def write_html_file(filename, content):
@@ -177,7 +157,7 @@ class Renderer:
             os.path.join(self.config.data_dir, "html", job.name, run.id)
         ):
             os.makedirs(os.path.join(self.config.data_dir, "html", job.name, run.id))
-        run.output = read_output(
+        run.output = dsari.utils.read_output(
             os.path.join(self.config.data_dir, "runs", job.name, run.id, "output.txt")
         )
         self.logger.info("Writing {}".format(run_html_filename))

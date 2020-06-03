@@ -21,6 +21,7 @@
 import binascii
 import copy
 import datetime
+import gzip
 import json
 import os
 
@@ -28,6 +29,11 @@ try:
     import dateutil.rrule as dateutil_rrule
 except ImportError as e:
     dateutil_rrule = e
+
+try:
+    import lzma
+except ImportError as e:
+    lzma = e
 
 try:
     import yaml
@@ -135,3 +141,19 @@ def get_next_schedule_time(schedule, job_name, start_time=None):
 
 def json_pretty_print(v):
     return json.dumps(v, sort_keys=True, indent=4, separators=(",", ": "))
+
+
+def read_output(filename):
+    if os.path.isfile(filename):
+        with open(filename, "rb") as f:
+            return f.read().decode("utf-8")
+    elif os.path.isfile("{}.gz".format(filename)):
+        with gzip.open("{}.gz".format(filename), "rb") as f:
+            return f.read().decode("utf-8")
+    elif (not isinstance(lzma, ImportError)) and os.path.isfile(
+        "{}.xz".format(filename)
+    ):
+        with open("{}.xz".format(filename), "rb") as f:
+            return lzma.LZMADecompressor().decompress(f.read()).decode("utf-8")
+    else:
+        return None

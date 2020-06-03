@@ -529,9 +529,7 @@ class Info:
             self.config.data_dir, "runs", run.job.name, run.id, "output.txt"
         )
         with AutoPager() as pager:
-            with open(fn) as f:
-                for l in f:
-                    pager.write(l)
+            pager.write(dsari.utils.read_output(fn))
 
     def cmd_tail_run_output(self):
         runs = self.db.get_runs(
