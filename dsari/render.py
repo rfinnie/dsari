@@ -160,6 +160,8 @@ class Renderer:
         run.output = dsari.utils.read_output(
             os.path.join(self.config.data_dir, "runs", job.name, run.id, "output.txt")
         )
+        if self.config.report_output_limit > 0:
+            run.output = run.output[(0 - self.config.report_output_limit) :]
         self.logger.info("Writing {}".format(run_html_filename))
         context = {"run": run}
         write_html_file(run_html_filename, self.run_template.render(context))

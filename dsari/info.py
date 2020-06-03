@@ -340,6 +340,7 @@ class Info:
                 "data_dir",
                 "template_dir",
                 "report_html_gz",
+                "report_output_limit",
                 "shutdown_kill_runs",
                 "shutdown_kill_grace",
                 "environment",
