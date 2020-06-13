@@ -185,7 +185,7 @@ Set to a URL representation of the base var directory of the dsari installation.
 
 ### NODE_NAME
 
-Always set to "master".
+Always set to "master", (what Jenkins calls the primary node).
 
 ### WORKSPACE
 

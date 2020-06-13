@@ -21,7 +21,7 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Originally from:
-# https://github.com/rfinnie/dsari/blob/master/dsari/croniter_hash.py
+# https://github.com/rfinnie/dsari
 
 import binascii
 import random
