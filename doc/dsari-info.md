@@ -14,33 +14,33 @@ dsari-info *argument* [*options*]
 
 # ARGUMENTS
 
-check-config
+config check
 :   Check the configuration, return 0 for a valid configuration or 1 for invalid.
 
     Options: None
 
-dump-config
+config dump
 :   Dump a compiled, assembled configuration.
 
     Options: *\-\-raw*, *\-\-format*
 
-list-jobs
+job list
 :   List known jobs.
     Note that while *\-\-format=yaml* or *\-\-format=json* look like valid job configurations, they are not guaranteed to be.
     For a guaranteed loadable configuration, use *dump-config* instead.
 
     Options: *\-\-job*, *\-\-format*
 
-list-runs
+run list
 :   List recorded runs.
 
     Options: *\-\-job*, *\-\-run*, *\-\-format*
 
-get-run-output *run_id*
+run output *run_id*
 :   Print the collected output of a run.
     If a run is currently running, output collected until that point will be printed.
 
-tail-run-output [*run_id* [*run_id* [...]]]
+run tail [*run_id* [*run_id* [...]]]
 :   Monitor the output of running runs, as they are collected.
     If no runs specified, tail all running runs.
 

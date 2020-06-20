@@ -180,56 +180,65 @@ def parse_args():
         help="configuration directory",
     )
 
-    subparsers = parser.add_subparsers(dest="subcommand")
+    subparsers = parser.add_subparsers(dest="command")
     subparsers.required = True
-    parser_list_jobs = subparsers.add_parser("list-jobs", help="list jobs")
-    parser_list_runs = subparsers.add_parser("list-runs", help="list runs")
-    parser_get_output = subparsers.add_parser("get-run-output", help="get run output")
-    parser_tail_output = subparsers.add_parser(
-        "tail-run-output", help="tail run output"
+
+    parser_job = subparsers.add_parser("job", help="job commands")
+    subparsers_job = parser_job.add_subparsers(dest="command_job")
+    subparsers_job.required = True
+    parser_job_list = subparsers_job.add_parser("list", help="list jobs")
+
+    parser_run = subparsers.add_parser("run", help="run commands")
+    subparsers_run = parser_run.add_subparsers(dest="command_run")
+    subparsers_run.required = True
+    parser_run_list = subparsers_run.add_parser("list", help="list runs")
+    parser_run_get = subparsers_run.add_parser("output", help="get run output")
+    parser_run_tail = subparsers_run.add_parser("tail", help="tail run output")
+
+    parser_config = subparsers.add_parser("config", help="config commands")
+    subparsers_config = parser_config.add_subparsers(dest="command_config")
+    subparsers_config.required = True
+    parser_config_dump = subparsers_config.add_parser(
+        "dump", help="dump a compiled version of the loaded config"
     )
-    subparsers.add_parser("check-config", help="validate configuration")
-    parser_dump_config = subparsers.add_parser(
-        "dump-config", help="dump a compiled version of the loaded config"
-    )
-    parser_dump_config.add_argument(
+    subparsers_config.add_parser("check", help="validate configuration")
+
+    optional_formats = []
+    if not isinstance(yaml, ImportError):
+        optional_formats.append("yaml")
+
+    parser_config_dump.add_argument(
         "--raw",
         action="store_true",
         help="output raw config instead of compiled/normalized config",
     )
-    format_choices = ["json"]
-    if not isinstance(yaml, ImportError):
-        format_choices.append("yaml")
-    parser_dump_config.add_argument(
+    parser_config_dump.add_argument(
         "--format",
         type=str,
-        choices=format_choices,
+        choices=["json", *optional_formats],
         default="json",
         help="output format",
     )
 
-    for p in (parser_list_jobs, parser_list_runs):
+    for p in (parser_job_list, parser_run_list):
         p.add_argument(
             "--job",
             type=str,
             action="append",
             help="job name to filter (can be given multiple times)",
         )
-        format_choices = ["pretty", "tabular", "json"]
-        if not isinstance(yaml, ImportError):
-            format_choices.append("yaml")
         p.add_argument(
             "--format",
             type=str,
-            choices=format_choices,
+            choices=["pretty", "tabular", "json", *optional_formats],
             default="pretty",
             help="output format",
         )
 
-    parser_get_output.add_argument("run", type=str, default=None, help="run UUID")
-    parser_tail_output.add_argument("run", type=str, nargs="*", help="run UUID")
+    parser_run_get.add_argument("run", type=str, default=None, help="run UUID")
+    parser_run_tail.add_argument("run", type=str, nargs="*", help="run UUID")
 
-    parser_list_runs.add_argument(
+    parser_run_list.add_argument(
         "--run",
         type=str,
         action="append",
@@ -608,16 +617,20 @@ class Info:
             DsariConsole(locals=console_vars).interact()
 
     def main(self):
+        command = self.args.command
+        while hasattr(self.args, "command_{}".format(command)):
+            command = "{}_{}".format(command, getattr(self.args, "command_{}".format(command)))
+
         cmd_map = {
-            "dump-config": self.cmd_dump_config,
-            "check-config": self.cmd_check_config,
-            "list-jobs": self.cmd_list_jobs,
-            "list-runs": self.cmd_list_runs,
-            "get-run-output": self.cmd_get_run_output,
-            "tail-run-output": self.cmd_tail_run_output,
+            "config_check": self.cmd_check_config,
+            "config_dump": self.cmd_dump_config,
+            "job_list": self.cmd_list_jobs,
+            "run_list": self.cmd_list_runs,
+            "run_output": self.cmd_get_run_output,
+            "run_tail": self.cmd_tail_run_output,
             "shell": self.cmd_shell,
         }
-        cmd_map[self.args.subcommand]()
+        cmd_map[command]()
 
 
 def main():

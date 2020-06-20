@@ -14,7 +14,7 @@ dsari\-info \f[I]argument\f[R] [\f[I]options\f[R]]
 configuration and run data.
 .SH ARGUMENTS
 .TP
-.B check\-config
+.B config check
 Check the configuration, return 0 for a valid configuration or 1 for
 invalid.
 .RS
@@ -22,14 +22,14 @@ invalid.
 Options: None
 .RE
 .TP
-.B dump\-config
+.B config dump
 Dump a compiled, assembled configuration.
 .RS
 .PP
 Options: \f[I]\-\-raw\f[R], \f[I]\-\-format\f[R]
 .RE
 .TP
-.B list\-jobs
+.B job list
 List known jobs.
 Note that while \f[I]\-\-format=yaml\f[R] or \f[I]\-\-format=json\f[R]
 look like valid job configurations, they are not guaranteed to be.
@@ -40,19 +40,19 @@ instead.
 Options: \f[I]\-\-job\f[R], \f[I]\-\-format\f[R]
 .RE
 .TP
-.B list\-runs
+.B run list
 List recorded runs.
 .RS
 .PP
 Options: \f[I]\-\-job\f[R], \f[I]\-\-run\f[R], \f[I]\-\-format\f[R]
 .RE
 .TP
-.B get\-run\-output \f[I]run_id\f[R]
+.B run output \f[I]run_id\f[R]
 Print the collected output of a run.
 If a run is currently running, output collected until that point will be
 printed.
 .TP
-.B tail\-run\-output [\f[I]run_id\f[R] [\f[I]run_id\f[R] [\&...]]]
+.B run tail [\f[I]run_id\f[R] [\f[I]run_id\f[R] [\&...]]]
 Monitor the output of running runs, as they are collected.
 If no runs specified, tail all running runs.
 .TP
