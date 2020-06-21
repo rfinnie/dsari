@@ -619,7 +619,9 @@ class Info:
     def main(self):
         command = self.args.command
         while hasattr(self.args, "command_{}".format(command)):
-            command = "{}_{}".format(command, getattr(self.args, "command_{}".format(command)))
+            command = "{}_{}".format(
+                command, getattr(self.args, "command_{}".format(command))
+            )
 
         cmd_map = {
             "config_check": self.cmd_check_config,
