@@ -16,17 +16,9 @@ class TestUtils(unittest.TestCase):
         )
 
     def test_epoch_to_dt(self):
-        self.assertEqual(
-            utils.epoch_to_dt(123).astimezone(datetime.timezone.utc),
-            datetime.datetime(1970, 1, 1, 0, 2, 3, tzinfo=datetime.timezone.utc),
-        )
+        now = datetime.datetime.now()
+        self.assertEqual(utils.epoch_to_dt(now.timestamp()), now)
 
     def test_dt_to_epoch(self):
-        self.assertEqual(
-            utils.dt_to_epoch(
-                datetime.datetime(1970, 1, 1, 0, 2, 3, tzinfo=datetime.timezone.utc)
-                .astimezone()
-                .replace(tzinfo=None)
-            ),
-            123,
-        )
+        now = datetime.datetime.now()
+        self.assertEqual(utils.dt_to_epoch(now), now.timestamp())
