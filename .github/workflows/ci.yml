@@ -1,0 +1,48 @@
+name: ci
+on:
+  push:
+    branches:
+    - main
+    - test
+  pull_request:
+    branches:
+    - main
+    - test
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+        - macos-latest
+        - ubuntu-latest
+        - windows-latest
+        python-version:
+        - "3.5"
+        - "3.6"
+        - "3.7"
+        - "3.8"
+    steps:
+    - uses: actions/checkout@v2
+    - name: Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Python dependencies
+      run: |
+        python -mpip install tox
+    - name: tox
+      run: |
+        python -mtox
+      if: ${{ matrix.python-version != '3.5' }}
+    - name: tox (Python 3.5)
+      run: |
+        python -mtox
+      env:
+        TOX_SKIP_ENV: black
+      if: ${{ matrix.python-version == '3.5' }}
+    - name: Upload sdist zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: dsari-sdist-${{ github.job }}-${{ github.run_id }}.${{ github.run_number }}-${{ runner.os }}-py${{ matrix.python-version }}
+        path: .tox/dist/*.zip

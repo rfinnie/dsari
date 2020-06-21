@@ -1,5 +1,7 @@
 # dsari - Do Something and Record It
 
+![ci](https://github.com/rfinnie/dsari/workflows/ci/badge.svg)
+
 dsari is a lightweight continuous integration (CI) system.
 It provides scheduling, concurrency management and trigger capabilities, and is easy to configure.
 Job scheduling is handled via `dsari-daemon`, while `dsari-render` may be used to format job run information as HTML.

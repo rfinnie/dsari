@@ -123,20 +123,20 @@ class AutoPager:
             except FileNotFoundError:
                 pass
 
-    def write(self, l):
+    def write(self, line):
         if self.closed:
             return
 
         if self.pager:
             try:
-                self.pager.stdin.write(l.encode("utf-8"))
+                self.pager.stdin.write(line.encode("utf-8"))
             except KeyboardInterrupt:
                 self.close()
             except BrokenPipeError:
                 self.close()
         else:
             try:
-                sys.stdout.write(l)
+                sys.stdout.write(line)
             except BrokenPipeError:
                 self.close()
 
@@ -263,10 +263,10 @@ class Info:
         largest_columns = {
             i: len(column_headers[i]) for i in range(len(column_headers))
         }
-        for l in output_data:
-            for i in range(len(l)):
-                if l[i][1] > largest_columns[i]:
-                    largest_columns[i] = l[i][1]
+        for line in output_data:
+            for i in range(len(line)):
+                if line[i][1] > largest_columns[i]:
+                    largest_columns[i] = line[i][1]
 
         printable_column_lengths = list(largest_columns.values())
         columns = 1000
@@ -303,13 +303,15 @@ class Info:
             dashchar * largest_columns[i] for i in range(len(printable_column_lengths))
         ]
         print("   ".join(line_data), file=file)
-        for l in output_data:
+        for line in output_data:
             line_data = []
             for i in range(len(printable_column_lengths)):
-                if (i + 1) == len(l):
-                    line_data.append(l[i][0])
+                if (i + 1) == len(line):
+                    line_data.append(line[i][0])
                 else:
-                    line_data.append(l[i][0] + (" " * (largest_columns[i] - l[i][1])))
+                    line_data.append(
+                        line[i][0] + (" " * (largest_columns[i] - line[i][1]))
+                    )
             print("   ".join(line_data), file=file)
 
     def dump_jobs(self, filter=None):

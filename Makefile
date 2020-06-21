@@ -1,4 +1,3 @@
-FIND := find
 PYTHON := python3
 
 all: build
@@ -7,14 +6,16 @@ build:
 	$(PYTHON) setup.py build
 
 lint:
-	# TODO: remove C901 once complexity is reduced
-	$(FIND) setup.py tests dsari -name '*.py' -print0 | xargs \
-		-0 $(PYTHON) -mflake8 --config=/dev/null \
-		--ignore=C901,E203,E231,W503 --max-line-length=120 \
-		--max-complexity=10
+	$(PYTHON) -mtox -e flake8
 
-test: build lint
-	$(PYTHON) setup.py test
+test:
+	$(PYTHON) -mtox
+
+test-quick:
+	$(PYTHON) -mtox -e black,flake8,pytest-quick
+
+black-check:
+	$(PYTHON) -mtox -e black
 
 black:
 	$(PYTHON) -mblack $(CURDIR)
