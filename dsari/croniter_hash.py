@@ -33,8 +33,8 @@ import croniter
 class croniter_hash(croniter.croniter):
     """Extend croniter with hash/random support
 
-    All croniter.croniter functionality is support; in addition,
-    Jenkins-style "H" hashing is supported, or "R" random.  Keyword
+    All croniter.croniter functionality is supported; in addition,
+    Jenkins-style "H" hashing is supported, or "R" for random.  Keyword
     argument "hash_id" (a croniter_hash-specific addition) is required
     for "H"/"R" definitions.
     """
@@ -54,7 +54,13 @@ class croniter_hash(croniter.croniter):
         if hash_type == "R":
             crc = random.randint(0, 0xFFFFFFFF)
         else:
-            crc = binascii.crc32(id.encode("utf-8")) & 0xFFFFFFFF
+            if isinstance(id, bytes):
+                id_bytes = id
+            elif isinstance(id, str):
+                id_bytes = id.encode("UTF-8")
+            else:
+                raise TypeError("id must be bytes or UTF-8 string")
+            crc = binascii.crc32(id_bytes) & 0xFFFFFFFF
         return ((crc >> position) % (range_end - range_begin + 1)) + range_begin
 
     def _hash_expand(self, expr_format, id):
@@ -68,9 +74,7 @@ class croniter_hash(croniter.croniter):
             expr_format = "H H * * H H"
         elif expr_format == "@monthly":
             expr_format = "H H H * * H"
-        elif expr_format == "@annually":
-            expr_format = "H H H H * H"
-        elif expr_format == "@yearly":
+        elif expr_format == "@yearly" or expr_format == "@annually":
             expr_format = "H H H H * H"
 
         expr_expanded = []
@@ -114,14 +118,3 @@ class croniter_hash(croniter.croniter):
 
         # Everything else
         return item
-
-
-if __name__ == "__main__":
-    import datetime
-    import string
-
-    id = "".join(random.choice(string.ascii_letters + string.digits) for i in range(30))
-    base = datetime.datetime.now()
-    iter = croniter_hash("H(30-59)/10 H(2-5) H/3 H *", base, hash_id=id)
-    for i in range(10):
-        print(iter.get_next(datetime.datetime))
