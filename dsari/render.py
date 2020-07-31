@@ -117,7 +117,9 @@ class Renderer:
         self.db = dsari.database.get_database(self.config)
 
     def render(self):
-        self.jobs = sorted(self.config.jobs.values())
+        self.jobs = sorted(
+            [job for job in self.config.jobs.values() if job.render_reports]
+        )
         self.job_runs = {}
         for job in self.jobs:
             job.last_run = None
@@ -132,9 +134,7 @@ class Renderer:
 
     def render_runs(self):
         self.run_template = self.templates.get_template("run.html")
-        runs = self.db.get_runs(
-            job_names=[job.name for job in self.jobs if job.render_reports]
-        )
+        runs = self.db.get_runs(job_names=[job.name for job in self.jobs])
         for run in runs:
             self.render_run(run)
 
