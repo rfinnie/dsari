@@ -19,7 +19,7 @@ setup(
     name="dsari",
     description="Do Something and Record It",
     long_description=read("README.md"),
-    # long_description_content_type="text/markdown",  # Safe to add circa 2023
+    long_description_content_type="text/markdown",
     version=dsari.__version__,
     license="GPLv2+",
     platforms=["Unix"],
