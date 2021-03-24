@@ -1,5 +1,3 @@
-include README
-include LICENSE
 include *.md
 include doc/*
 include dsari-daemon
