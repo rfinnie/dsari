@@ -1,9 +1,15 @@
+# croniter_hash - Extend croniter with hash/random support
+# Copyright (C) 2015-2021 Ryan Finnie
+#
+# SPDX-License-Identifier: MIT
+#
+# Originally from:
+# https://github.com/rfinnie/dsari
+
 from datetime import datetime, timedelta
 from unittest import TestCase
 
-import croniter
-
-from dsari.croniter_hash import croniter_hash
+from dsari.croniter_hash import croniter, croniter_hash
 
 
 class TestCroniterHash(TestCase):
@@ -29,10 +35,14 @@ class TestCroniterHash(TestCase):
     def test_hash_weekly(self):
         """Test manually-defined weekly"""
         obj = croniter_hash("H H * * H", self.epoch, hash_id=self.hash_id)
-        self.assertEqual(obj.get_next(datetime), datetime(2020, 1, 3, 11, 10))
-        self.assertEqual(
-            obj.get_next(datetime), datetime(2020, 1, 3, 11, 10) + timedelta(weeks=1)
+        testval = obj.get_next(datetime)
+        # croniter 1.0.5 changes the defined weekly range from (0, 6)
+        # to (0, 7), to match cron's behavior that Sunday is 0 or 7.
+        # This changes our hash, so test for either.
+        self.assertIn(
+            testval, (datetime(2020, 1, 3, 11, 10), datetime(2020, 1, 5, 11, 10))
         )
+        self.assertEqual(obj.get_next(datetime), testval + timedelta(weeks=1))
 
     def test_hash_monthly(self):
         """Test manually-defined monthly"""
@@ -80,11 +90,15 @@ class TestCroniterHash(TestCase):
     def test_hash_word_weekly(self):
         """Test built-in @weekly"""
         obj = croniter_hash("@weekly", self.epoch, hash_id=self.hash_id)
-        self.assertEqual(obj.get_next(datetime), datetime(2020, 1, 3, 11, 10, 32))
-        self.assertEqual(
-            obj.get_next(datetime),
-            datetime(2020, 1, 3, 11, 10, 32) + timedelta(weeks=1),
+        testval = obj.get_next(datetime)
+        # croniter 1.0.5 changes the defined weekly range from (0, 6)
+        # to (0, 7), to match cron's behavior that Sunday is 0 or 7.
+        # This changes our hash, so test for either.
+        self.assertIn(
+            testval,
+            (datetime(2020, 1, 3, 11, 10, 32), datetime(2020, 1, 5, 11, 10, 32)),
         )
+        self.assertEqual(obj.get_next(datetime), testval + timedelta(weeks=1))
 
     def test_hash_word_monthly(self):
         """Test built-in @monthly"""
