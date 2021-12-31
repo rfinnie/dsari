@@ -13,15 +13,29 @@ import dsari
 from dsari import utils
 
 
+def dir_has_config(dir):
+    if os.path.exists(os.path.join(dir, "dsari.json")):
+        return True
+    elif os.path.exists(os.path.join(dir, "dsari.yaml")):
+        return True
+    elif os.path.exists(os.path.join(dir, "config.d")):
+        return True
+    else:
+        return False
+
+
 if "DSARI_HOME" in os.environ:
     DEFAULT_CONFIG_DIR = os.path.join(os.environ["DSARI_HOME"], "etc")
     DEFAULT_DATA_DIR = os.path.join(os.environ["DSARI_HOME"], "var")
-elif __file__.startswith("/usr/lib"):
-    DEFAULT_CONFIG_DIR = "/etc/dsari"
-    DEFAULT_DATA_DIR = "/var/lib/dsari"
-elif __file__.startswith("/usr/local/lib"):
+elif dir_has_config(os.path.join(os.path.expanduser("~"), ".dsari", "etc")):
+    DEFAULT_CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".dsari", "etc")
+    DEFAULT_DATA_DIR = os.path.join(os.path.expanduser("~"), ".dsari", "var")
+elif dir_has_config("/usr/local/etc/dsari"):
     DEFAULT_CONFIG_DIR = "/usr/local/etc/dsari"
     DEFAULT_DATA_DIR = "/usr/local/lib/dsari"
+elif dir_has_config("/etc/dsari"):
+    DEFAULT_CONFIG_DIR = "/etc/dsari"
+    DEFAULT_DATA_DIR = "/var/lib/dsari"
 else:
     DEFAULT_CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".dsari", "etc")
     DEFAULT_DATA_DIR = os.path.join(os.path.expanduser("~"), ".dsari", "var")
