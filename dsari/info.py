@@ -12,6 +12,7 @@ import os
 import shlex
 import subprocess
 import sys
+import time
 
 import dsari
 import dsari.config
@@ -544,6 +545,11 @@ class Info:
             pager.write(dsari.utils.read_output(fn))
 
     def cmd_tail_run_output(self):
+        while True:
+            self.cmd_tail_run_output_loop()
+            time.sleep(1)
+
+    def cmd_tail_run_output_loop(self):
         runs = self.db.get_runs(
             run_ids=(self.args.run if self.args.run else None), runs_running=True
         )
