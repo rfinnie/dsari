@@ -11,7 +11,24 @@
 <body>
 <div class="container">
 <h1>dsari</h1>
-<h2>Runs</h2>
+<h2>Failed Runs</h2>
+<table class="table table-striped">
+<tr>
+    <th>Stop time</th>
+    <th>Job name</th>
+    <th>Duration</th>
+    <th>Exit code</th>
+</tr>
+{% for run in failed_runs %}
+<tr{% if run.exit_code != 0 %} class="danger"{% endif %}>
+    <td><a href="{{ run.job.name }}/{{ run.id }}/">{{ strip_ms(run.stop_time) }}</a></td>
+    <td>{{ run.job.name }}</td>
+    <td>{{ strip_ms(run.stop_time - run.start_time) }}</td>
+    <td>{{ run.exit_code }}</td>
+</tr>
+{% endfor %}
+</table>
+<h2>Latest Runs</h2>
 <table class="table table-striped">
 <tr>
     <th>Stop time</th>
@@ -21,9 +38,9 @@
 </tr>
 {% for run in runs %}
 <tr{% if run.exit_code != 0 %} class="danger"{% endif %}>
-    <td><a href="{{ run.job.name }}/{{ run.id }}/">{{ run.stop_time }}</a></td>
+    <td><a href="{{ run.job.name }}/{{ run.id }}/">{{ strip_ms(run.stop_time) }}</a></td>
     <td>{{ run.job.name }}</td>
-    <td>{{ run.stop_time - run.start_time }}</td>
+    <td>{{ strip_ms(run.stop_time - run.start_time) }}</td>
     <td>{{ run.exit_code }}</td>
 </tr>
 {% endfor %}
@@ -39,9 +56,9 @@
 {% for job in jobs %}
 <tr{% if job.last_run.start_time != job.last_successful_run.start_time %} class="danger"{% endif %}>
     <td><a href="{{ job.name }}/">{{ job.name }}</a></td>
-    <td>{{ job.last_run.start_time }}</td>
-    <td>{% if job.last_run.start_time %}{{ job.last_run.stop_time - job.last_run.start_time }}{% endif %}</td>
-    <td>{{ job.last_successful_run.start_time }}</td>
+    <td>{{ strip_ms(job.last_run.start_time) }}</td>
+    <td>{% if job.last_run.start_time %}{{ strip_ms(job.last_run.stop_time - job.last_run.start_time) }}{% endif %}</td>
+    <td>{{ strip_ms(job.last_successful_run.start_time) }}</td>
 </tr>
 {% endfor %}
 </table>

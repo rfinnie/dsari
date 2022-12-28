@@ -98,7 +98,10 @@ class Renderer:
             loader=loader,
             extensions=["jinja2.ext.autoescape"],
         )
-        self.templates.globals["now"] = datetime.datetime.now()
+        self.templates.globals.update({
+            "now": datetime.datetime.now(),
+            "strip_ms": lambda x: str(x).split(".", 2)[0],
+        })
 
         self.db = dsari.database.get_database(self.config)
 
@@ -213,6 +216,9 @@ class Renderer:
                 "jobs": self.jobs,
                 "runs": sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[
                     :25
+                ],
+                "failed_runs": sorted([run for run in self.runs if run.exit_code > 0], key=lambda run: run.stop_time, reverse=True)[
+                    :10
                 ],
             }
             index_html_filename = os.path.join(base_dir, "index.html")
