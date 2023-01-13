@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import argparse
-import datetime
 import json
 import logging
 import math
@@ -18,7 +17,7 @@ from urllib.parse import parse_qs
 import dsari
 import dsari.config
 import dsari.database
-from dsari.utils import dt_to_epoch
+from dsari.utils import dtnow, dt_to_epoch, seconds_to_td
 
 __version__ = dsari.__version__
 
@@ -343,15 +342,14 @@ class Prometheus:
         return metrics
 
     def get_metrics(self):
-        exporter_start = datetime.datetime.now()
+        exporter_start = dtnow()
         metrics = {}
 
         if (self.job_cache is None) or (
-            (self.job_cache_time + datetime.timedelta(seconds=self.args.job_cache_time))
-            < datetime.datetime.now()
+            (self.job_cache_time + seconds_to_td(self.args.job_cache_time)) < dtnow()
         ):
             self.job_cache = self.get_job_metrics()
-            self.job_cache_time = datetime.datetime.now()
+            self.job_cache_time = dtnow()
         metrics.update(self.job_cache)
 
         if not self.args.no_running:
@@ -363,7 +361,7 @@ class Prometheus:
                     [({}, time.time())], help="Current time, seconds since epoch"
                 ),
                 "dsari_exporter_collect_seconds": entry(
-                    [({}, (datetime.datetime.now() - exporter_start).total_seconds())],
+                    [({}, (dtnow() - exporter_start).total_seconds())],
                     help="Time spent collecting metrics",
                 ),
                 "dsari_version_info": entry(

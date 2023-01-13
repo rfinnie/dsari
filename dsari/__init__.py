@@ -30,6 +30,7 @@ class Job(object):
         self.name = name
         self.command = []
         self.schedule = None
+        self.schedule_timezone = utils.dtnow().tzinfo
         self.concurrency_groups = []
         self.max_execution = None
         self.max_execution_grace = utils.seconds_to_td(60.0)

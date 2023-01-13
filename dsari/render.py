@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import argparse
-import datetime
 import gzip
 import logging
 import os
@@ -23,6 +22,7 @@ import dsari
 import dsari.config
 import dsari.database
 import dsari.utils
+from dsari.utils import dtnow
 
 __version__ = dsari.__version__
 
@@ -110,7 +110,7 @@ class Renderer:
         )
         self.templates.globals.update(
             {
-                "now": datetime.datetime.now(),
+                "now": dtnow(),
                 "strip_ms": lambda x: str(x).split(".", 2)[0],
             }
         )

@@ -6,7 +6,6 @@
 
 import argparse
 import copy
-import datetime
 import logging
 import math
 import os
@@ -29,6 +28,7 @@ except ImportError as e:
 import dsari
 import dsari.config
 import dsari.database
+from dsari.utils import dtnow, dtlocalize
 from dsari.utils import dt_to_epoch, epoch_to_dt
 from dsari.utils import seconds_to_td, td_to_seconds
 from dsari.utils import (
@@ -51,7 +51,7 @@ def wait_deadline(pid, options, deadline, interval=0.05):
             child_exit = child_exit >> 8
         if child_pid != 0:
             return (child_pid, child_exit, child_resource)
-        if datetime.datetime.now() >= deadline:
+        if dtnow() >= deadline:
             return (child_pid, child_exit, child_resource)
         time.sleep(interval)
 
@@ -124,7 +124,7 @@ class Scheduler:
         self.running_groups = {}
 
         self.wakeups = []
-        self.next_wakeup = datetime.datetime.now() + seconds_to_td(60.0)
+        self.next_wakeup = dtnow() + seconds_to_td(60.0)
 
         self.db = dsari.database.get_database(self.config)
         self.logger.debug("Database in use: {}".format(repr(self.db)))
@@ -145,7 +145,7 @@ class Scheduler:
 
     def begin_shutdown(self):
         self.shutdown = True
-        self.shutdown_begin = datetime.datetime.now()
+        self.shutdown_begin = dtnow()
         self.scheduled_runs = []
         for run in self.running_runs:
             run.respawn = False
@@ -170,9 +170,7 @@ class Scheduler:
             return
         if not self.config.shutdown_kill_grace:
             return
-        if datetime.datetime.now() < (
-            self.shutdown_begin + self.config.shutdown_kill_grace
-        ):
+        if dtnow() < (self.shutdown_begin + self.config.shutdown_kill_grace):
             self.wakeups.append(self.shutdown_begin + self.config.shutdown_kill_grace)
             return
         for run in self.running_runs:
@@ -188,7 +186,7 @@ class Scheduler:
             run.kill_sent = True
 
     def signal_handler(self, signum, frame):
-        self.next_wakeup = datetime.datetime.now()
+        self.next_wakeup = dtnow()
         if signum in (signal.SIGINT, signal.SIGTERM):
             if signum == signal.SIGINT:
                 self.logger.info("SIGINT received, beginning shutdown")
@@ -205,7 +203,7 @@ class Scheduler:
             self.logger.debug("SIGUSR1 received")
 
     def sigquit_status(self):
-        now = datetime.datetime.now()
+        now = dtnow()
         for run in sorted(self.running_runs, key=lambda x: x.job.name):
             job = run.job
             t = run.start_time
@@ -251,7 +249,7 @@ class Scheduler:
         self.scheduled_runs = []
         for run in self.running_runs:
             run.respawn = False
-        now = datetime.datetime.now()
+        now = dtnow()
         for job in sorted(self.config.jobs.values()):
             self.jobs.append(job)
             if not job.schedule:
@@ -259,7 +257,11 @@ class Scheduler:
                     "[{}] No schedule defined, manual triggers only".format(job.name)
                 )
                 continue
-            t = get_next_schedule_time(job.schedule, job.name, start_time=now)
+            t = get_next_schedule_time(
+                job.schedule,
+                job.name,
+                start_time=dtlocalize(now, job.schedule_timezone),
+            )
             if t is None:
                 self.logger.debug(
                     "[{}] Schedule {} does not produce a future run, skipping".format(
@@ -305,7 +307,7 @@ class Scheduler:
             return
         sigterm_grace = job.max_execution_grace
         sigkill_grace = seconds_to_td(5.0)
-        now = datetime.datetime.now()
+        now = dtnow()
         delta = now - run.start_time
         if delta > (job.max_execution + sigterm_grace):
             if not run.kill_sent:
@@ -467,9 +469,7 @@ class Scheduler:
 
     def process_next_child(self):
         self.logger.debug(
-            "Waiting up to {} for running jobs".format(
-                self.next_wakeup - datetime.datetime.now()
-            )
+            "Waiting up to {} for running jobs".format(self.next_wakeup - dtnow())
         )
         (child_pid, child_exit, child_resource) = wait_deadline(
             -1, os.WNOHANG, self.next_wakeup
@@ -484,7 +484,7 @@ class Scheduler:
         if not run:
             return child_pid
         job = run.job
-        now = datetime.datetime.now()
+        now = dtnow()
         run.stop_time = now
         run.exit_code = child_exit
         self.logger.info(
@@ -541,7 +541,7 @@ class Scheduler:
             break
         if trigger_file is None:
             return
-        t = epoch_to_dt(os.path.getmtime(trigger_file))
+        t = dtlocalize(epoch_to_dt(os.path.getmtime(trigger_file)))
         try:
             j = load_structured_file(
                 trigger_file, file_type=trigger_file_type, delete_during=True
@@ -590,6 +590,7 @@ class Scheduler:
                     )
                 )
                 return
+        t = dtlocalize(t, j.get("schedule_timezone"))
 
         if "environment" in j:
             try:
@@ -635,7 +636,7 @@ class Scheduler:
             self.scheduled_runs.append(run)
 
     def process_scheduled_run(self, run):
-        now = datetime.datetime.now()
+        now = dtnow()
         job = run.job
         if run.schedule_time > now:
             self.wakeups.append(run.schedule_time)
@@ -705,7 +706,11 @@ class Scheduler:
         if run.concurrency_group:
             self.running_groups[run.concurrency_group].append(run)
         if run.respawn and job.schedule:
-            t = get_next_schedule_time(job.schedule, job.name, start_time=now)
+            t = get_next_schedule_time(
+                job.schedule,
+                job.name,
+                start_time=dtlocalize(now, job.schedule_timezone),
+            )
             if t is None:
                 self.logger.debug(
                     "[{}] Schedule {} does not produce a future run, skipping".format(
@@ -725,7 +730,7 @@ class Scheduler:
             )
 
     def process_wakeups(self):
-        self.next_wakeup = datetime.datetime.now() + seconds_to_td(60.0)
+        self.next_wakeup = dtnow() + seconds_to_td(60.0)
         for wakeup in self.wakeups:
             if wakeup < self.next_wakeup:
                 self.next_wakeup = wakeup
@@ -749,9 +754,7 @@ class Scheduler:
             self.process_wakeups()
 
             if len(self.running_runs) > 0:
-                while (len(self.running_runs) > 0) and (
-                    self.next_wakeup > datetime.datetime.now()
-                ):
+                while (len(self.running_runs) > 0) and (self.next_wakeup > dtnow()):
                     if self.process_next_child() == 0:
                         break
             else:
@@ -763,7 +766,7 @@ class Scheduler:
                     "No running jobs, waiting until {}".format(self.next_wakeup)
                 )
                 while True:
-                    now = datetime.datetime.now()
+                    now = dtnow()
                     if self.next_wakeup <= now:
                         break
                     elif (self.next_wakeup - now) < seconds_to_td(1):

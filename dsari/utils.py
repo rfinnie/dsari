@@ -17,6 +17,11 @@ except ImportError as e:
     dateutil_rrule = e
 
 try:
+    import dateutil.tz as dateutil_tz
+except ImportError as e:
+    dateutil_tz = e
+
+try:
     import lzma
 except ImportError as e:
     lzma = e
@@ -77,6 +82,22 @@ def dt_to_epoch(dt):
     return dt.timestamp()
 
 
+def dtlocalize(dt, tz=None):
+    if tz is not None:
+        if isinstance(tz, datetime.tzinfo):
+            return dt.astimezone(tz)
+        elif not isinstance(dateutil_tz, ImportError):
+            dt.astimezone(dateutil_tz.gettz(tz))
+        else:
+            return dt.astimezone()
+    else:
+        return dt.astimezone()
+
+
+def dtnow(tz=None):
+    return dtlocalize(datetime.datetime.now(), tz)
+
+
 def validate_environment_dict(env_in):
     env_out = {}
     for k in env_in:
@@ -106,7 +127,7 @@ def get_next_schedule_time(schedule, job_name, start_time=None):
         if isinstance(dateutil_rrule, ImportError):
             raise ImportError("dateutil not available, manual triggers only")
         hashed_epoch = start_time - seconds_to_td(
-            (dt_to_epoch(start_time) % (crc % 86400))
+            ((dt_to_epoch(start_time) - crc) % 86400)
         )
         t = dateutil_rrule.rrulestr(schedule, dtstart=hashed_epoch).after(start_time)
         if t is not None:

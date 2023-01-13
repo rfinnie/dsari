@@ -175,6 +175,19 @@ Default: null
 The [schedule format](schedule-format.md) definition.
 If not set, no recurring schedule is set up, and the job only responds to [manual triggers](triggers.md).
 
+### schedule_timezone
+
+Example:
+```yaml
+schedule_timezone: America/Los_Angeles
+```
+
+Default: Local timezone
+
+The timezone a job will be scheduled relative to.
+If not set, the daemon's local timezone will be used.
+Job/run times are stored in dsari's database as UTC.
+
 ### environment
 
 Example:

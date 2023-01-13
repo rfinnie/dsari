@@ -216,6 +216,7 @@ class ConfigLoader:
         valid_values = {
             "command": (list, str),
             "schedule": (type(None),) + (str,),
+            "schedule_timezone": (str,),
             "max_execution": (int, float),
             "max_execution_grace": (int, float),
             "environment": (dict,),
@@ -226,6 +227,7 @@ class ConfigLoader:
             "concurrent_runs": (bool,),
         }
         value_transforms = {
+            "schedule_timezone": lambda x: utils.dateutil_tz.gettz(x),
             "max_execution": lambda x: utils.seconds_to_td(x),
             "max_execution_grace": lambda x: utils.seconds_to_td(x),
             "environment": lambda x: utils.validate_environment_dict(copy.deepcopy(x)),

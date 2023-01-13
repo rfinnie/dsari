@@ -6,7 +6,6 @@
 
 import argparse
 import binascii
-import datetime
 import locale
 import os
 import shlex
@@ -17,6 +16,7 @@ import time
 import dsari
 import dsari.config
 import dsari.database
+from dsari.utils import dtnow, seconds_to_td
 from dsari.utils import get_next_schedule_time, json_pretty_print, td_to_seconds, yaml
 
 __version__ = dsari.__version__
@@ -311,7 +311,9 @@ class Info:
                 "command_append_run": job.command_append_run,
                 "schedule": job.schedule,
                 "next_scheduled_run": (
-                    get_next_schedule_time(job.schedule, job.name)
+                    get_next_schedule_time(
+                        job.schedule, job.name, start_time=dtnow(job.schedule_timezone)
+                    )
                     if job.schedule
                     else None
                 ),
@@ -466,10 +468,10 @@ class Info:
             color = Color()
 
             def time_color(t):
-                now = datetime.datetime.now()
-                if (now - t) <= datetime.timedelta(hours=1):
+                now = dtnow()
+                if (now - t) <= seconds_to_td(60 * 60):
                     return "green"
-                elif (now - t) <= datetime.timedelta(days=1):
+                elif (now - t) <= seconds_to_td(60 * 60 * 24):
                     return "blue"
                 else:
                     return None
@@ -485,7 +487,7 @@ class Info:
                     "Type",
                     "Schedule Delay",
                 )
-                now = datetime.datetime.now()
+                now = dtnow()
                 for run in sorted(runs, key=lambda run: run.start_time, reverse=True):
                     if run.stop_time is not None:
                         run_time = str(run.stop_time - run.start_time)
@@ -570,7 +572,6 @@ class Info:
         vars = {
             "concurrency_groups": self.config.concurrency_groups,
             "config": self.config,
-            "datetime": datetime,
             "db": self.db,
             "dsari": dsari,
             "jobs": self.config.jobs,

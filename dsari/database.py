@@ -78,7 +78,7 @@ class BaseSQLDatabase(BaseDatabase):
             if k not in f.keys():
                 continue
             if type(f[k]) in (int, float):
-                setattr(run, k, epoch_to_dt(f[k]))
+                setattr(run, k, epoch_to_dt(f[k]).astimezone())
             else:
                 setattr(run, k, f[k])
         if "exit_code" in f.keys():

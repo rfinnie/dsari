@@ -43,9 +43,12 @@ Or, if the `python-dateutil` Python package is installed, ISO 8601 times may be 
 
 ```json
     {
-        "schedule_time": "2016-09-10T14:28:27"
+        "schedule_time": "2016-09-10T14:28:27",
+        "schedule_timezone": "America/Los_Angeles"
     }
 ```
+
+The daemon's local timezone will be used if "schedule_timezone" is not specified.
 
 Care should be taken when scheduling in the future via triggers, as scheduled triggers do not survive across `dsari-daemon` restarts or reloads.
 
