@@ -12,6 +12,13 @@ import os
 
 import jinja2
 
+try:
+    from jinja2.ext import autoescape  # noqa: F401
+
+    HAS_AUTOESCAPE = True
+except ImportError:
+    HAS_AUTOESCAPE = False
+
 import dsari
 import dsari.config
 import dsari.database
@@ -93,10 +100,13 @@ class Renderer:
         else:
             loader = jinja2.PackageLoader("dsari")
 
+        extensions = []
+        if HAS_AUTOESCAPE:
+            extensions.append("jinja2.ext.autoescape")
         self.templates = jinja2.Environment(
             autoescape=guess_autoescape,
             loader=loader,
-            extensions=["jinja2.ext.autoescape"],
+            extensions=extensions,
         )
         self.templates.globals.update(
             {
