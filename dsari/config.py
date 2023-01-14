@@ -157,7 +157,7 @@ class ConfigLoader:
             "database": (dict,),
         }
         value_transforms = {
-            "shutdown_kill_grace": lambda x: utils.seconds_to_td(x),
+            "shutdown_kill_grace": utils.seconds_to_td,
             "environment": lambda x: utils.validate_environment_dict(copy.deepcopy(x)),
         }
         self.populate_object(
@@ -227,9 +227,9 @@ class ConfigLoader:
             "concurrent_runs": (bool,),
         }
         value_transforms = {
-            "schedule_timezone": lambda x: utils.dateutil_tz.gettz(x),
-            "max_execution": lambda x: utils.seconds_to_td(x),
-            "max_execution_grace": lambda x: utils.seconds_to_td(x),
+            "schedule_timezone": utils.dateutil_tz.gettz,
+            "max_execution": utils.seconds_to_td,
+            "max_execution_grace": utils.seconds_to_td,
             "environment": lambda x: utils.validate_environment_dict(copy.deepcopy(x)),
         }
 
