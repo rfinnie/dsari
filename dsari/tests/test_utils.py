@@ -1,3 +1,9 @@
+# SPDX-PackageName: dsari
+# SPDX-PackageSupplier: Ryan Finnie <ryan@finnie.org>
+# SPDX-PackageDownloadLocation: https://codeberg.org/rfinnie/dsari
+# SPDX-FileCopyrightText: © 2015 Ryan Finnie <ryan@finnie.org>
+# SPDX-License-Identifier: MPL-2.0
+
 import datetime
 import unittest
 
@@ -6,14 +12,10 @@ from dsari import utils
 
 class TestUtils(unittest.TestCase):
     def test_seconds_to_td(self):
-        self.assertEqual(
-            utils.seconds_to_td(123), datetime.timedelta(minutes=2, seconds=3)
-        )
+        self.assertEqual(utils.seconds_to_td(123), datetime.timedelta(minutes=2, seconds=3))
 
     def test_td_to_seconds(self):
-        self.assertEqual(
-            utils.td_to_seconds(datetime.timedelta(minutes=2, seconds=3)), 123
-        )
+        self.assertEqual(utils.td_to_seconds(datetime.timedelta(minutes=2, seconds=3)), 123)
 
     def test_epoch_to_dt(self):
         now = datetime.datetime.now()

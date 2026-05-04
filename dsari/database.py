@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
-
-# dsari - Do Something and Record It
-# Copyright (C) 2015-2021 Ryan Finnie
+# SPDX-PackageName: dsari
+# SPDX-PackageSupplier: Ryan Finnie <ryan@finnie.org>
+# SPDX-PackageDownloadLocation: https://codeberg.org/rfinnie/dsari
+# SPDX-FileCopyrightText: © 2015 Ryan Finnie <ryan@finnie.org>
 # SPDX-License-Identifier: MPL-2.0
 
 import copy
@@ -65,7 +65,7 @@ class BaseSQLDatabase(BaseDatabase):
 
     def _build_insert(self, pairs):
         out = []
-        for (k, v) in pairs:
+        for k, v in pairs:
             if k in ("trigger_data", "run_data"):
                 out.append(json.dumps(v))
             else:
@@ -77,7 +77,7 @@ class BaseSQLDatabase(BaseDatabase):
         for k in ("schedule_time", "start_time", "stop_time"):
             if k not in f.keys():
                 continue
-            if type(f[k]) in (int, float):
+            if isinstance(f[k], (int, float)):
                 setattr(run, k, epoch_to_dt(f[k]).astimezone())
             else:
                 setattr(run, k, f[k])
@@ -85,7 +85,7 @@ class BaseSQLDatabase(BaseDatabase):
             run.exit_code = f["exit_code"]
         run.trigger_type = f["trigger_type"]
         for k in ("trigger_data", "run_data"):
-            if type(f[k]) == dict:
+            if isinstance(f[k], dict):
                 setattr(run, k, f[k])
             else:
                 setattr(run, k, json.loads(f[k]))
@@ -291,16 +291,12 @@ class BaseSQLDatabase(BaseDatabase):
                 *
             FROM
                 {}
-        """.format(
-            table_name
-        )
+        """.format(table_name)
         if where is not None:
             sql_statement += """
                 WHERE
                     {} in ({})
-            """.format(
-                where, ",".join(["{}"] * len(where_in))
-            )
+            """.format(where, ",".join(["{}"] * len(where_in)))
         sql_statement = self._modify_statement(sql_statement)
         cur = self.db_conn.cursor()
         cur.execute(sql_statement, where_in)
@@ -568,7 +564,7 @@ class SQLite3Database(BaseSQLDatabase):
 
     def _build_insert(self, pairs):
         out = []
-        for (k, v) in pairs:
+        for k, v in pairs:
             if k in ("schedule_time", "start_time", "stop_time"):
                 out.append(dt_to_epoch(v))
             elif k in ("trigger_data", "run_data"):
@@ -588,9 +584,7 @@ class MongoDBDatabase(BaseDatabase):
             uri = config.database["uri"]
         else:
             uri = None
-        if ("connection" in config.database) and (
-            type(config.database["connection"]) == dict
-        ):
+        if ("connection" in config.database) and isinstance(config.database["connection"], dict):
             connection = config.database["connection"]
         else:
             connection = {}
@@ -619,21 +613,13 @@ class MongoDBDatabase(BaseDatabase):
         return run
 
     def get_previous_runs(self, job):
-        result = (
-            self.db.runs.find({"job_name": job.name})
-            .sort([("stop_time", self.pymongo.DESCENDING)])
-            .limit(1)
-        )
+        result = self.db.runs.find({"job_name": job.name}).sort([("stop_time", self.pymongo.DESCENDING)]).limit(1)
         try:
             previous_run = self._build_run_from_result(job, result[0])
         except IndexError:
             previous_run = None
 
-        result = (
-            self.db.runs.find({"job_name": job.name, "exit_code": 0})
-            .sort([("stop_time", self.pymongo.DESCENDING)])
-            .limit(1)
-        )
+        result = self.db.runs.find({"job_name": job.name, "exit_code": 0}).sort([("stop_time", self.pymongo.DESCENDING)]).limit(1)
         try:
             previous_good_run = self._build_run_from_result(job, result[0])
         except IndexError:

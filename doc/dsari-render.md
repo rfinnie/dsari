@@ -27,5 +27,4 @@ dsari-render [*options*]
 # SEE ALSO
 
 * `dsari-daemon`
-* [dsari](https://github.com/rfinnie/dsari)
-
+* [dsari](https://codeberg.org/rfinnie/dsari)

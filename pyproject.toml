@@ -1,0 +1,74 @@
+# SPDX-PackageName: dsari
+# SPDX-PackageSupplier: Ryan Finnie <ryan@finnie.org>
+# SPDX-PackageDownloadLocation: https://codeberg.org/rfinnie/dsari
+# SPDX-FileCopyrightText: © 2026 Ryan Finnie <ryan@finnie.org>
+# SPDX-License-Identifier: MPL-2.0
+
+[project]
+name = "dsari"
+version = "2.0"
+authors = [
+    {name = "Ryan Finnie", email = "ryan@finnie.org"},
+]
+description = "Do Something and Record It"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MPL-2.0"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "croniter",
+]
+
+[project.urls]
+Homepage = "https://codeberg.org/rfinnie/dsari"
+
+[build-system]
+requires = ["setuptools>=59.6.0"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+full = [
+    "PyYAML",
+    "croniter",
+    "python-dateutil",
+    "Jinja2",
+    "IPython",
+    "termcolor",
+    "psycopg2",
+    "mysqlclient",
+    "pymongo",
+]
+pytest = [
+    "PyYAML",
+    "croniter",
+    "python-dateutil",
+    "Jinja2",
+]
+
+[tool.setuptools.packages.find]
+include = [
+    "dsari",
+    "dsari.tests",
+]
+
+[tools.setuptools.package-data]
+"dsari" = ["templates/*.html"]
+
+[project.scripts]
+dsari-daemon = "dsari.daemon:main"
+dsari-info = "dsari.info:main"
+dsari-prometheus-exporter = "dsari.prometheus_exporter:main"
+dsari-render = "dsari.render:main"
+
+[tool.black]
+line-length = 132

@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
-
-# dsari - Do Something and Record It
-# Copyright (C) 2015-2021 Ryan Finnie
+# SPDX-PackageName: dsari
+# SPDX-PackageSupplier: Ryan Finnie <ryan@finnie.org>
+# SPDX-PackageDownloadLocation: https://codeberg.org/rfinnie/dsari
+# SPDX-FileCopyrightText: © 2015 Ryan Finnie <ryan@finnie.org>
 # SPDX-License-Identifier: MPL-2.0
 
 import argparse
@@ -30,17 +30,15 @@ __version__ = dsari.__version__
 def guess_autoescape(template_name):
     if template_name is None or "." not in template_name:
         return False
-    (base, ext) = template_name.rsplit(".", 1)
+    base, ext = template_name.rsplit(".", 1)
     if ext == "jinja2":
-        (base, ext) = base.rsplit(".", 1)
+        base, ext = base.rsplit(".", 1)
     return ext in ("html", "htm", "xml")
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Do Something and Record It - report renderer ({})".format(
-            __version__
-        ),
+        description="Do Something and Record It - report renderer ({})".format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -56,12 +54,8 @@ def parse_args():
         default=dsari.config.DEFAULT_CONFIG_DIR,
         help="configuration directory",
     )
-    parser.add_argument(
-        "--regenerate", "-r", action="store_true", help="regenerate all reports"
-    )
-    parser.add_argument(
-        "--debug", action="store_true", help="output additional debugging information"
-    )
+    parser.add_argument("--regenerate", "-r", action="store_true", help="regenerate all reports")
+    parser.add_argument("--debug", action="store_true", help="output additional debugging information")
     return parser.parse_args()
 
 
@@ -82,9 +76,7 @@ class Renderer:
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
         lh_console = logging.StreamHandler()
-        lh_console_formatter = logging.Formatter(
-            "[%(asctime)s] %(levelname)s: %(message)s"
-        )
+        lh_console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
         lh_console.setFormatter(lh_console_formatter)
         if self.args.debug:
             lh_console.setLevel(logging.DEBUG)
@@ -118,9 +110,7 @@ class Renderer:
         self.db = dsari.database.get_database(self.config)
 
     def render(self):
-        self.jobs = sorted(
-            [job for job in self.config.jobs.values() if job.render_reports]
-        )
+        self.jobs = sorted([job for job in self.config.jobs.values() if job.render_reports])
         self.job_runs = {}
         for job in self.jobs:
             job.last_run = None
@@ -146,21 +136,15 @@ class Renderer:
         job.last_run = run
         if run.exit_code == 0:
             job.last_successful_run = run
-        run_html_filename = os.path.join(
-            self.config.data_dir, "html", job.name, run.id, "index.html"
-        )
+        run_html_filename = os.path.join(self.config.data_dir, "html", job.name, run.id, "index.html")
         if self.config.report_html_gz:
             run_html_filename = "{}.gz".format(run_html_filename)
         if os.path.isfile(run_html_filename):
             if not self.args.regenerate:
                 return
-        if not os.path.exists(
-            os.path.join(self.config.data_dir, "html", job.name, run.id)
-        ):
+        if not os.path.exists(os.path.join(self.config.data_dir, "html", job.name, run.id)):
             os.makedirs(os.path.join(self.config.data_dir, "html", job.name, run.id))
-        raw_output = dsari.utils.read_output(
-            os.path.join(self.config.data_dir, "runs", job.name, run.id, "output.txt")
-        )
+        raw_output = dsari.utils.read_output(os.path.join(self.config.data_dir, "runs", job.name, run.id, "output.txt"))
         raw_len = 0 if raw_output is None else len(raw_output)
         limit_start = self.config.report_run_output_start
         limit_end = self.config.report_run_output_end
@@ -168,11 +152,7 @@ class Renderer:
         if (
             (raw_output is not None)
             and (limit_start > 0 or limit_end > 0)
-            and (
-                raw_len > limit_combined
-                or (raw_len > limit_start and limit_start > 0)
-                or (raw_len > limit_end and limit_end > 0)
-            )
+            and (raw_len > limit_combined or (raw_len > limit_start and limit_start > 0) or (raw_len > limit_end and limit_end > 0))
         ):
             run.output = ""
             if limit_start > 0:
@@ -199,15 +179,11 @@ class Renderer:
     def render_job(self, job):
         context = {
             "job": job,
-            "runs": sorted(
-                self.job_runs[job.name], key=lambda run: run.stop_time, reverse=True
-            ),
+            "runs": sorted(self.job_runs[job.name], key=lambda run: run.stop_time, reverse=True),
         }
         if not os.path.exists(os.path.join(self.config.data_dir, "html", job.name)):
             os.makedirs(os.path.join(self.config.data_dir, "html", job.name))
-        job_html_filename = os.path.join(
-            self.config.data_dir, "html", job.name, "index.html"
-        )
+        job_html_filename = os.path.join(self.config.data_dir, "html", job.name, "index.html")
         if self.config.report_html_gz:
             job_html_filename = "{}.gz".format(job_html_filename)
         self.logger.info("Writing {}".format(job_html_filename))
@@ -226,9 +202,7 @@ class Renderer:
         if (len(self.jobs_written) > 0) or self.args.regenerate:
             context = {
                 "jobs": self.jobs,
-                "runs": sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[
-                    :25
-                ],
+                "runs": sorted(self.runs, key=lambda run: run.stop_time, reverse=True)[:25],
                 "failed_runs": sorted(
                     [run for run in self.runs if run.exit_code > 0],
                     key=lambda run: run.stop_time,

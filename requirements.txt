@@ -1,6 +1,0 @@
-croniter
-IPython
-Jinja2
-python-dateutil
-PyYAML
-termcolor

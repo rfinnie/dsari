@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
-
-# dsari - Do Something and Record It
-# Copyright (C) 2015-2021 Ryan Finnie
+# SPDX-PackageName: dsari
+# SPDX-PackageSupplier: Ryan Finnie <ryan@finnie.org>
+# SPDX-PackageDownloadLocation: https://codeberg.org/rfinnie/dsari
+# SPDX-FileCopyrightText: © 2015 Ryan Finnie <ryan@finnie.org>
 # SPDX-License-Identifier: MPL-2.0
 
 import binascii
@@ -32,9 +32,9 @@ except ImportError as e:
     yaml = e
 
 try:
-    from . import croniter_hash
+    from . import croniter
 except ImportError as e:
-    croniter_hash = e
+    croniter = e
 
 
 def dict_merge(s, m):
@@ -102,19 +102,13 @@ def validate_environment_dict(env_in):
     env_out = {}
     for k in env_in:
         if type(k) not in (str,):
-            raise KeyError(
-                "Invalid environment key name: {} ({})".format(repr(k), repr(type(k)))
-            )
+            raise KeyError("Invalid environment key name: {} ({})".format(repr(k), repr(type(k))))
         if type(env_in[k]) in (str,):
             env_out[k] = env_in[k]
         elif type(env_in[k]) in (int, float):
             env_out[k] = str(env_in[k])
         else:
-            raise ValueError(
-                "Invalid environment value name: {} ({})".format(
-                    repr(env_in[k]), repr(type(env_in[k]))
-                )
-            )
+            raise ValueError("Invalid environment value name: {} ({})".format(repr(env_in[k]), repr(type(env_in[k]))))
     return env_out
 
 
@@ -126,23 +120,16 @@ def get_next_schedule_time(schedule, job_name, start_time=None):
     if schedule.upper().startswith("RRULE:"):
         if isinstance(dateutil_rrule, ImportError):
             raise ImportError("dateutil not available, manual triggers only")
-        hashed_epoch = start_time - seconds_to_td(
-            ((dt_to_epoch(start_time) - crc) % 86400)
-        )
+        hashed_epoch = start_time - seconds_to_td(((dt_to_epoch(start_time) - crc) % 86400))
         t = dateutil_rrule.rrulestr(schedule, dtstart=hashed_epoch).after(start_time)
         if t is not None:
             t = t + subsecond_offset
         return t
-    if isinstance(croniter_hash, ImportError):
+    if isinstance(croniter, ImportError):
         raise ImportError("croniter not available, manual triggers only")
     if len(schedule.split(" ")) == 5:
         schedule = schedule + " H"
-    t = (
-        croniter_hash.croniter_hash(
-            schedule, start_time=start_time, hash_id=job_name
-        ).get_next(datetime.datetime)
-        + subsecond_offset
-    )
+    t = croniter.croniter(schedule, start_time=start_time, hash_id=job_name).get_next(datetime.datetime) + subsecond_offset
     return t
 
 
@@ -157,9 +144,7 @@ def read_output(filename):
     elif os.path.isfile("{}.gz".format(filename)):
         with gzip.open("{}.gz".format(filename), "rb") as f:
             return f.read().decode("utf-8")
-    elif (not isinstance(lzma, ImportError)) and os.path.isfile(
-        "{}.xz".format(filename)
-    ):
+    elif (not isinstance(lzma, ImportError)) and os.path.isfile("{}.xz".format(filename)):
         with open("{}.xz".format(filename), "rb") as f:
             return lzma.LZMADecompressor().decompress(f.read()).decode("utf-8")
     else:

@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
-
-# dsari - Do Something and Record It
-# Copyright (C) 2015-2021 Ryan Finnie
+# SPDX-PackageName: dsari
+# SPDX-PackageSupplier: Ryan Finnie <ryan@finnie.org>
+# SPDX-PackageDownloadLocation: https://codeberg.org/rfinnie/dsari
+# SPDX-FileCopyrightText: © 2015 Ryan Finnie <ryan@finnie.org>
 # SPDX-License-Identifier: MPL-2.0
 
 import argparse
@@ -59,17 +59,11 @@ class Color:
 
     def format(self, st, *args, **kwargs):
         if not self.do_color:
-            return st.format(
-                *(i[0] for i in args), **{k: v[0] for k, v in kwargs.items()}
-            )
+            return st.format(*(i[0] for i in args), **{k: v[0] for k, v in kwargs.items()})
         cargs = []
         for arg in args:
             if len(arg) > 1:
-                cargs.append(
-                    self.termcolor.colored(
-                        arg[0], arg[1], attrs=(arg[2] if len(arg) > 2 else [])
-                    )
-                )
+                cargs.append(self.termcolor.colored(arg[0], arg[1], attrs=(arg[2] if len(arg) > 2 else [])))
             else:
                 cargs.append(arg[0])
         ckwargs = {}
@@ -104,9 +98,7 @@ class AutoPager:
             if not os.environ.get("LESS"):
                 env.update({"LESS": "-FRSXMQ"})
             try:
-                self.pager = subprocess.Popen(
-                    pager_cmd, stdin=subprocess.PIPE, stdout=sys.stdout, env=env
-                )
+                self.pager = subprocess.Popen(pager_cmd, stdin=subprocess.PIPE, stdout=sys.stdout, env=env)
             except FileNotFoundError:
                 pass
 
@@ -148,9 +140,7 @@ class AutoPager:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Do Something and Record It - job/run information ({})".format(
-            __version__
-        ),
+        description="Do Something and Record It - job/run information ({})".format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -185,9 +175,7 @@ def parse_args():
     parser_config = subparsers.add_parser("config", help="config commands")
     subparsers_config = parser_config.add_subparsers(dest="command_config")
     subparsers_config.required = True
-    parser_config_dump = subparsers_config.add_parser(
-        "dump", help="dump a compiled version of the loaded config"
-    )
+    parser_config_dump = subparsers_config.add_parser("dump", help="dump a compiled version of the loaded config")
     subparsers_config.add_parser("check", help="validate configuration")
 
     optional_formats = []
@@ -247,9 +235,7 @@ class Info:
         self.db = dsari.database.get_database(self.config)
 
     def pretty_print_table(self, output_data, column_headers, file=sys.stdout):
-        largest_columns = {
-            i: len(column_headers[i]) for i in range(len(column_headers))
-        }
+        largest_columns = {i: len(column_headers[i]) for i in range(len(column_headers))}
         for line in output_data:
             for i in range(len(line)):
                 if line[i][1] > largest_columns[i]:
@@ -259,9 +245,7 @@ class Info:
         columns = 1000
         if sys.stdout.isatty():
             try:
-                columns = int(
-                    subprocess.check_output(["stty", "size"]).decode().split()[1]
-                )
+                columns = int(subprocess.check_output(["stty", "size"]).decode().split()[1])
             except Exception:
                 pass
         try:
@@ -269,11 +253,7 @@ class Info:
         except Exception:
             pass
         while len(printable_column_lengths) >= 1:
-            if (
-                sum(printable_column_lengths)
-                + (3 * (len(printable_column_lengths) - 1))
-                <= columns
-            ):
+            if sum(printable_column_lengths) + (3 * (len(printable_column_lengths) - 1)) <= columns:
                 break
             printable_column_lengths.pop()
 
@@ -281,14 +261,9 @@ class Info:
             dashchar = "\u2500"
         else:
             dashchar = "-"
-        line_data = [
-            "{{:^{}}}".format(largest_columns[i]).format(column_headers[i])
-            for i in range(len(printable_column_lengths))
-        ]
+        line_data = ["{{:^{}}}".format(largest_columns[i]).format(column_headers[i]) for i in range(len(printable_column_lengths))]
         print("   ".join(line_data), file=file)
-        line_data = [
-            dashchar * largest_columns[i] for i in range(len(printable_column_lengths))
-        ]
+        line_data = [dashchar * largest_columns[i] for i in range(len(printable_column_lengths))]
         print("   ".join(line_data), file=file)
         for line in output_data:
             line_data = []
@@ -296,9 +271,7 @@ class Info:
                 if (i + 1) == len(line):
                     line_data.append(line[i][0])
                 else:
-                    line_data.append(
-                        line[i][0] + (" " * (largest_columns[i] - line[i][1]))
-                    )
+                    line_data.append(line[i][0] + (" " * (largest_columns[i] - line[i][1])))
             print("   ".join(line_data), file=file)
 
     def dump_jobs(self, filter=None):
@@ -311,30 +284,21 @@ class Info:
                 "command_append_run": job.command_append_run,
                 "schedule": job.schedule,
                 "next_scheduled_run": (
-                    get_next_schedule_time(
-                        job.schedule, job.name, start_time=dtnow(job.schedule_timezone)
-                    )
+                    get_next_schedule_time(job.schedule, job.name, start_time=dtnow(job.schedule_timezone))
                     if job.schedule
                     else None
                 ),
                 "environment": job.environment,
                 "max_execution": job.max_execution,
                 "max_execution_grace": job.max_execution_grace,
-                "concurrency_groups": sorted(
-                    [
-                        concurrency_group.name
-                        for concurrency_group in job.concurrency_groups
-                    ]
-                ),
+                "concurrency_groups": sorted([concurrency_group.name for concurrency_group in job.concurrency_groups]),
                 "render_reports": job.render_reports,
                 "jenkins_environment": job.jenkins_environment,
                 "job_group": job.job_group,
                 "concurrent_runs": job.concurrent_runs,
             }
             if jobs[job.name]["next_scheduled_run"] is not None:
-                jobs[job.name]["next_scheduled_run"] = jobs[job.name][
-                    "next_scheduled_run"
-                ].isoformat()
+                jobs[job.name]["next_scheduled_run"] = jobs[job.name]["next_scheduled_run"].isoformat()
             for k in ("max_execution", "max_execution_grace"):
                 if jobs[job.name][k] is not None:
                     jobs[job.name][k] = td_to_seconds(jobs[job.name][k])
@@ -362,9 +326,7 @@ class Info:
                 if config[attr] is not None:
                     config[attr] = td_to_seconds(config[attr])
             for concurrency_group in self.config.concurrency_groups.values():
-                config["concurrency_groups"][concurrency_group.name] = {
-                    "max": concurrency_group.max
-                }
+                config["concurrency_groups"][concurrency_group.name] = {"max": concurrency_group.max}
         with AutoPager() as pager:
             if self.args.format == "yaml":
                 print(yaml.safe_dump(config), file=pager, end="")
@@ -420,9 +382,9 @@ class Info:
     def cmd_list_runs(self):
         job_names = self.args.job
         run_ids = self.args.run
-        runs = self.db.get_runs(
-            job_names=job_names, run_ids=run_ids, runs_running=False
-        ) + self.db.get_runs(job_names=job_names, run_ids=run_ids, runs_running=True)
+        runs = self.db.get_runs(job_names=job_names, run_ids=run_ids, runs_running=False) + self.db.get_runs(
+            job_names=job_names, run_ids=run_ids, runs_running=True
+        )
         if self.args.format in ("json", "yaml"):
             out = {}
             for run in runs:
@@ -430,9 +392,7 @@ class Info:
                     "job_name": run.job.name,
                     "schedule_time": run.schedule_time.isoformat(),
                     "start_time": run.start_time.isoformat(),
-                    "stop_time": (
-                        None if not run.stop_time else run.stop_time.isoformat()
-                    ),
+                    "stop_time": (None if not run.stop_time else run.stop_time.isoformat()),
                     "exit_code": (None if not run.stop_time else run.exit_code),
                     "trigger_type": run.trigger_type,
                     "trigger_data": run.trigger_data,
@@ -455,11 +415,7 @@ class Info:
                                 run.trigger_type,
                                 run.schedule_time.isoformat(),
                                 run.start_time.isoformat(),
-                                (
-                                    ""
-                                    if not run.stop_time
-                                    else run.stop_time.isoformat()
-                                ),
+                                ("" if not run.stop_time else run.stop_time.isoformat()),
                             ]
                         ),
                         file=pager,
@@ -540,9 +496,7 @@ class Info:
             if len(runs) == 0:
                 self.args.parser.error("Cannot find run ID {}".format(run_id))
         run = runs[0]
-        fn = os.path.join(
-            self.config.data_dir, "runs", run.job.name, run.id, "output.txt"
-        )
+        fn = os.path.join(self.config.data_dir, "runs", run.job.name, run.id, "output.txt")
         with AutoPager() as pager:
             pager.write(dsari.utils.read_output(fn))
 
@@ -552,14 +506,10 @@ class Info:
             time.sleep(1)
 
     def cmd_tail_run_output_loop(self):
-        runs = self.db.get_runs(
-            run_ids=(self.args.run if self.args.run else None), runs_running=True
-        )
+        runs = self.db.get_runs(run_ids=(self.args.run if self.args.run else None), runs_running=True)
         filenames = []
         for run in runs:
-            filename = os.path.join(
-                self.config.data_dir, "runs", run.job.name, run.id, "output.txt"
-            )
+            filename = os.path.join(self.config.data_dir, "runs", run.job.name, run.id, "output.txt")
             if os.path.exists(filename):
                 filenames.append(filename)
         if filenames:
@@ -577,11 +527,11 @@ class Info:
             "jobs": self.config.jobs,
         }
         banner = "Additional variables available:\n"
-        for (k, v) in vars.items():
+        for k, v in vars.items():
             v = vars[k]
-            if type(v) == dict:
+            if isinstance(v, dict):
                 r = "Dictionary ({} items)".format(len(v))
-            elif type(v) == list:
+            elif isinstance(v, list):
                 r = "List ({} items)".format(len(v))
             else:
                 r = repr(v)
@@ -605,18 +555,14 @@ class Info:
             class DsariConsole(code.InteractiveConsole):
                 pass
 
-            console_vars = vars.copy().update(
-                {"__name__": "__console__", "__doc__": None}
-            )
+            console_vars = vars.copy().update({"__name__": "__console__", "__doc__": None})
             print(banner, end="")
             DsariConsole(locals=console_vars).interact()
 
     def main(self):
         command = self.args.command
         while hasattr(self.args, "command_{}".format(command)):
-            command = "{}_{}".format(
-                command, getattr(self.args, "command_{}".format(command))
-            )
+            command = "{}_{}".format(command, getattr(self.args, "command_{}".format(command)))
 
         cmd_map = {
             "config_check": self.cmd_check_config,

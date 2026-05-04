@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
-
-# dsari - Do Something and Record It
-# Copyright (C) 2015-2021 Ryan Finnie
+# SPDX-PackageName: dsari
+# SPDX-PackageSupplier: Ryan Finnie <ryan@finnie.org>
+# SPDX-PackageDownloadLocation: https://codeberg.org/rfinnie/dsari
+# SPDX-FileCopyrightText: © 2015 Ryan Finnie <ryan@finnie.org>
 # SPDX-License-Identifier: MPL-2.0
 
 import argparse
@@ -24,9 +24,7 @@ __version__ = dsari.__version__
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="Do Something and Record It - Prometheus exporter ({})".format(
-            __version__
-        ),
+        description="Do Something and Record It - Prometheus exporter ({})".format(__version__),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -35,9 +33,7 @@ def parse_args(argv):
         version=__version__,
         help="report the program version",
     )
-    parser.add_argument(
-        "--debug", action="store_true", help="output additional debugging information"
-    )
+    parser.add_argument("--debug", action="store_true", help="output additional debugging information")
     parser.add_argument(
         "--config-dir",
         "-c",
@@ -75,9 +71,7 @@ def parse_args(argv):
         default="0.01,0.1,0.5,0.9,0.99",
         help="comma-separated list of quantiles to use for summaries",
     )
-    parser.add_argument(
-        "--no-running", action="store_true", help="do not gather running run metrics"
-    )
+    parser.add_argument("--no-running", action="store_true", help="do not gather running run metrics")
     parser.add_argument(
         "--dump",
         action="store_true",
@@ -141,9 +135,7 @@ class Prometheus:
                 if a[0]:
                     output += "{}{{{}}} {}\n".format(
                         k,
-                        ",".join(
-                            ['{}="{}"'.format(x, a[0][x]) for x in sorted(a[0].keys())]
-                        ),
+                        ",".join(['{}="{}"'.format(x, a[0][x]) for x in sorted(a[0].keys())]),
                         a[1],
                     )
                 else:
@@ -192,12 +184,7 @@ class Prometheus:
                         (
                             {"job_name": job.name, "quantile": str(quantile)},
                             percentile(
-                                sorted(
-                                    [
-                                        (run.stop_time - run.start_time).total_seconds()
-                                        for run in runs
-                                    ]
-                                ),
+                                sorted([(run.stop_time - run.start_time).total_seconds() for run in runs]),
                                 quantile,
                             ),
                         )
@@ -206,14 +193,7 @@ class Prometheus:
                         (
                             {"job_name": job.name, "quantile": str(quantile)},
                             percentile(
-                                sorted(
-                                    [
-                                        (
-                                            run.start_time - run.schedule_time
-                                        ).total_seconds()
-                                        for run in runs
-                                    ]
-                                ),
+                                sorted([(run.start_time - run.schedule_time).total_seconds() for run in runs]),
                                 quantile,
                             ),
                         )
@@ -221,42 +201,24 @@ class Prometheus:
                 run_duration_seconds_sum.append(
                     (
                         {"job_name": job.name},
-                        sum(
-                            [
-                                (run.stop_time - run.start_time).total_seconds()
-                                for run in runs
-                            ]
-                        ),
+                        sum([(run.stop_time - run.start_time).total_seconds() for run in runs]),
                     )
                 )
                 run_duration_seconds_count.append(({"job_name": job.name}, len_runs))
                 run_latency_seconds_sum.append(
                     (
                         {"job_name": job.name},
-                        sum(
-                            [
-                                (run.start_time - run.schedule_time).total_seconds()
-                                for run in runs
-                            ]
-                        ),
+                        sum([(run.start_time - run.schedule_time).total_seconds() for run in runs]),
                     )
                 )
                 run_latency_seconds_count.append(({"job_name": job.name}, len_runs))
                 last_run_exit_code.append(({"job_name": job.name}, last_run.exit_code))
-                last_run_schedule_time.append(
-                    ({"job_name": job.name}, dt_to_epoch(last_run.schedule_time))
-                )
-                last_run_start_time.append(
-                    ({"job_name": job.name}, dt_to_epoch(last_run.start_time))
-                )
-                last_run_stop_time.append(
-                    ({"job_name": job.name}, dt_to_epoch(last_run.stop_time))
-                )
+                last_run_schedule_time.append(({"job_name": job.name}, dt_to_epoch(last_run.schedule_time)))
+                last_run_start_time.append(({"job_name": job.name}, dt_to_epoch(last_run.start_time)))
+                last_run_stop_time.append(({"job_name": job.name}, dt_to_epoch(last_run.stop_time)))
 
         metrics = {
-            "dsari_run_count": entry(
-                run_count, type="counter", help="Number of runs performed for a job"
-            ),
+            "dsari_run_count": entry(run_count, type="counter", help="Number of runs performed for a job"),
             "dsari_run_success_count": entry(
                 run_success_count,
                 type="counter",
@@ -272,26 +234,16 @@ class Prometheus:
                 type="summary",
                 help="Length of time spent in a run",
             ),
-            "dsari_run_duration_seconds_count": entry(
-                run_duration_seconds_count, type=None, help=None
-            ),
-            "dsari_run_duration_seconds_sum": entry(
-                run_duration_seconds_sum, type=None, help=None
-            ),
+            "dsari_run_duration_seconds_count": entry(run_duration_seconds_count, type=None, help=None),
+            "dsari_run_duration_seconds_sum": entry(run_duration_seconds_sum, type=None, help=None),
             "dsari_run_latency_seconds": entry(
                 run_latency_seconds,
                 type="summary",
                 help="Length of time spent between scheduled start and actual start",
             ),
-            "dsari_run_latency_seconds_count": entry(
-                run_latency_seconds_count, type=None, help=None
-            ),
-            "dsari_run_latency_seconds_sum": entry(
-                run_latency_seconds_sum, type=None, help=None
-            ),
-            "dsari_last_run_exit_code": entry(
-                last_run_exit_code, help="Numeric exit code of the last run for a job"
-            ),
+            "dsari_run_latency_seconds_count": entry(run_latency_seconds_count, type=None, help=None),
+            "dsari_run_latency_seconds_sum": entry(run_latency_seconds_sum, type=None, help=None),
+            "dsari_last_run_exit_code": entry(last_run_exit_code, help="Numeric exit code of the last run for a job"),
             "dsari_last_run_schedule_time": entry(
                 last_run_schedule_time,
                 help="Schedule time of the last run for a job, seconds since epoch",
@@ -345,9 +297,7 @@ class Prometheus:
         exporter_start = dtnow()
         metrics = {}
 
-        if (self.job_cache is None) or (
-            (self.job_cache_time + seconds_to_td(self.args.job_cache_time)) < dtnow()
-        ):
+        if (self.job_cache is None) or ((self.job_cache_time + seconds_to_td(self.args.job_cache_time)) < dtnow()):
             self.job_cache = self.get_job_metrics()
             self.job_cache_time = dtnow()
         metrics.update(self.job_cache)
@@ -357,9 +307,7 @@ class Prometheus:
 
         metrics.update(
             {
-                "dsari_time": entry(
-                    [({}, time.time())], help="Current time, seconds since epoch"
-                ),
+                "dsari_time": entry([({}, time.time())], help="Current time, seconds since epoch"),
                 "dsari_exporter_collect_seconds": entry(
                     [({}, (dtnow() - exporter_start).total_seconds())],
                     help="Time spent collecting metrics",
@@ -380,9 +328,7 @@ class PrometheusHandler:
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
         lh_console = logging.StreamHandler()
-        lh_console_formatter = logging.Formatter(
-            "[%(asctime)s] %(levelname)s: %(message)s"
-        )
+        lh_console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
         lh_console.setFormatter(lh_console_formatter)
         if self.prom.args.debug:
             lh_console.setLevel(logging.DEBUG)

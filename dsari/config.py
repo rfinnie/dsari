@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
-
-# dsari - Do Something and Record It
-# Copyright (C) 2015-2021 Ryan Finnie
+# SPDX-PackageName: dsari
+# SPDX-PackageSupplier: Ryan Finnie <ryan@finnie.org>
+# SPDX-PackageDownloadLocation: https://codeberg.org/rfinnie/dsari
+# SPDX-FileCopyrightText: © 2015 Ryan Finnie <ryan@finnie.org>
 # SPDX-License-Identifier: MPL-2.0
 
 import copy
@@ -91,9 +91,7 @@ class ConfigLoader:
                 try:
                     config = utils.dict_merge(
                         config,
-                        utils.load_structured_file(
-                            os.path.join(config_dir, fn), file_type=fn_type
-                        ),
+                        utils.load_structured_file(os.path.join(config_dir, fn), file_type=fn_type),
                     )
                 except (ValueError, ImportError) as e:
                     raise ConfigError(e)
@@ -114,9 +112,7 @@ class ConfigLoader:
                 config_files.sort()
                 for file in config_files:
                     try:
-                        config = utils.dict_merge(
-                            config, utils.load_structured_file(file, file_type=fn_type)
-                        )
+                        config = utils.dict_merge(config, utils.load_structured_file(file, file_type=fn_type))
                     except (ValueError, ImportError) as e:
                         raise ConfigError(e)
 
@@ -127,20 +123,12 @@ class ConfigLoader:
             if k not in valid_values:
                 continue
             if type(v) not in valid_values[k]:
-                raise ConfigError(
-                    "{}: {}: Invalid value {} (expected {})".format(
-                        level, k, repr(type(v)), repr(valid_values[k])
-                    )
-                )
+                raise ConfigError("{}: {}: Invalid value {} (expected {})".format(level, k, repr(type(v)), repr(valid_values[k])))
             if k in value_transforms:
                 try:
                     v = value_transforms[k](v)
                 except Exception as e:
-                    raise ConfigError(
-                        "{}: {}: Invalid value during transformation: {}".format(
-                            level, k, str(e)
-                        )
-                    )
+                    raise ConfigError("{}: {}: Invalid value during transformation: {}".format(level, k, str(e)))
                     return
             setattr(obj, k, v)
 
@@ -160,9 +148,7 @@ class ConfigLoader:
             "shutdown_kill_grace": utils.seconds_to_td,
             "environment": lambda x: utils.validate_environment_dict(copy.deepcopy(x)),
         }
-        self.populate_object(
-            self.config, "Config", config, valid_values, value_transforms
-        )
+        self.populate_object(self.config, "Config", config, valid_values, value_transforms)
 
     def build_concurrency_groups(self, config):
         if "concurrency_groups" not in config:
@@ -171,13 +157,9 @@ class ConfigLoader:
         valid_values = {"max": (int,)}
         value_transforms = {}
 
-        for concurrency_group_name, concurrency_group_dict in config[
-            "concurrency_groups"
-        ].items():
+        for concurrency_group_name, concurrency_group_dict in config["concurrency_groups"].items():
             if not self.is_valid_name(concurrency_group_name):
-                raise ConfigError(
-                    "Concurrency group {}: Invalid name".format(concurrency_group_name)
-                )
+                raise ConfigError("Concurrency group {}: Invalid name".format(concurrency_group_name))
             concurrency_group = dsari.ConcurrencyGroup(concurrency_group_name)
             self.populate_object(
                 concurrency_group,
@@ -201,9 +183,7 @@ class ConfigLoader:
                 raise ConfigError("Job group {}: Invalid name".format(job_group_name))
             job_template = copy.deepcopy(job_group_dict)
             if "job_names" not in job_template:
-                raise ConfigError(
-                    "Job group {}: job_names required".format(job_group_name)
-                )
+                raise ConfigError("Job group {}: job_names required".format(job_group_name))
             for job_name in job_template["job_names"]:
                 jobs[job_name] = copy.deepcopy(job_template)
                 jobs[job_name]["job_group"] = job_group_name
@@ -237,21 +217,15 @@ class ConfigLoader:
             raise ConfigError("Job {}: Invalid name".format(job_name))
         if "command" not in job_dict:
             raise ConfigError("Job {}: command required".format(job_name))
-        if type(job_dict["command"]) == str:
+        if isinstance(job_dict["command"], str):
             job_dict["command"] = shlex.split(job_dict["command"])
         job = dsari.Job(job_name)
-        self.populate_object(
-            job, "Job {}".format(job_name), job_dict, valid_values, value_transforms
-        )
+        self.populate_object(job, "Job {}".format(job_name), job_dict, valid_values, value_transforms)
         if job.schedule is not None:
             try:
                 utils.get_next_schedule_time(job.schedule, job.name)
             except Exception as e:
-                raise ConfigError(
-                    "Job {}: Invalid schedule ({}): {}: {}".format(
-                        job.name, job.schedule, type(e), str(e)
-                    )
-                )
+                raise ConfigError("Job {}: Invalid schedule ({}): {}: {}".format(job.name, job.schedule, type(e), str(e)))
         self.build_job_concurrency_groups(job, job_dict)
         self.config.jobs[job.name] = job
 
@@ -260,20 +234,12 @@ class ConfigLoader:
             return
         for concurrency_group_name in job_dict["concurrency_groups"]:
             if concurrency_group_name in self.config.concurrency_groups:
-                concurrency_group = self.config.concurrency_groups[
-                    concurrency_group_name
-                ]
+                concurrency_group = self.config.concurrency_groups[concurrency_group_name]
             else:
                 if not self.is_valid_name(concurrency_group_name):
-                    raise ConfigError(
-                        "Concurrency group {}: Invalid name".format(
-                            concurrency_group_name
-                        )
-                    )
+                    raise ConfigError("Concurrency group {}: Invalid name".format(concurrency_group_name))
                 concurrency_group = dsari.ConcurrencyGroup(concurrency_group_name)
-                self.config.concurrency_groups[
-                    concurrency_group.name
-                ] = concurrency_group
+                self.config.concurrency_groups[concurrency_group.name] = concurrency_group
             job.concurrency_groups.append(concurrency_group)
 
     def load(self, config):

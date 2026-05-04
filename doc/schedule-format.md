@@ -30,16 +30,16 @@ Here are a few examples of the extended syntax:
     H H * * *
     # Hash on the minute and hour, running once daily.
     # Example result: 53 18 * * *
-    
+
     H H(0-7) * * *
     # Hash on the minute, and hash between midnight and 7AM on the hour, running
     # once daily.
     # Example result: 22 6 * * *
-    
+
     H/15 * * * *
     # Every 15 minutes, offset a hashed amount.
     # Example result: 7-59/15 * * * * (i.e. 7,22,37,52)
-    
+
     H(30-59)/10 * * * *
     # Every 10 minutes, offset a hashed amount, but only between :30 and :59 each
     # hour.
