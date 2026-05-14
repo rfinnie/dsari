@@ -1,6 +1,6 @@
 # SPDX-PackageName: dsari
 # SPDX-PackageSupplier: Ryan Finnie <ryan@finnie.org>
-# SPDX-PackageDownloadLocation: https://codeberg.org/rfinnie/dsari
+# SPDX-PackageDownloadLocation: https://forge.colobox.com/rfinnie/dsari
 # SPDX-FileCopyrightText: © 2026 Ryan Finnie <ryan@finnie.org>
 # SPDX-License-Identifier: MPL-2.0
 
@@ -30,7 +30,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://codeberg.org/rfinnie/dsari"
+Homepage = "https://forge.colobox.com/rfinnie/dsari"
 
 [build-system]
 requires = ["setuptools>=59.6.0"]

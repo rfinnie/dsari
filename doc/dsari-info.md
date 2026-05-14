@@ -71,4 +71,4 @@ shell
 # SEE ALSO
 
 * `dsari-daemon`
-* [dsari](https://codeberg.org/rfinnie/dsari)
+* [dsari](https://forge.colobox.com/rfinnie/dsari)

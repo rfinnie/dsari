@@ -44,4 +44,4 @@ It reads a configuration file containing job information, and schedules runs of 
 * `dsari-info`
 * `dsari-prometheus-exporter`
 * `dsari-render`
-* [dsari](https://codeberg.org/rfinnie/dsari)
+* [dsari](https://forge.colobox.com/rfinnie/dsari)

@@ -52,4 +52,4 @@ When run as a WSGI application, you may send the `WSGI_ARGS` environment variabl
 # SEE ALSO
 
 * `dsari-daemon`
-* [dsari](https://codeberg.org/rfinnie/dsari)
+* [dsari](https://forge.colobox.com/rfinnie/dsari)
