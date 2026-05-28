@@ -1,5 +1,8 @@
 # dsari - Do Something and Record It
 
+[![Git forge repository](https://img.shields.io/badge/git-forge-orange?logo=forgejo)](https://forge.colobox.com/rfinnie/dsari)
+[![CI pipeline status](https://woodpecker.colobox.com/api/badges/41/status.svg)](https://woodpecker.colobox.com/repos/41)
+
 dsari is a lightweight continuous integration (CI) system.
 It provides scheduling, concurrency management and trigger capabilities, and is easy to configure.
 Job scheduling is handled via `dsari-daemon`, while `dsari-render` may be used to format job run information as HTML.
